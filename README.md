@@ -12,22 +12,25 @@ window. Nothing else exists yet: no SoC, no video, no MiSTer wiring.
 
 ```
 matched 10000000 of 10000000 instructions, 2146802 bus accesses,
-11656940 cycles (1.17 cycles/insn, 0.858 IPC)
+11791270 cycles (1.18 cycles/insn, 0.848 IPC)
 fetches 10000004 for 10000000 retires (1.000 per instruction)
 PASS
 ```
+
+Eleven directed tests cover what the ROM does not reach, including every
+exception the core can raise. `tests/run`.
 
 On the DE10-Nano part, the core alone:
 
 | | |
 |---|---|
-| ALMs | 2,759 / 41,910 (7%) |
-| Registers | 3,249 |
+| ALMs | 2,781 / 41,910 (7%) |
+| Registers | 3,229 |
 | DSP | 6 / 112 |
 | Block RAM | none yet |
-| Fmax | 56.07 MHz (slow 85C) |
+| Fmax | 57.17 MHz (slow 85C) |
 
-**56.07 MHz at 0.858 IPC is 48.1 MIPS**, against the 36.864 the part manages
+**57.17 MHz at 0.848 IPC is 48.5 MIPS**, against the 36.864 the part manages
 at one instruction per cycle. That is 1.3x the target, which is the margin
 the caches and SDRAM controller have to fit inside.
 
@@ -86,14 +89,45 @@ The MADD family the R3900 also has is deliberately absent, because the
 reference does not implement it either and this ROM does not use it. Adding
 it on one side only would break lockstep for no gain.
 
-### ISA coverage
+### Directed tests
 
-54 distinct instructions are exercised by the ten-million-instruction
-window, which is essentially the whole MIPS-I integer set including
-`lwl`/`lwr`/`swl`/`swr` and `mult`/`divu`. Implemented but **not** reached
-by that window, and so not yet validated: `add`, `sub`, `multu`, `div`,
-`bltzal`, `bgezal`, `syscall`, `break`, and every exception path -- the ROM
-takes none in the first ten million instructions.
+The ROM is an excellent test of the paths it uses and no test at all of the
+ones it does not. It exercises 54 distinct instructions in ten million from
+reset -- essentially the whole MIPS-I integer set, `lwl`/`lwr`/`swl`/`swr`
+and `mult`/`divu` included -- and takes **zero exceptions** in all of it.
+Everything the core does about faults was therefore untested by it.
+
+`tests/*.s` aims at the rest deliberately, with the reference still the
+arbiter: each one is assembled, run on magicrecomp, and replayed against the
+RTL through the same lockstep harness. So the tests say what the hardware
+does rather than what I believed when writing them.
+
+| | |
+|---|---|
+| `exc_adel`, `exc_ades` | misaligned load and store |
+| `exc_ovf` | overflow from `ADD`, `ADDI` and `SUB`, resuming between each |
+| `exc_ri` | encodings both cores must refuse, not quietly NOP |
+| `exc_sys_bp` | `SYSCALL` and `BREAK` |
+| `exc_dbe` | load and store to nothing -- the only fault raised in MEM |
+| `exc_ibe` | a jump to nothing -- the only fault raised in IF |
+| `exc_delay` | a fault in a delay slot: EPC names the branch, Cause.BD set |
+| `exc_int` | a software interrupt, and `RFE` returning from it |
+| `exc_bev0` | the other vector, with the handler copied into RAM first |
+| `arith` | `ADD`, `SUB`, `MULTU`, signed `DIV` and both its special cases, the variable shifts, `BLTZAL`/`BGEZAL`, `MTHI`/`MTLO` |
+
+A test also declares how many exceptions it expects, and the runner checks
+the reference actually took that many. A test that stops faulting -- because
+an encoding stopped being illegal, say -- would otherwise keep passing while
+testing nothing.
+
+`tools/mipsasm.py` assembles them, so no cross-toolchain is needed;
+`tools/gentrace.c` runs them on the reference in a machine that is two RAMs
+and nothing else, resetting exactly as the real part does so the RTL side
+needs no special setup.
+
+Still not covered: an interrupt arriving on an external `IP` line rather
+than through Cause's software bits, and the TLB instructions, which this
+part does not have.
 
 ## Sequencing
 
@@ -132,20 +166,22 @@ rtl/cpu/r3900.sv     the core
 sim/cosim/           Verilator lockstep harness against magicrecomp
 sim/golden/          reference traces (regenerated, not committed)
 scripts/mktrace      regenerates them
+tests/               directed tests, and tests/run
+tools/mipsasm.py     a small big-endian MIPS-I assembler
+tools/gentrace.c     runs a test on the reference, emits the same traces
 syn/cpu/             Quartus project for the core alone: area and Fmax
 sys/                 MiSTer framework
 ```
 
 ## Next
 
-1. Pipeline the core to one instruction per cycle.
-2. I-cache and D-cache (4 KB / 1 KB, what the monitor reports), SDRAM
+1. I-cache and D-cache (4 KB / 1 KB, what the monitor reports), SDRAM
    controller, ROM load over the HPS.
-3. TX39 peripheral block, enough of it to reach the IDT monitor banner:
+2. TX39 peripheral block, enough of it to reach the IDT monitor banner:
    BIU, interrupt controller, UART A, clock/power control.
-4. LCD controller to MiSTer video. 480x320 at 2 bpp, four pixels per byte,
+3. LCD controller to MiSTer video. 480x320 at 2 bpp, four pixels per byte,
    most significant bits first -- the same panel format every Magic Cap
    machine uses.
-5. SIB and the UCB1100: touchscreen ADC, the AD2/AD3 battery rails, the
+4. SIB and the UCB1100: touchscreen ADC, the AD2/AD3 battery rails, the
    periodic sound-in interrupt the boot path waits on.
-6. Empty PC Card slots with card-detect high, MBUS idle.
+5. Empty PC Card slots with card-detect high, MBUS idle.

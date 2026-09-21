@@ -113,6 +113,12 @@ module r3900 #(
     reg        id_exc_v;
     reg [31:0] id_exc_bad;
     reg        id_exc_bad_v;
+    // Whether a faulting instruction still retires travels with the
+    // exception from EX onwards (ex_exc_ret): an instruction that faults
+    // while executing does retire, and the reference records it with
+    // next_pc already naming the vector, whereas an interrupt or a failed
+    // fetch retires nothing because nothing executed. ID needs no copy --
+    // the only exception raised before EX is IBE, which EX tags directly.
 
     // ID/EX
     reg        ex_v;
@@ -123,6 +129,7 @@ module r3900 #(
     reg [4:0]  ex_exc_code;
     reg [31:0] ex_exc_bad;
     reg        ex_exc_bad_v;
+    reg        ex_exc_ret;
 
     // EX/MEM
     reg        me_v;
@@ -137,6 +144,7 @@ module r3900 #(
     reg [4:0]  me_exc_code;
     reg [31:0] me_exc_bad;
     reg        me_exc_bad_v;
+    reg        me_exc_ret;
 
     // MEM/WB
     reg        wb_v;
@@ -437,7 +445,20 @@ module r3900 #(
     wire special_hazard = id_v && (touches_cp0(i_id) || touches_hilo(i_id)) &&
                           special_inflight;
 
-    assign id_hazard = load_use | branch_load_use | special_hazard;
+    // A write to CP0 can change whether an interrupt is pending, and the
+    // reference decides that before every single instruction. So no
+    // instruction may enter EX while a CP0 write is in flight -- not just
+    // the ones that read CP0. Without this the interrupt lands one or two
+    // instructions later than it should, which is invisible until something
+    // compares EPC.
+    wire cp0_write_inflight = (ex_v && touches_cp0(ex_insn) &&
+                               ((`RS(ex_insn) == 5'h04) || (`RS(ex_insn) == 5'h10))) ||
+                              (me_v && touches_cp0(me_insn) &&
+                               ((`RS(me_insn) == 5'h04) || (`RS(me_insn) == 5'h10))) ||
+                              (wb_v && wb_cp0_we);
+
+    assign id_hazard = load_use | branch_load_use | special_hazard |
+                       (id_v && cp0_write_inflight);
 
     // ------------------------------------------------ interrupts
 
@@ -593,6 +614,7 @@ module r3900 #(
     wire [4:0] ex_exc_out_code = ex_exc_v ? ex_exc_code : ex_new_code;
     wire [31:0] ex_exc_out_bad = ex_exc_v ? ex_exc_bad  : ex_va;
     wire       ex_exc_out_badv = ex_exc_v ? ex_exc_bad_v : ex_new_bad_v;
+    wire       ex_exc_out_ret  = ex_exc_v ? ex_exc_ret   : 1'b1;
 
     // =========================================================== MEM
 
@@ -694,6 +716,7 @@ module r3900 #(
     wire [4:0]  me_exc_out_code = me_exc_v ? me_exc_code : EXC_DBE;
     wire [31:0] me_exc_out_bad  = me_exc_v ? me_exc_bad  : me_va;
     wire        me_exc_out_badv = me_exc_v ? me_exc_bad_v : 1'b1;
+    wire        me_exc_out_ret  = me_exc_v ? me_exc_ret   : 1'b1;
 
     // All exceptions are committed here, at one point in the pipeline, so
     // that the oldest instruction always wins without a priority network.
@@ -737,6 +760,7 @@ module r3900 #(
             rt_v     <= 1'b0;
             id_ds    <= 1'b0;
             id_exc_v <= 1'b0; ex_exc_v <= 1'b0; me_exc_v <= 1'b0;
+            ex_exc_ret <= 1'b1; me_exc_ret <= 1'b1;
             me_phase <= 1'b0;
             md_count <= 6'd0; md_run <= 1'b0; md_skip <= 1'b0;
             insn_count <= 64'd0; cycle_count <= 64'd0;
@@ -778,19 +802,23 @@ module r3900 #(
             end
 
             // ------------------------------------------------ MEM -> WB
-            wb_v <= adv_mem ? (me_v && !me_exc_out_v) : 1'b0;
+            wb_v <= adv_mem ? (me_v && (!me_exc_out_v || me_exc_out_ret))
+                            : 1'b0;
             if (adv_mem) begin
                 wb_pc      <= me_pc;
                 wb_insn    <= me_insn;
-                wb_next_pc <= me_next_pc;
-                wb_we      <= writes_gpr(i_me);
+                // A faulted instruction retires having gone nowhere: the
+                // next fetch is the vector, so next_pc names the word after
+                // it, and none of its own writes happen.
+                wb_next_pc <= me_exc_out_v ? (exc_vector + 32'd4) : me_next_pc;
+                wb_we      <= writes_gpr(i_me) && !me_exc_out_v;
                 wb_wa      <= dest_reg(i_me);
                 wb_value   <= is_load(i_me) ? load_value : me_result;
                 wb_hi      <= me_hi;
                 wb_lo      <= me_lo;
-                wb_hilo_we <= me_hilo_we;
-                wb_cache   <= (`OP(i_me) == 6'h2F);
-                wb_cp0_we  <= (`OP(i_me) == 6'h10) &&
+                wb_hilo_we <= me_hilo_we && !me_exc_out_v;
+                wb_cache   <= (`OP(i_me) == 6'h2F) && !me_exc_out_v;
+                wb_cp0_we  <= (`OP(i_me) == 6'h10) && !me_exc_out_v &&
                               ((`RS(i_me) == 5'h04) || (`RS(i_me) == 5'h10));
                 wb_cp0_a   <= (`RS(i_me) == 5'h10) ? 5'd31 : `RD(i_me);
                 wb_cp0_d   <= me_rt;
@@ -816,6 +844,7 @@ module r3900 #(
                 me_exc_code  <= ex_exc_out_code;
                 me_exc_bad   <= ex_exc_out_bad;
                 me_exc_bad_v <= ex_exc_out_badv;
+                me_exc_ret   <= ex_exc_out_ret;
                 me_hilo_we   <= 1'b0;
                 if (ex_v && (`OP(i_ex) == 6'h00)) begin
                     case (`FN(i_ex))
@@ -875,16 +904,20 @@ module r3900 #(
                 ex_exc_bad   <= id_exc_bad;
                 ex_exc_bad_v <= id_exc_bad_v;
                 if (id_exc_v) begin
+                    // IBE: the fetch failed, so nothing executed.
                     ex_exc_v <= 1'b1; ex_exc_code <= id_exc_code;
+                    ex_exc_ret <= 1'b0;
                 end else if (id_take_irq) begin
+                    // Taken in place of the instruction, which therefore
+                    // does not retire.
                     ex_v <= adv_id && id_v && !exc_flush;
                     ex_exc_v <= 1'b1; ex_exc_code <= EXC_INT;
-                    ex_exc_bad_v <= 1'b0;
+                    ex_exc_bad_v <= 1'b0; ex_exc_ret <= 1'b0;
                 end else if (id_v && illegal(id_insn)) begin
                     ex_exc_v <= 1'b1; ex_exc_code <= EXC_RI;
-                    ex_exc_bad_v <= 1'b0;
+                    ex_exc_bad_v <= 1'b0; ex_exc_ret <= 1'b1;
                 end else begin
-                    ex_exc_v <= 1'b0;
+                    ex_exc_v <= 1'b0; ex_exc_ret <= 1'b1;
                 end
                 if (!adv_id) ex_v <= 1'b0;      // ID is stalled; bubble
             end

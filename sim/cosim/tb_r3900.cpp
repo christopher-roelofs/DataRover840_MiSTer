@@ -18,6 +18,8 @@
 #include <cstring>
 #include <cinttypes>
 #include <unordered_map>
+#include <unordered_set>
+#include <vector>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/mman.h>
@@ -92,9 +94,20 @@ int main(int argc, char **argv) {
     if (!st.open(state_path, TRACE_STATE_MAGIC, sizeof(state_rec))) return 2;
     if (!bs.open(bus_path,   BUS_TRACE_MAGIC,   sizeof(bus_rec)))   return 2;
     const state_rec *S = (const state_rec *)st.recs;
-    const bus_rec   *B = (const bus_rec *)bs.recs;
+    const bus_rec   *Ball = (const bus_rec *)bs.recs;
 
-    uint64_t n_state = st.count, n_bus = bs.count;
+    // Fetch failures are keyed by address, not by position: a pipelined core
+    // fetches ahead of the data accesses around it, so they cannot be
+    // replayed from the same in-order stream. Data accesses can, because
+    // they all happen in MEM and MEM is in order.
+    std::vector<bus_rec>        B;
+    std::unordered_set<uint32_t> ifetch_err;
+    for (uint64_t i = 0; i < bs.count; i++) {
+        if (Ball[i].flags & BUS_F_IFETCH) ifetch_err.insert(Ball[i].addr);
+        else                              B.push_back(Ball[i]);
+    }
+
+    uint64_t n_state = st.count, n_bus = B.size();
     if (limit && limit < n_state) n_state = limit;
     printf("reference: %" PRIu64 " instructions, %" PRIu64 " bus accesses\n",
            n_state, n_bus);
@@ -109,6 +122,7 @@ int main(int argc, char **argv) {
     imem.reserve(n_state);
     for (uint64_t i = 0; i < n_state; i++) {
         uint32_t a = phys(S[i].pc);
+        if (ifetch_err.count(a)) continue;
         auto it = imem.find(a);
         if (it == imem.end()) imem.emplace(a, S[i].insn);
         else if (it->second != S[i].insn) {
@@ -134,6 +148,7 @@ int main(int argc, char **argv) {
     uint64_t bidx = 0;       // next bus access expected
     uint64_t fetches = 0;    // instruction fetches served
     uint64_t drains  = 0;    // accesses from instructions past the trace end
+    uint64_t flushed = 0;    // fetches the reference never made, i.e. flushed
     // Deeper than any pipeline this core will have; only used at the very
     // end of a run.
     const uint64_t DRAIN_SLACK = 16;
@@ -155,19 +170,35 @@ int main(int argc, char **argv) {
         // wrong fetch address is caught here rather than as a wrong result
         // three instructions later.
         dut->ibus_ack = 0;
+        dut->ibus_err = 0;
         if (dut->ibus_req) {
+            if (ifetch_err.count(dut->ibus_addr)) {
+                // The reference could not fetch this address either.
+                dut->ibus_rdata = 0;
+                dut->ibus_err   = 1;
+                dut->ibus_ack   = 1;
+                fetches++;
+                goto fetched;
+            }
             auto it = imem.find(dut->ibus_addr);
             if (it == imem.end()) {
-                fprintf(stderr, "\n*** fetched %08X, an address the reference "
-                        "never executed (next to retire is %" PRIu64
-                        ", pc %08X)\n", dut->ibus_addr, idx, S[idx].pc);
-                failures++;
-                break;
+                // An exception flushes instructions that were already
+                // fetched, so near a fault the core legitimately asks for
+                // addresses the reference never reached. Serve a NOP and
+                // let the retire comparison be the judge: if one of these
+                // ever actually retires, its pc will not match and that is
+                // caught on the very next retire.
+                dut->ibus_rdata = 0;
+                dut->ibus_ack   = 1;
+                fetches++;
+                flushed++;
+                goto fetched;
             }
             dut->ibus_rdata = it->second;
             dut->ibus_ack   = 1;
             fetches++;
         }
+    fetched:;
 
         // Data access, replayed from the reference.
         dut->dbus_ack = 0;
@@ -192,6 +223,8 @@ int main(int argc, char **argv) {
             uint32_t word_addr = b.addr & ~3u;
             unsigned size = BUS_SIZE(b.flags);
             bool     wr   = BUS_IS_WRITE(b.flags);
+            bool     err  = BUS_IS_ERROR(b.flags);
+            (void)err;
 
             if (dut->dbus_addr != word_addr || (bool)dut->dbus_we != wr) {
                 fprintf(stderr, "\n*** bus access diverged at instruction %" PRIu64
@@ -208,7 +241,9 @@ int main(int argc, char **argv) {
 
             // Big-endian lanes: lane 3 is the byte at the word address.
             unsigned lane = 3u - (b.addr & 3u);
-            if (!wr) {
+            if (BUS_IS_ERROR(b.flags) && !wr) {
+                dut->dbus_rdata = 0;
+            } else if (!wr) {
                 uint32_t w = 0;
                 if (size == 4)      w = b.value;
                 else if (size == 2) w = (b.addr & 2) ? b.value : (b.value << 16);
@@ -234,6 +269,7 @@ int main(int argc, char **argv) {
                     break;
                 }
             }
+            dut->dbus_err = BUS_IS_ERROR(b.flags) ? 1 : 0;
             dut->dbus_ack = 1;
         }
 
@@ -315,6 +351,8 @@ int main(int argc, char **argv) {
     if (drains)
         printf("%" PRIu64 " access(es) from instructions still in flight past "
                "the end of the trace\n", drains);
+    if (flushed)
+        printf("%" PRIu64 " fetch(es) discarded by a flush\n", flushed);
 
     delete dut;
     if (failures || idx != n_state) {

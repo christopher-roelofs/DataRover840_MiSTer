@@ -35,5 +35,10 @@ struct bus_rec {
     uint32_t flags;       // low byte: size in bytes; bit 8: write
 };
 
-#define BUS_SIZE(f)  ((f) & 0xFFu)
-#define BUS_IS_WRITE(f) (((f) & 0x100u) != 0)
+#define BUS_F_WRITE  0x100u
+#define BUS_F_ERROR  0x200u   // the access failed; nothing decoded it
+#define BUS_F_IFETCH 0x400u   // an instruction fetch, not a data access
+
+#define BUS_SIZE(f)     ((f) & 0xFFu)
+#define BUS_IS_WRITE(f) (((f) & BUS_F_WRITE) != 0)
+#define BUS_IS_ERROR(f) (((f) & BUS_F_ERROR) != 0)

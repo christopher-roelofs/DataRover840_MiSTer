@@ -1,0 +1,61 @@
+#!/bin/sh
+#
+# Directed tests for the paths the DataRover ROM never reaches.
+#
+# Each .s is assembled, run on magicrecomp to produce the reference traces,
+# and then replayed against the RTL core in lockstep. The reference is the
+# arbiter throughout: these tests say what the hardware does, not what I
+# believed when I wrote them.
+#
+# A test also declares how many exceptions it expects. A test that stops
+# faulting -- because an encoding stopped being illegal, say -- would
+# otherwise keep passing while testing nothing.
+#
+set -e
+cd "$(dirname "$0")/.."
+
+MRC=${MRC:-../magicrecomp}
+OUT=${OUT:-/tmp/r3900-tests}
+BASE=0xBFC00000
+N=${N:-400}
+
+if [ ! -x tools/gentrace ]; then
+    echo "tests: building gentrace"
+    gcc -O2 -o tools/gentrace tools/gentrace.c -I"$MRC/src" \
+        "$MRC/build/libmrc_cpu_mips.a" "$MRC/build/libmrc_common.a"
+fi
+[ -x sim/cosim/obj_dir/Vr3900 ] || make -C sim/cosim >/dev/null
+
+mkdir -p "$OUT"
+pass=0; fail=0
+
+for src in tests/*.s; do
+    name=$(basename "$src" .s)
+    want=$(grep -oE 'expect-exceptions:[[:space:]]*[0-9]+' "$src" | grep -oE '[0-9]+$')
+    [ -n "$want" ] || { echo "$name: no expect-exceptions line"; fail=$((fail+1)); continue; }
+
+    python3 tools/mipsasm.py "$src" "$OUT/$name.bin" $BASE >/dev/null
+
+    counts=$(./tools/gentrace "$OUT/$name.bin" "$OUT/$name" -n $N)
+    got_exc=$(echo "$counts" | cut -d' ' -f2)
+    if [ "$got_exc" != "$want" ]; then
+        printf '%-14s FAIL  reference took %s exception(s), expected %s\n' \
+               "$name" "$got_exc" "$want"
+        fail=$((fail+1)); continue
+    fi
+
+    if out=$(./sim/cosim/obj_dir/Vr3900 --state "$OUT/$name.trc" \
+                                        --bus "$OUT/$name.bus" 2>&1); then
+        ipc=$(echo "$out" | grep -oE '[0-9.]+ IPC' || true)
+        printf '%-14s ok    %s exception(s), %s\n' "$name" "$want" "$ipc"
+        pass=$((pass+1))
+    else
+        printf '%-14s FAIL\n' "$name"
+        echo "$out" | grep -E '^\*\*\*' -A4 | sed 's/^/                /'
+        fail=$((fail+1))
+    fi
+done
+
+echo
+echo "$pass passed, $fail failed"
+[ "$fail" -eq 0 ]
