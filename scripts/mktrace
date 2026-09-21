@@ -1,0 +1,39 @@
+#!/bin/sh
+#
+# Regenerate the reference traces the RTL core is validated against.
+#
+# These come out of magicrecomp, running the device's own ROM from reset.
+# They are not in git: a million instructions is 144 MB. Both files are
+# written together and must stay together -- the bus trace only makes sense
+# against the state trace it was recorded with.
+#
+#   scripts/mktrace [instructions] [output-prefix]
+#
+set -e
+
+N=${1:-1000000}
+OUT=${2:-sim/golden/reset-1m}
+MRC=${MRC:-../magicrecomp}
+ROM=${ROM:-"$MRC/roms/Data Rover 840/DataRover-840-USA.image"}
+
+if [ ! -x "$MRC/build/mcap" ]; then
+    echo "mktrace: no mcap at $MRC/build/mcap -- build magicrecomp first" >&2
+    echo "         (cmake -S $MRC -B $MRC/build && cmake --build $MRC/build -j)" >&2
+    exit 1
+fi
+if [ ! -f "$ROM" ]; then
+    echo "mktrace: no ROM at $ROM" >&2
+    exit 1
+fi
+
+mkdir -p "$(dirname "$OUT")"
+echo "mktrace: $N instructions from reset -> $OUT.trc / $OUT.bus"
+
+# --temporary keeps the run from leaving a snapshot beside the ROM.
+"$MRC/build/mcap" --rom "$ROM" --headless --temporary \
+    --trace-state "$OUT.trc" \
+    --trace-bus   "$OUT.bus" \
+    --trace-state-count "$N" -n "$N" 2>&1 \
+  | grep -Ei 'exception|identification|RAM:' || true
+
+ls -la "$OUT.trc" "$OUT.bus"
