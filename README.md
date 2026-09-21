@@ -206,12 +206,20 @@ one wait is not. A burst holds the grant, which needs no counter: the cache
 keeps its request asserted for all four beats.
 
 The board is tested at memory latencies from zero upward, fixed and random,
-because one SDRAM serving two ports is where a stall bug hides. Over the
-first million instructions -- mostly uncached monitor code, so pessimistic:
+because one SDRAM serving two ports is where a stall bug hides.
 
 | SDRAM latency | 0 | 1 | 2 | 4 | random 0-7 |
 |---|---|---|---|---|---|
-| IPC | 0.901 | 0.524 | 0.366 | 0.230 | 0.254 |
+| first 1M instructions | 0.901 | 0.524 | 0.366 | 0.230 | 0.254 |
+| first 10M instructions | 0.650 | **0.566** | **0.501** | | |
+
+The two windows disagree in opposite directions for the same reason. The
+first million is nearly all uncached monitor code in kseg1: single-word
+fetches, which are free when memory answers instantly and expensive when it
+does not. The ten million is mostly the OS running cached out of kuseg,
+where the caches carry it and the latency barely shows. The second is the
+one to plan with, and at a plausible latency it is about **0.50 IPC**, or
+23.8 MIPS at the 47.49 MHz the cached core closes at.
 
 `sim/cosim/tb_board.cpp` runs the same lockstep one level further out, and
 the split it uses is the board's rather than a guess. Whatever the decode
