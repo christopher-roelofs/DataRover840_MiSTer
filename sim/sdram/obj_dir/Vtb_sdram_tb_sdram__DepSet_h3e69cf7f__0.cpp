@@ -252,12 +252,12 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__2(Vtb_sdram_
             vlSelf->__Vdly__ctl__DOT__state = 5U;
         } else if ((5U == (IData)(vlSelf->__PVT__ctl__DOT__state))) {
             vlSelf->__Vdly__ctl__DOT__state = 4U;
-            if ((0x2e5U < (IData)(vlSelf->__PVT__ctl__DOT__refresh_count))) {
+            if ((0x2cdU < (IData)(vlSelf->__PVT__ctl__DOT__refresh_count))) {
                 __Vdly__ctl__DOT__refresh_count = (0x3fffU 
                                                    & ((IData)(1U) 
                                                       + 
                                                       ((IData)(vlSelf->__PVT__ctl__DOT__refresh_count) 
-                                                       - (IData)(0x2e5U))));
+                                                       - (IData)(0x2cdU))));
                 vlSelf->__Vdly__ctl__DOT__state = 0xaU;
                 vlSelf->__PVT__ctl__DOT__command = 1U;
                 vlSelf->__PVT__ctl__DOT__chip = 0U;
@@ -266,7 +266,7 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__2(Vtb_sdram_
             vlSelf->__Vdly__ctl__DOT__state = 9U;
             vlSelf->__PVT__ctl__DOT__command = 1U;
             vlSelf->__PVT__ctl__DOT__chip = 1U;
-        } else if ((0x5caU < (IData)(vlSelf->__PVT__ctl__DOT__refresh_count))) {
+        } else if ((0x59aU < (IData)(vlSelf->__PVT__ctl__DOT__refresh_count))) {
             vlSelf->__Vdly__ctl__DOT__state = 5U;
         } else if (vlSelf->__PVT__ctl__DOT__unnamedblk1__DOT__ch1_rq) {
             vlSelf->__Vdly__ctl__DOT__unnamedblk1__DOT__cas_addr 
@@ -376,7 +376,7 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__2(Vtb_sdram_
     }
     if ((1U & (~ (IData)(vlSymsp->TOP.rst_n)))) {
         vlSelf->__Vdly__ctl__DOT__state = 0U;
-        __Vdly__ctl__DOT__refresh_count = 0x1318U;
+        __Vdly__ctl__DOT__refresh_count = 0x1483U;
     }
     vlSelf->__PVT__ctl__DOT__unnamedblk1__DOT__ch1_rq 
         = __Vdly__ctl__DOT__unnamedblk1__DOT__ch1_rq;

@@ -248,6 +248,18 @@ quartus_sh --flow compile DataRover840     # output_files/DataRover840.rbf
 scripts/deploy                             # copies core and ROM to the MiSTer
 ```
 
+It builds and meets timing: 9,709 ALMs of 41,910, 65 of 553 M10K, 37 DSP,
+with 0.616 ns of setup slack and 0.252 ns of hold on the 92 MHz clock. Most
+of that area is the MiSTer framework; the core itself is 3,208 ALMs and 7
+M10K.
+
+The clock is 92 MHz rather than 95 because of one path. The core's own
+critical path -- the data cache's fill state, through the stall network, to
+the fetch redirect -- takes 21.16 ns, and two periods of 95 MHz is 21.05.
+It missed by 113 picoseconds, which is the core wanting more time than it
+was being given rather than anything being wrong with it. Two periods of
+92 MHz is 21.7 ns.
+
 `scripts/deploy` puts the core in `_Console` and the ROM in
 `games/DataRover840`, then asks MiSTer to load it. The ROM is chosen from
 the OSD; it arrives over `ioctl` and is written into the SDRAM before the

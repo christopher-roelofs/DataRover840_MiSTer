@@ -15,7 +15,7 @@
 `default_nettype none
 
 module dr840_machine (
-    input  wire        clk,          // 95 MHz: SDRAM, and the core halved
+    input  wire        clk,          // 92 MHz: SDRAM, and the core halved
     input  wire        rst_n,
 
     // ---- ROM load, from the HPS. Whole words, big-endian.
@@ -149,7 +149,7 @@ module dr840_machine (
         .ch2_req(ch2_req), .ch2_rnw(ch2_rnw), .ch2_ready(ch2_ready)
     );
 
-    sdram #(.CLK_MHZ(95)) ctl (
+    sdram #(.CLK_MHZ(92)) ctl (
         .init(~rst_n), .clk(clk),
         .SDRAM_DQ_O(SDRAM_DQ_O), .SDRAM_DQ_OE(SDRAM_DQ_OE),
         .SDRAM_DQ_I(SDRAM_DQ_I), .SDRAM_A(SDRAM_A),

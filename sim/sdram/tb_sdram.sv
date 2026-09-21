@@ -156,9 +156,8 @@ module tb_sdram (
     wire        SDRAM_DQML, SDRAM_DQMH, SDRAM_nCS, SDRAM_nWE;
     wire        SDRAM_nRAS, SDRAM_nCAS, SDRAM_CKE, SDRAM_CLK;
 
-    // 95 MHz is what a divide-by-two PLL gives alongside a core at the
-    // 47.5 MHz it closes at.
-    sdram #(.CLK_MHZ(95)) ctl (
+    // 92 MHz: two periods of it is 21.7 ns, and the core needs 21.2.
+    sdram #(.CLK_MHZ(92)) ctl (
         .init(~rst_n), .clk(clk),
         .SDRAM_DQ_O(ctl_dq_o), .SDRAM_DQ_OE(ctl_dq_oe), .SDRAM_DQ_I(dq_bus),
         .SDRAM_A(SDRAM_A),

@@ -1,3 +1,11 @@
+# 92 MHz for the SDRAM; the core advances on every second edge of it.
+#
+# Not 95, which was the first choice. The core's own critical path -- the
+# data cache's fill state, through the stall network, to the fetch
+# redirect -- takes 21.16 ns, and two periods of 95 MHz is 21.05. It missed
+# by 113 picoseconds, which is the core needing more time than it was being
+# given rather than anything being wrong with it. Two periods of 92 MHz is
+# 21.7 ns.
 # The core and its caches advance on every second edge of the SDRAM clock,
 # so every path inside them has two periods to settle. Saying so is not
 # optional: a clock enable does not relax timing by itself, and without this
