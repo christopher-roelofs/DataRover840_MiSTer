@@ -30,11 +30,15 @@ On the DE10-Nano part, the core alone:
 |---|---|
 | | core | with caches |
 |---|---|---|
-| ALMs | 2,781 (7%) | 3,203 (8%) |
-| Registers | 3,229 | 3,516 |
-| Block RAM | none | 7 M10K, 47,808 bits |
+| ALMs | 2,781 (7%) | 3,208 (8%) |
+| Registers | 3,229 | 3,447 |
+| Block RAM | none | 7 M10K |
 | DSP | 6 / 112 | 6 / 112 |
-| Fmax | 57.17 MHz | 47.49 MHz |
+| Fmax | 57.17 MHz | 47.31 MHz |
+
+With the clock enable and its multicycle constraints, the cached core closes
+at a **95 MHz clock** -- the SDRAM's rate, advancing every second edge -- with
+0.439 ns of slack. See **Clocking**.
 
 ### What that is worth
 
@@ -237,6 +241,48 @@ image at all (the furthest access is its very last byte), and the ROM does
 not use mirroring to find its size -- it does not find it at all, it is a
 constant. A real modulo would put a 32-bit divide on the path to memory.
 
+## Clocking
+
+One clock, one domain, nothing to cross. The SDRAM runs at 95 MHz and the
+core is the same clock gated down by a clock enable, so it advances every
+second edge -- an effective 47.5 MHz, which is what it closes at. Every
+register in the core and its caches is enabled; the adapter and the
+controller are not.
+
+The point is latency measured in the core's own cycles. A memory access
+takes about twelve memory clocks whatever else happens, and at a divider of
+two that is six of the core's rather than twelve:
+
+| memory clocks per core clock | 1 | 2 | 3 | 4 |
+|---|---|---|---|---|
+| IPC at the core's rate | 0.075 | 0.149 | 0.223 | 0.293 |
+
+(first 200k instructions, which are almost entirely uncached monitor code
+and so the worst case the machine ever has.) Over the first million it is
+0.097 against 0.188 -- the divider is worth a little under 2x, and 3 or 4
+would be worth more still if the SDRAM could be clocked that high, which at
+95 MHz it already nearly cannot.
+
+**A clock enable does not relax timing by itself.** Without saying so, the
+fitter has to close the whole core at the memory's rate. The constraint that
+makes it true is in `syn/cached/r3900_cached_syn.sdc`:
+
+```
+set_multicycle_path -setup -end 2 -from [get_registers *] -to [get_registers *]
+set_multicycle_path -hold  -end 1 -from [get_registers *] -to [get_registers *]
+```
+
+With those, the core and caches close at 95 MHz with 0.439 ns to spare.
+Without them the same design fails by a factor of two, and the failure looks
+like the core being too slow rather than the constraints being wrong.
+
+The controller's refresh constants are derived from its clock now rather
+than written out for 100 MHz. At the 95 MHz this actually runs at, the
+100 MHz numbers refresh every 8.2 us where the part wants 7.8 -- about 7,800
+refreshes in the 64 ms that needs 8,192. Close enough to look fine and not
+close enough to be right; the chip model's worst gap fell from 1,559 clocks
+to 799 when they were corrected.
+
 ## SDRAM
 
 `rtl/board/sdram.sv` is Sorgelig's MiSTer controller, taken from GBA_MiSTer
@@ -349,9 +395,9 @@ sys/                 MiSTer framework
 
 ## Next
 
-1. Clocking, and ROM load over the HPS. The controller wants to run faster
-   than the CPU; one PLL with the core on a clock enable avoids any domain
-   crossing, and is what decides the real throughput.
+1. ROM load over the HPS, and the MiSTer top level. The memory is in place
+   and the clocking is settled; what is missing is `emu.sv`, `hps_io`, and
+   writing the ROM into the SDRAM before the core leaves reset.
 2. TX39 peripheral block, enough of it to reach the IDT monitor banner:
    BIU, interrupt controller, UART A, clock/power control.
 3. LCD controller to MiSTer video. 480x320 at 2 bpp, four pixels per byte,

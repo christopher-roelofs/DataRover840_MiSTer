@@ -32,6 +32,7 @@ VM_CLASSES_FAST += \
 	Vtb_sdram_sdram_mt48lc16m16a2__DepSet_h87112264__0 \
 	Vtb_sdram_r3900_cached__Cz1__DepSet_h9bf53649__0 \
 	Vtb_sdram_r3900__Cz2__DepSet_h3a4a1839__0 \
+	Vtb_sdram_r3900__Cz2__DepSet_h0a67d060__0 \
 
 # Generated module classes, non-fast-path, compile with low/medium optimization
 VM_CLASSES_SLOW += \

@@ -26,6 +26,11 @@
 
 module dr840_sdram (
     input  wire        clk,            // the SDRAM clock, faster than the CPU
+    // The core's clock enable. This module runs at the full rate and the
+    // requester does not, so every reply is held until an enabled edge has
+    // taken it -- otherwise a whole burst could be delivered between two of
+    // the requester's clock edges and three quarters of it would vanish.
+    input  wire        cen,
     input  wire        rst_n,
 
     // ---- the memory port from dr840_mem
@@ -74,11 +79,13 @@ module dr840_sdram (
                S_WR     = 4'd2,   // a whole-word write
                S_RMW_R  = 4'd3,   // narrower than a word: read,
                S_RMW_W  = 4'd4,   //   merge and write back
-               S_B_LO   = 4'd5,   // first half of a line: issue
-               S_B_LO_0 = 4'd6,   //   hand back word 0
-               S_B_LO_1 = 4'd7,   //   hand back word 1
-               S_B_HI   = 4'd8,   // second half: issue
-               S_B_HI_0 = 4'd9;
+               S_TAKE   = 4'd5,   // wait for the reply to be taken
+               S_B_LO   = 4'd6,   // first half of a line: issue
+               S_B_T0   = 4'd7,   //   word 0 taken -> present word 1
+               S_B_T1   = 4'd8,   //   word 1 taken -> issue the second half
+               S_B_HI   = 4'd9,
+               S_B_T2   = 4'd10,
+               S_B_T3   = 4'd11;
 
     reg [3:0]  state;
     assign ram_busy = (state != S_IDLE);
@@ -94,6 +101,9 @@ module dr840_sdram (
         ram_be[0] ? ram_wdata[7:0]   : hold[7:0]
     };
 
+    // A reply has been taken once an enabled edge has seen it asserted.
+    wire ack_taken = ram_ack && cen;
+
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             state   <= S_IDLE;
@@ -104,7 +114,8 @@ module dr840_sdram (
         end else begin
             ch1_req <= 1'b0;
             ch2_req <= 1'b0;
-            ram_ack <= 1'b0;
+            // A reply stands until an enabled edge takes it.
+            if (ack_taken) ram_ack <= 1'b0;
             dbg_start <= 1'b0;
             if (state == S_IDLE && ram_req && !ram_ack) begin
                 dbg_start      <= 1'b1;
@@ -147,13 +158,15 @@ module dr840_sdram (
             S_RD: if (ch2_ready) begin
                 ram_rdata <= swap(ch2_dout);
                 ram_ack   <= 1'b1;
-                state     <= S_IDLE;
+                state     <= S_TAKE;
             end
 
             S_WR: if (ch2_ready) begin
                 ram_ack <= 1'b1;
-                state   <= S_IDLE;
+                state   <= S_TAKE;
             end
+
+            S_TAKE: if (ack_taken) state <= S_IDLE;
 
             S_RMW_R: if (ch2_ready) begin
                 hold    <= swap(ch2_dout);
@@ -178,28 +191,29 @@ module dr840_sdram (
             S_B_LO: if (ch1_ready) begin
                 ram_rdata <= swap(ch1_dout[31:0]);
                 ram_ack   <= 1'b1;
-                state     <= S_B_LO_0;
+                state     <= S_B_T0;
             end
-            S_B_LO_0: begin
+            S_B_T0: if (ack_taken) begin
                 ram_rdata <= swap(ch1_dout[63:32]);
-                ram_ack   <= 1'b1;
-                state     <= S_B_LO_1;
+                ram_ack   <= 1'b1;             // stays up; the data moves on
+                state     <= S_B_T1;
             end
-            S_B_LO_1: begin
+            S_B_T1: if (ack_taken) begin
                 ch1_addr <= {2'b00, line[24:4], 3'd4};   // +8 bytes
                 ch1_req  <= 1'b1;
-                state    <= S_B_HI;
+                state    <= S_B_HI;            // the default drops the ack
             end
             S_B_HI: if (ch1_ready) begin
                 ram_rdata <= swap(ch1_dout[31:0]);
                 ram_ack   <= 1'b1;
-                state     <= S_B_HI_0;
+                state     <= S_B_T2;
             end
-            S_B_HI_0: begin
+            S_B_T2: if (ack_taken) begin
                 ram_rdata <= swap(ch1_dout[63:32]);
                 ram_ack   <= 1'b1;
-                state     <= S_IDLE;
+                state     <= S_B_T3;
             end
+            S_B_T3: if (ack_taken) state <= S_IDLE;
 
             default: state <= S_IDLE;
             endcase

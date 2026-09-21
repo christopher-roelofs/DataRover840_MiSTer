@@ -29,6 +29,7 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_sdram VL_NOT_FINAL : public VerilatedMode
     // propagate new values into/out from the Verilated model.
     VL_IN8(&clk,0,0);
     VL_IN8(&rst_n,0,0);
+    VL_IN8(&clk_div,7,0);
     VL_OUT8(&io_req,0,0);
     VL_OUT8(&io_we,0,0);
     VL_OUT8(&io_be,3,0);
@@ -47,6 +48,7 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_sdram VL_NOT_FINAL : public VerilatedMode
     VL_OUT8(&dbg_start,0,0);
     VL_OUT8(&dbg_start_kind,1,0);
     VL_OUT8(&dbg_state,3,0);
+    VL_OUT8(&dbg_cen,0,0);
     VL_OUT16(&dbg_max_refresh_gap,15,0);
     VL_OUT16(&dbg_violations,15,0);
     VL_OUT16(&dbg_last_col,15,0);

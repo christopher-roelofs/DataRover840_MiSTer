@@ -11,6 +11,7 @@ Vtb_sdram::Vtb_sdram(VerilatedContext* _vcontextp__, const char* _vcname__)
     , vlSymsp{new Vtb_sdram__Syms(contextp(), _vcname__, this)}
     , clk{vlSymsp->TOP.clk}
     , rst_n{vlSymsp->TOP.rst_n}
+    , clk_div{vlSymsp->TOP.clk_div}
     , io_req{vlSymsp->TOP.io_req}
     , io_we{vlSymsp->TOP.io_we}
     , io_be{vlSymsp->TOP.io_be}
@@ -29,6 +30,7 @@ Vtb_sdram::Vtb_sdram(VerilatedContext* _vcontextp__, const char* _vcname__)
     , dbg_start{vlSymsp->TOP.dbg_start}
     , dbg_start_kind{vlSymsp->TOP.dbg_start_kind}
     , dbg_state{vlSymsp->TOP.dbg_state}
+    , dbg_cen{vlSymsp->TOP.dbg_cen}
     , dbg_max_refresh_gap{vlSymsp->TOP.dbg_max_refresh_gap}
     , dbg_violations{vlSymsp->TOP.dbg_violations}
     , dbg_last_col{vlSymsp->TOP.dbg_last_col}

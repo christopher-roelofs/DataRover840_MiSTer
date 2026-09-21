@@ -32,6 +32,7 @@ VL_ATTR_COLD void Vtb_sdram_r3900_cached__Cz1___ctor_var_reset(Vtb_sdram_r3900_c
     VL_DEBUG_IF(VL_DBG_MSGF("+        Vtb_sdram_r3900_cached__Cz1___ctor_var_reset\n"); );
     // Body
     vlSelf->__PVT__clk = VL_RAND_RESET_I(1);
+    vlSelf->__PVT__cen = VL_RAND_RESET_I(1);
     vlSelf->__PVT__rst_n = VL_RAND_RESET_I(1);
     vlSelf->__PVT__imem_addr = VL_RAND_RESET_I(32);
     vlSelf->__PVT__imem_req = VL_RAND_RESET_I(1);
@@ -111,7 +112,9 @@ VL_ATTR_COLD void Vtb_sdram_r3900_cached__Cz1___ctor_var_reset(Vtb_sdram_r3900_c
     vlSelf->cache__DOT____VdfgTmp_h53db0a74__0 = 0;
     vlSelf->cache__DOT____VdfgTmp_h6b597d1c__0 = 0;
     vlSelf->cache__DOT____VdfgTmp_ha01f3fd2__0 = 0;
-    vlSelf->__Vdlyvdim0__cache__DOT__idata__v0 = 0;
-    vlSelf->__Vdlyvval__cache__DOT__idata__v0 = VL_RAND_RESET_I(32);
-    vlSelf->__Vdlyvset__cache__DOT__idata__v0 = 0;
+    vlSelf->__Vdly__cache__DOT__dstate = VL_RAND_RESET_I(2);
+    vlSelf->__Vdly__cache__DOT__dcnt = VL_RAND_RESET_I(2);
+    vlSelf->__Vdly__cache__DOT__istate = VL_RAND_RESET_I(2);
+    vlSelf->__Vdly__cache__DOT__icnt = VL_RAND_RESET_I(2);
+    vlSelf->__Vdly__cache__DOT__init_cnt = VL_RAND_RESET_I(9);
 }

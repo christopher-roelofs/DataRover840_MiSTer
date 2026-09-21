@@ -715,10 +715,6 @@ VL_INLINE_OPT void Vtb_sdram_r3900__Cz2___nba_sequent__TOP__tb_sdram__cpu__cpu__
     __PVT__me_is_load = 0;
     CData/*0:0*/ __VdfgTmp_hc3cd8cde__0;
     __VdfgTmp_hc3cd8cde__0 = 0;
-    IData/*31:0*/ __Vfunc_phys__0__Vfuncout;
-    __Vfunc_phys__0__Vfuncout = 0;
-    IData/*31:0*/ __Vfunc_phys__0__va;
-    __Vfunc_phys__0__va = 0;
     CData/*0:0*/ __Vfunc_cacheable__1__Vfuncout;
     __Vfunc_cacheable__1__Vfuncout = 0;
     IData/*31:0*/ __Vfunc_cacheable__1__va;
@@ -949,1054 +945,1080 @@ VL_INLINE_OPT void Vtb_sdram_r3900__Cz2___nba_sequent__TOP__tb_sdram__cpu__cpu__
     __Vdly__id_v = vlSelf->__PVT__id_v;
     __Vdly__me_phase = vlSelf->__PVT__me_phase;
     if (vlSymsp->TOP.rst_n) {
-        if (vlSelf->__PVT__wb_v) {
-            vlSelf->__PVT__rt_v = 1U;
-            vlSelf->__PVT__rt_pc = vlSelf->__PVT__wb_pc;
-            vlSelf->__PVT__rt_insn = vlSelf->__PVT__wb_insn;
-            vlSelf->__PVT__rt_next_pc = vlSelf->__PVT__wb_next_pc;
-            if (vlSelf->__PVT__wb_cp0_we) {
-                if ((0x10U & (IData)(vlSelf->__PVT__wb_cp0_a))) {
-                    if ((8U & (IData)(vlSelf->__PVT__wb_cp0_a))) {
-                        if ((4U & (IData)(vlSelf->__PVT__wb_cp0_a))) {
-                            if ((2U & (IData)(vlSelf->__PVT__wb_cp0_a))) {
-                                if ((1U & (IData)(vlSelf->__PVT__wb_cp0_a))) {
-                                    __Vdlyvval__cp0__v0 
-                                        = ((0xfffffff0U 
-                                            & vlSelf->__PVT__cp0
-                                            [0xcU]) 
-                                           | (0xfU 
-                                              & VL_SHIFTR_III(32,32,32, 
-                                                              vlSelf->__PVT__cp0
-                                                              [0xcU], 2U)));
-                                    __Vdlyvset__cp0__v0 = 1U;
+        if (vlSymsp->TOP__tb_sdram.dbg_cen) {
+            if (vlSelf->__PVT__wb_v) {
+                vlSelf->__PVT__rt_v = 1U;
+                vlSelf->__PVT__rt_pc = vlSelf->__PVT__wb_pc;
+                vlSelf->__PVT__rt_insn = vlSelf->__PVT__wb_insn;
+                vlSelf->__PVT__rt_next_pc = vlSelf->__PVT__wb_next_pc;
+                if (vlSelf->__PVT__wb_cp0_we) {
+                    if ((0x10U & (IData)(vlSelf->__PVT__wb_cp0_a))) {
+                        if ((8U & (IData)(vlSelf->__PVT__wb_cp0_a))) {
+                            if ((4U & (IData)(vlSelf->__PVT__wb_cp0_a))) {
+                                if ((2U & (IData)(vlSelf->__PVT__wb_cp0_a))) {
+                                    if ((1U & (IData)(vlSelf->__PVT__wb_cp0_a))) {
+                                        __Vdlyvval__cp0__v0 
+                                            = ((0xfffffff0U 
+                                                & vlSelf->__PVT__cp0
+                                                [0xcU]) 
+                                               | (0xfU 
+                                                  & VL_SHIFTR_III(32,32,32, 
+                                                                  vlSelf->__PVT__cp0
+                                                                  [0xcU], 2U)));
+                                        __Vdlyvset__cp0__v0 = 1U;
+                                    } else {
+                                        __Vdlyvval__cp0__v1 
+                                            = vlSelf->__PVT__wb_cp0_d;
+                                        __Vdlyvset__cp0__v1 = 1U;
+                                        __Vdlyvdim0__cp0__v1 
+                                            = vlSelf->__PVT__wb_cp0_a;
+                                    }
                                 } else {
-                                    __Vdlyvval__cp0__v1 
+                                    __Vdlyvval__cp0__v2 
                                         = vlSelf->__PVT__wb_cp0_d;
-                                    __Vdlyvset__cp0__v1 = 1U;
-                                    __Vdlyvdim0__cp0__v1 
+                                    __Vdlyvset__cp0__v2 = 1U;
+                                    __Vdlyvdim0__cp0__v2 
                                         = vlSelf->__PVT__wb_cp0_a;
                                 }
                             } else {
-                                __Vdlyvval__cp0__v2 
+                                __Vdlyvval__cp0__v3 
                                     = vlSelf->__PVT__wb_cp0_d;
-                                __Vdlyvset__cp0__v2 = 1U;
-                                __Vdlyvdim0__cp0__v2 
+                                __Vdlyvset__cp0__v3 = 1U;
+                                __Vdlyvdim0__cp0__v3 
                                     = vlSelf->__PVT__wb_cp0_a;
                             }
                         } else {
-                            __Vdlyvval__cp0__v3 = vlSelf->__PVT__wb_cp0_d;
-                            __Vdlyvset__cp0__v3 = 1U;
-                            __Vdlyvdim0__cp0__v3 = vlSelf->__PVT__wb_cp0_a;
+                            __Vdlyvval__cp0__v4 = vlSelf->__PVT__wb_cp0_d;
+                            __Vdlyvset__cp0__v4 = 1U;
+                            __Vdlyvdim0__cp0__v4 = vlSelf->__PVT__wb_cp0_a;
                         }
-                    } else {
-                        __Vdlyvval__cp0__v4 = vlSelf->__PVT__wb_cp0_d;
-                        __Vdlyvset__cp0__v4 = 1U;
-                        __Vdlyvdim0__cp0__v4 = vlSelf->__PVT__wb_cp0_a;
-                    }
-                } else if ((8U & (IData)(vlSelf->__PVT__wb_cp0_a))) {
-                    if ((4U & (IData)(vlSelf->__PVT__wb_cp0_a))) {
-                        if ((2U & (IData)(vlSelf->__PVT__wb_cp0_a))) {
-                            if ((1U & (~ (IData)(vlSelf->__PVT__wb_cp0_a)))) {
-                                __Vdlyvval__cp0__v5 
-                                    = vlSelf->__PVT__wb_cp0_d;
-                                __Vdlyvset__cp0__v5 = 1U;
-                                __Vdlyvdim0__cp0__v5 
-                                    = vlSelf->__PVT__wb_cp0_a;
+                    } else if ((8U & (IData)(vlSelf->__PVT__wb_cp0_a))) {
+                        if ((4U & (IData)(vlSelf->__PVT__wb_cp0_a))) {
+                            if ((2U & (IData)(vlSelf->__PVT__wb_cp0_a))) {
+                                if ((1U & (~ (IData)(vlSelf->__PVT__wb_cp0_a)))) {
+                                    __Vdlyvval__cp0__v5 
+                                        = vlSelf->__PVT__wb_cp0_d;
+                                    __Vdlyvset__cp0__v5 = 1U;
+                                    __Vdlyvdim0__cp0__v5 
+                                        = vlSelf->__PVT__wb_cp0_a;
+                                }
+                            } else if ((1U & (IData)(vlSelf->__PVT__wb_cp0_a))) {
+                                __Vdlyvval__cp0__v6 
+                                    = ((0xfffffcffU 
+                                        & vlSelf->__PVT__cp0
+                                        [0xdU]) | (0x300U 
+                                                   & vlSelf->__PVT__wb_cp0_d));
+                                __Vdlyvset__cp0__v6 = 1U;
+                            } else {
+                                __Vdlyvval__cp0__v7 
+                                    = (0xffefffffU 
+                                       & vlSelf->__PVT__wb_cp0_d);
+                                __Vdlyvset__cp0__v7 = 1U;
                             }
+                        } else if ((2U & (IData)(vlSelf->__PVT__wb_cp0_a))) {
+                            __Vdlyvval__cp0__v8 = vlSelf->__PVT__wb_cp0_d;
+                            __Vdlyvset__cp0__v8 = 1U;
+                            __Vdlyvdim0__cp0__v8 = vlSelf->__PVT__wb_cp0_a;
                         } else if ((1U & (IData)(vlSelf->__PVT__wb_cp0_a))) {
-                            __Vdlyvval__cp0__v6 = (
-                                                   (0xfffffcffU 
-                                                    & vlSelf->__PVT__cp0
-                                                    [0xdU]) 
-                                                   | (0x300U 
-                                                      & vlSelf->__PVT__wb_cp0_d));
-                            __Vdlyvset__cp0__v6 = 1U;
-                        } else {
-                            __Vdlyvval__cp0__v7 = (0xffefffffU 
-                                                   & vlSelf->__PVT__wb_cp0_d);
-                            __Vdlyvset__cp0__v7 = 1U;
+                            __Vdly__cycle_count = ((QData)((IData)(vlSelf->__PVT__wb_cp0_d)) 
+                                                   << 1U);
                         }
+                    } else if ((4U & (IData)(vlSelf->__PVT__wb_cp0_a))) {
+                        __Vdlyvval__cp0__v9 = vlSelf->__PVT__wb_cp0_d;
+                        __Vdlyvset__cp0__v9 = 1U;
+                        __Vdlyvdim0__cp0__v9 = vlSelf->__PVT__wb_cp0_a;
                     } else if ((2U & (IData)(vlSelf->__PVT__wb_cp0_a))) {
-                        __Vdlyvval__cp0__v8 = vlSelf->__PVT__wb_cp0_d;
-                        __Vdlyvset__cp0__v8 = 1U;
-                        __Vdlyvdim0__cp0__v8 = vlSelf->__PVT__wb_cp0_a;
-                    } else if ((1U & (IData)(vlSelf->__PVT__wb_cp0_a))) {
-                        __Vdly__cycle_count = ((QData)((IData)(vlSelf->__PVT__wb_cp0_d)) 
-                                               << 1U);
+                        __Vdlyvval__cp0__v10 = vlSelf->__PVT__wb_cp0_d;
+                        __Vdlyvset__cp0__v10 = 1U;
+                        __Vdlyvdim0__cp0__v10 = vlSelf->__PVT__wb_cp0_a;
+                    } else if ((1U & (~ (IData)(vlSelf->__PVT__wb_cp0_a)))) {
+                        __Vdlyvval__cp0__v11 = vlSelf->__PVT__wb_cp0_d;
+                        __Vdlyvset__cp0__v11 = 1U;
+                        __Vdlyvdim0__cp0__v11 = vlSelf->__PVT__wb_cp0_a;
                     }
-                } else if ((4U & (IData)(vlSelf->__PVT__wb_cp0_a))) {
-                    __Vdlyvval__cp0__v9 = vlSelf->__PVT__wb_cp0_d;
-                    __Vdlyvset__cp0__v9 = 1U;
-                    __Vdlyvdim0__cp0__v9 = vlSelf->__PVT__wb_cp0_a;
-                } else if ((2U & (IData)(vlSelf->__PVT__wb_cp0_a))) {
-                    __Vdlyvval__cp0__v10 = vlSelf->__PVT__wb_cp0_d;
-                    __Vdlyvset__cp0__v10 = 1U;
-                    __Vdlyvdim0__cp0__v10 = vlSelf->__PVT__wb_cp0_a;
-                } else if ((1U & (~ (IData)(vlSelf->__PVT__wb_cp0_a)))) {
-                    __Vdlyvval__cp0__v11 = vlSelf->__PVT__wb_cp0_d;
-                    __Vdlyvset__cp0__v11 = 1U;
-                    __Vdlyvdim0__cp0__v11 = vlSelf->__PVT__wb_cp0_a;
                 }
+                if (vlSelf->__PVT__wb_cache) {
+                    vlSelf->cache_ops = (1ULL + vlSelf->cache_ops);
+                }
+                vlSelf->insn_count = (1ULL + vlSelf->insn_count);
+                if (((IData)(vlSelf->__PVT__wb_we) 
+                     & (0U != (IData)(vlSelf->__PVT__wb_wa)))) {
+                    __Vdlyvval__regs__v0 = vlSelf->__PVT__wb_value;
+                    __Vdlyvset__regs__v0 = 1U;
+                    __Vdlyvdim0__regs__v0 = vlSelf->__PVT__wb_wa;
+                }
+                if (vlSelf->__PVT__wb_hilo_we) {
+                    __Vdly__hi = vlSelf->__PVT__wb_hi;
+                    __Vdly__lo = vlSelf->__PVT__wb_lo;
+                }
+                __Vdly__cycle_count = (1ULL + vlSelf->cycle_count);
+            } else {
+                vlSelf->__PVT__rt_v = 0U;
             }
-            if (vlSelf->__PVT__wb_cache) {
-                vlSelf->cache_ops = (1ULL + vlSelf->cache_ops);
-            }
-            vlSelf->insn_count = (1ULL + vlSelf->insn_count);
-            if (((IData)(vlSelf->__PVT__wb_we) & (0U 
-                                                  != (IData)(vlSelf->__PVT__wb_wa)))) {
-                __Vdlyvval__regs__v0 = vlSelf->__PVT__wb_value;
-                __Vdlyvset__regs__v0 = 1U;
-                __Vdlyvdim0__regs__v0 = vlSelf->__PVT__wb_wa;
-            }
-            if (vlSelf->__PVT__wb_hilo_we) {
-                __Vdly__hi = vlSelf->__PVT__wb_hi;
-                __Vdly__lo = vlSelf->__PVT__wb_lo;
-            }
-            __Vdly__cycle_count = (1ULL + vlSelf->cycle_count);
-        } else {
-            vlSelf->__PVT__rt_v = 0U;
-        }
-        vlSelf->__PVT__wb_v = ((IData)(vlSelf->__PVT__adv_mem) 
-                               & ((IData)(vlSelf->__PVT__me_v) 
-                                  & ((~ (IData)(vlSelf->__PVT__me_exc_out_v)) 
-                                     | (IData)(vlSelf->__PVT__me_exc_out_ret))));
-        if (vlSelf->__PVT__adv_mem) {
-            __Vfunc_dest_reg__94__i = vlSelf->__PVT__i_me;
-            __Vfunc_dest_reg__94__Vfuncout = (0x1fU 
-                                              & ((__Vfunc_dest_reg__94__i 
-                                                  >> 0x1fU)
-                                                  ? 
-                                                 (__Vfunc_dest_reg__94__i 
-                                                  >> 0x10U)
-                                                  : 
-                                                 ((0x40000000U 
-                                                   & __Vfunc_dest_reg__94__i)
-                                                   ? 
-                                                  ((0x20000000U 
-                                                    & __Vfunc_dest_reg__94__i)
-                                                    ? 
-                                                   (__Vfunc_dest_reg__94__i 
-                                                    >> 0x10U)
-                                                    : 
-                                                   ((0x10000000U 
-                                                     & __Vfunc_dest_reg__94__i)
-                                                     ? 
-                                                    (__Vfunc_dest_reg__94__i 
-                                                     >> 0x10U)
-                                                     : 
-                                                    ((0x8000000U 
-                                                      & __Vfunc_dest_reg__94__i)
+            vlSelf->__PVT__wb_v = ((IData)(vlSelf->__PVT__adv_mem) 
+                                   & ((IData)(vlSelf->__PVT__me_v) 
+                                      & ((~ (IData)(vlSelf->__PVT__me_exc_out_v)) 
+                                         | (IData)(vlSelf->__PVT__me_exc_out_ret))));
+            if (vlSelf->__PVT__adv_mem) {
+                __Vfunc_dest_reg__94__i = vlSelf->__PVT__i_me;
+                __Vfunc_dest_reg__94__Vfuncout = (0x1fU 
+                                                  & ((__Vfunc_dest_reg__94__i 
+                                                      >> 0x1fU)
                                                       ? 
                                                      (__Vfunc_dest_reg__94__i 
                                                       >> 0x10U)
                                                       : 
-                                                     ((0x4000000U 
+                                                     ((0x40000000U 
                                                        & __Vfunc_dest_reg__94__i)
                                                        ? 
-                                                      (__Vfunc_dest_reg__94__i 
-                                                       >> 0x10U)
-                                                       : 
-                                                      (__Vfunc_dest_reg__94__i 
-                                                       >> 0x10U)))))
-                                                   : 
-                                                  ((0x20000000U 
-                                                    & __Vfunc_dest_reg__94__i)
-                                                    ? 
-                                                   (__Vfunc_dest_reg__94__i 
-                                                    >> 0x10U)
-                                                    : 
-                                                   ((0x10000000U 
-                                                     & __Vfunc_dest_reg__94__i)
-                                                     ? 
-                                                    (__Vfunc_dest_reg__94__i 
-                                                     >> 0x10U)
-                                                     : 
-                                                    ((0x8000000U 
-                                                      & __Vfunc_dest_reg__94__i)
-                                                      ? 
-                                                     ((0x4000000U 
-                                                       & __Vfunc_dest_reg__94__i)
-                                                       ? 0x1fU
-                                                       : 
-                                                      (__Vfunc_dest_reg__94__i 
-                                                       >> 0x10U))
-                                                      : 
-                                                     ((0x4000000U 
-                                                       & __Vfunc_dest_reg__94__i)
-                                                       ? 0x1fU
-                                                       : 
-                                                      ((9U 
-                                                        == 
-                                                        (0x3fU 
-                                                         & __Vfunc_dest_reg__94__i))
+                                                      ((0x20000000U 
+                                                        & __Vfunc_dest_reg__94__i)
                                                         ? 
-                                                       ((0U 
-                                                         == 
-                                                         (0x1fU 
-                                                          & (__Vfunc_dest_reg__94__i 
-                                                             >> 0xbU)))
-                                                         ? 0x1fU
-                                                         : 
-                                                        (__Vfunc_dest_reg__94__i 
-                                                         >> 0xbU))
-                                                        : 
                                                        (__Vfunc_dest_reg__94__i 
-                                                        >> 0xbU)))))))));
-            vlSelf->__PVT__wb_pc = vlSelf->__PVT__me_pc;
-            vlSelf->__PVT__wb_insn = vlSelf->__PVT__me_insn;
-            vlSelf->__PVT__wb_next_pc = ((IData)(vlSelf->__PVT__me_exc_out_v)
-                                          ? ((IData)(4U) 
-                                             + vlSelf->__PVT__exc_vector)
-                                          : vlSelf->__PVT__me_next_pc);
-            vlSelf->__PVT__wb_we = (([&]() {
-                        __Vfunc_writes_gpr__83__i = vlSelf->__PVT__i_me;
-                        __Vfunc_writes_gpr__83__Vfuncout 
-                            = (1U & ((__Vfunc_writes_gpr__83__i 
-                                      >> 0x1fU) ? (
-                                                   (0x40000000U 
-                                                    & __Vfunc_writes_gpr__83__i)
-                                                    ? 
-                                                   (~ 
-                                                    ([&]() {
-                                                __Vfunc_is_store__84__i 
-                                                    = __Vfunc_writes_gpr__83__i;
-                                                __Vfunc_is_store__84__Vfuncout 
-                                                    = 
-                                                    (((((0x28U 
-                                                         == 
-                                                         (__Vfunc_is_store__84__i 
-                                                          >> 0x1aU)) 
-                                                        | (0x29U 
-                                                           == 
-                                                           (__Vfunc_is_store__84__i 
-                                                            >> 0x1aU))) 
-                                                       | (0x2bU 
-                                                          == 
-                                                          (__Vfunc_is_store__84__i 
-                                                           >> 0x1aU))) 
-                                                      | (0x2aU 
-                                                         == 
-                                                         (__Vfunc_is_store__84__i 
-                                                          >> 0x1aU))) 
-                                                     | (0x2eU 
-                                                        == 
-                                                        (__Vfunc_is_store__84__i 
-                                                         >> 0x1aU)));
-                                            }(), (IData)(__Vfunc_is_store__84__Vfuncout)))
-                                                    : 
-                                                   ((0x20000000U 
-                                                     & __Vfunc_writes_gpr__83__i)
-                                                     ? 
-                                                    ((0x10000000U 
-                                                      & __Vfunc_writes_gpr__83__i)
-                                                      ? 
-                                                     ((0x8000000U 
-                                                       & __Vfunc_writes_gpr__83__i)
-                                                       ? 
-                                                      ((1U 
-                                                        & (~ 
-                                                           (__Vfunc_writes_gpr__83__i 
-                                                            >> 0x1aU))) 
-                                                       && (1U 
-                                                           & (~ 
-                                                              ([&]() {
-                                                                    __Vfunc_is_store__85__i 
-                                                                        = __Vfunc_writes_gpr__83__i;
-                                                                    __Vfunc_is_store__85__Vfuncout 
-                                                                        = 
-                                                                        (((((0x28U 
-                                                                             == 
-                                                                             (__Vfunc_is_store__85__i 
-                                                                              >> 0x1aU)) 
-                                                                            | (0x29U 
-                                                                               == 
-                                                                               (__Vfunc_is_store__85__i 
-                                                                                >> 0x1aU))) 
-                                                                           | (0x2bU 
-                                                                              == 
-                                                                              (__Vfunc_is_store__85__i 
-                                                                               >> 0x1aU))) 
-                                                                          | (0x2aU 
-                                                                             == 
-                                                                             (__Vfunc_is_store__85__i 
-                                                                              >> 0x1aU))) 
-                                                                         | (0x2eU 
-                                                                            == 
-                                                                            (__Vfunc_is_store__85__i 
-                                                                             >> 0x1aU)));
-                                                                }(), (IData)(__Vfunc_is_store__85__Vfuncout)))))
+                                                        >> 0x10U)
+                                                        : 
+                                                       ((0x10000000U 
+                                                         & __Vfunc_dest_reg__94__i)
+                                                         ? 
+                                                        (__Vfunc_dest_reg__94__i 
+                                                         >> 0x10U)
+                                                         : 
+                                                        ((0x8000000U 
+                                                          & __Vfunc_dest_reg__94__i)
+                                                          ? 
+                                                         (__Vfunc_dest_reg__94__i 
+                                                          >> 0x10U)
+                                                          : 
+                                                         ((0x4000000U 
+                                                           & __Vfunc_dest_reg__94__i)
+                                                           ? 
+                                                          (__Vfunc_dest_reg__94__i 
+                                                           >> 0x10U)
+                                                           : 
+                                                          (__Vfunc_dest_reg__94__i 
+                                                           >> 0x10U)))))
                                                        : 
-                                                      (~ 
-                                                       ([&]() {
-                                                            __Vfunc_is_store__86__i 
-                                                                = __Vfunc_writes_gpr__83__i;
-                                                            __Vfunc_is_store__86__Vfuncout 
-                                                                = 
-                                                                (((((0x28U 
-                                                                     == 
-                                                                     (__Vfunc_is_store__86__i 
-                                                                      >> 0x1aU)) 
-                                                                    | (0x29U 
-                                                                       == 
-                                                                       (__Vfunc_is_store__86__i 
-                                                                        >> 0x1aU))) 
-                                                                   | (0x2bU 
-                                                                      == 
-                                                                      (__Vfunc_is_store__86__i 
-                                                                       >> 0x1aU))) 
-                                                                  | (0x2aU 
-                                                                     == 
-                                                                     (__Vfunc_is_store__86__i 
-                                                                      >> 0x1aU))) 
-                                                                 | (0x2eU 
-                                                                    == 
-                                                                    (__Vfunc_is_store__86__i 
-                                                                     >> 0x1aU)));
-                                                        }(), (IData)(__Vfunc_is_store__86__Vfuncout))))
-                                                      : 
-                                                     (~ 
-                                                      ([&]() {
-                                                        __Vfunc_is_store__87__i 
-                                                            = __Vfunc_writes_gpr__83__i;
-                                                        __Vfunc_is_store__87__Vfuncout 
-                                                            = 
-                                                            (((((0x28U 
-                                                                 == 
-                                                                 (__Vfunc_is_store__87__i 
-                                                                  >> 0x1aU)) 
-                                                                | (0x29U 
-                                                                   == 
-                                                                   (__Vfunc_is_store__87__i 
-                                                                    >> 0x1aU))) 
-                                                               | (0x2bU 
-                                                                  == 
-                                                                  (__Vfunc_is_store__87__i 
-                                                                   >> 0x1aU))) 
-                                                              | (0x2aU 
-                                                                 == 
-                                                                 (__Vfunc_is_store__87__i 
-                                                                  >> 0x1aU))) 
-                                                             | (0x2eU 
-                                                                == 
-                                                                (__Vfunc_is_store__87__i 
-                                                                 >> 0x1aU)));
-                                                    }(), (IData)(__Vfunc_is_store__87__Vfuncout))))
-                                                     : 
-                                                    (~ 
-                                                     ([&]() {
-                                                    __Vfunc_is_store__88__i 
-                                                        = __Vfunc_writes_gpr__83__i;
-                                                    __Vfunc_is_store__88__Vfuncout 
-                                                        = 
-                                                        (((((0x28U 
-                                                             == 
-                                                             (__Vfunc_is_store__88__i 
-                                                              >> 0x1aU)) 
-                                                            | (0x29U 
-                                                               == 
-                                                               (__Vfunc_is_store__88__i 
-                                                                >> 0x1aU))) 
-                                                           | (0x2bU 
-                                                              == 
-                                                              (__Vfunc_is_store__88__i 
-                                                               >> 0x1aU))) 
-                                                          | (0x2aU 
-                                                             == 
-                                                             (__Vfunc_is_store__88__i 
-                                                              >> 0x1aU))) 
-                                                         | (0x2eU 
+                                                      ((0x20000000U 
+                                                        & __Vfunc_dest_reg__94__i)
+                                                        ? 
+                                                       (__Vfunc_dest_reg__94__i 
+                                                        >> 0x10U)
+                                                        : 
+                                                       ((0x10000000U 
+                                                         & __Vfunc_dest_reg__94__i)
+                                                         ? 
+                                                        (__Vfunc_dest_reg__94__i 
+                                                         >> 0x10U)
+                                                         : 
+                                                        ((0x8000000U 
+                                                          & __Vfunc_dest_reg__94__i)
+                                                          ? 
+                                                         ((0x4000000U 
+                                                           & __Vfunc_dest_reg__94__i)
+                                                           ? 0x1fU
+                                                           : 
+                                                          (__Vfunc_dest_reg__94__i 
+                                                           >> 0x10U))
+                                                          : 
+                                                         ((0x4000000U 
+                                                           & __Vfunc_dest_reg__94__i)
+                                                           ? 0x1fU
+                                                           : 
+                                                          ((9U 
                                                             == 
-                                                            (__Vfunc_is_store__88__i 
-                                                             >> 0x1aU)));
-                                                }(), (IData)(__Vfunc_is_store__88__Vfuncout)))))
-                                      : ((0x40000000U 
-                                          & __Vfunc_writes_gpr__83__i)
-                                          ? ((0x20000000U 
+                                                            (0x3fU 
+                                                             & __Vfunc_dest_reg__94__i))
+                                                            ? 
+                                                           ((0U 
+                                                             == 
+                                                             (0x1fU 
+                                                              & (__Vfunc_dest_reg__94__i 
+                                                                 >> 0xbU)))
+                                                             ? 0x1fU
+                                                             : 
+                                                            (__Vfunc_dest_reg__94__i 
+                                                             >> 0xbU))
+                                                            : 
+                                                           (__Vfunc_dest_reg__94__i 
+                                                            >> 0xbU)))))))));
+                vlSelf->__PVT__wb_pc = vlSelf->__PVT__me_pc;
+                vlSelf->__PVT__wb_insn = vlSelf->__PVT__me_insn;
+                vlSelf->__PVT__wb_next_pc = ((IData)(vlSelf->__PVT__me_exc_out_v)
+                                              ? ((IData)(4U) 
+                                                 + vlSelf->__PVT__exc_vector)
+                                              : vlSelf->__PVT__me_next_pc);
+                vlSelf->__PVT__wb_we = (([&]() {
+                            __Vfunc_writes_gpr__83__i 
+                                = vlSelf->__PVT__i_me;
+                            __Vfunc_writes_gpr__83__Vfuncout 
+                                = (1U & ((__Vfunc_writes_gpr__83__i 
+                                          >> 0x1fU)
+                                          ? ((0x40000000U 
                                               & __Vfunc_writes_gpr__83__i)
                                               ? (~ 
                                                  ([&]() {
-                                                    __Vfunc_is_store__89__i 
+                                                    __Vfunc_is_store__84__i 
                                                         = __Vfunc_writes_gpr__83__i;
-                                                    __Vfunc_is_store__89__Vfuncout 
+                                                    __Vfunc_is_store__84__Vfuncout 
                                                         = 
                                                         (((((0x28U 
                                                              == 
-                                                             (__Vfunc_is_store__89__i 
+                                                             (__Vfunc_is_store__84__i 
                                                               >> 0x1aU)) 
                                                             | (0x29U 
                                                                == 
-                                                               (__Vfunc_is_store__89__i 
+                                                               (__Vfunc_is_store__84__i 
                                                                 >> 0x1aU))) 
                                                            | (0x2bU 
                                                               == 
-                                                              (__Vfunc_is_store__89__i 
+                                                              (__Vfunc_is_store__84__i 
                                                                >> 0x1aU))) 
                                                           | (0x2aU 
                                                              == 
-                                                             (__Vfunc_is_store__89__i 
+                                                             (__Vfunc_is_store__84__i 
                                                               >> 0x1aU))) 
                                                          | (0x2eU 
                                                             == 
-                                                            (__Vfunc_is_store__89__i 
+                                                            (__Vfunc_is_store__84__i 
                                                              >> 0x1aU)));
-                                                }(), (IData)(__Vfunc_is_store__89__Vfuncout)))
-                                              : ((0x10000000U 
+                                                }(), (IData)(__Vfunc_is_store__84__Vfuncout)))
+                                              : ((0x20000000U 
+                                                  & __Vfunc_writes_gpr__83__i)
+                                                  ? 
+                                                 ((0x10000000U 
+                                                   & __Vfunc_writes_gpr__83__i)
+                                                   ? 
+                                                  ((0x8000000U 
+                                                    & __Vfunc_writes_gpr__83__i)
+                                                    ? 
+                                                   ((1U 
+                                                     & (~ 
+                                                        (__Vfunc_writes_gpr__83__i 
+                                                         >> 0x1aU))) 
+                                                    && (1U 
+                                                        & (~ 
+                                                           ([&]() {
+                                                                        __Vfunc_is_store__85__i 
+                                                                            = __Vfunc_writes_gpr__83__i;
+                                                                        __Vfunc_is_store__85__Vfuncout 
+                                                                            = 
+                                                                            (((((0x28U 
+                                                                                == 
+                                                                                (__Vfunc_is_store__85__i 
+                                                                                >> 0x1aU)) 
+                                                                                | (0x29U 
+                                                                                == 
+                                                                                (__Vfunc_is_store__85__i 
+                                                                                >> 0x1aU))) 
+                                                                               | (0x2bU 
+                                                                                == 
+                                                                                (__Vfunc_is_store__85__i 
+                                                                                >> 0x1aU))) 
+                                                                              | (0x2aU 
+                                                                                == 
+                                                                                (__Vfunc_is_store__85__i 
+                                                                                >> 0x1aU))) 
+                                                                             | (0x2eU 
+                                                                                == 
+                                                                                (__Vfunc_is_store__85__i 
+                                                                                >> 0x1aU)));
+                                                                    }(), (IData)(__Vfunc_is_store__85__Vfuncout)))))
+                                                    : 
+                                                   (~ 
+                                                    ([&]() {
+                                                                __Vfunc_is_store__86__i 
+                                                                    = __Vfunc_writes_gpr__83__i;
+                                                                __Vfunc_is_store__86__Vfuncout 
+                                                                    = 
+                                                                    (((((0x28U 
+                                                                         == 
+                                                                         (__Vfunc_is_store__86__i 
+                                                                          >> 0x1aU)) 
+                                                                        | (0x29U 
+                                                                           == 
+                                                                           (__Vfunc_is_store__86__i 
+                                                                            >> 0x1aU))) 
+                                                                       | (0x2bU 
+                                                                          == 
+                                                                          (__Vfunc_is_store__86__i 
+                                                                           >> 0x1aU))) 
+                                                                      | (0x2aU 
+                                                                         == 
+                                                                         (__Vfunc_is_store__86__i 
+                                                                          >> 0x1aU))) 
+                                                                     | (0x2eU 
+                                                                        == 
+                                                                        (__Vfunc_is_store__86__i 
+                                                                         >> 0x1aU)));
+                                                            }(), (IData)(__Vfunc_is_store__86__Vfuncout))))
+                                                   : 
+                                                  (~ 
+                                                   ([&]() {
+                                                            __Vfunc_is_store__87__i 
+                                                                = __Vfunc_writes_gpr__83__i;
+                                                            __Vfunc_is_store__87__Vfuncout 
+                                                                = 
+                                                                (((((0x28U 
+                                                                     == 
+                                                                     (__Vfunc_is_store__87__i 
+                                                                      >> 0x1aU)) 
+                                                                    | (0x29U 
+                                                                       == 
+                                                                       (__Vfunc_is_store__87__i 
+                                                                        >> 0x1aU))) 
+                                                                   | (0x2bU 
+                                                                      == 
+                                                                      (__Vfunc_is_store__87__i 
+                                                                       >> 0x1aU))) 
+                                                                  | (0x2aU 
+                                                                     == 
+                                                                     (__Vfunc_is_store__87__i 
+                                                                      >> 0x1aU))) 
+                                                                 | (0x2eU 
+                                                                    == 
+                                                                    (__Vfunc_is_store__87__i 
+                                                                     >> 0x1aU)));
+                                                        }(), (IData)(__Vfunc_is_store__87__Vfuncout))))
+                                                  : 
+                                                 (~ 
+                                                  ([&]() {
+                                                        __Vfunc_is_store__88__i 
+                                                            = __Vfunc_writes_gpr__83__i;
+                                                        __Vfunc_is_store__88__Vfuncout 
+                                                            = 
+                                                            (((((0x28U 
+                                                                 == 
+                                                                 (__Vfunc_is_store__88__i 
+                                                                  >> 0x1aU)) 
+                                                                | (0x29U 
+                                                                   == 
+                                                                   (__Vfunc_is_store__88__i 
+                                                                    >> 0x1aU))) 
+                                                               | (0x2bU 
+                                                                  == 
+                                                                  (__Vfunc_is_store__88__i 
+                                                                   >> 0x1aU))) 
+                                                              | (0x2aU 
+                                                                 == 
+                                                                 (__Vfunc_is_store__88__i 
+                                                                  >> 0x1aU))) 
+                                                             | (0x2eU 
+                                                                == 
+                                                                (__Vfunc_is_store__88__i 
+                                                                 >> 0x1aU)));
+                                                    }(), (IData)(__Vfunc_is_store__88__Vfuncout)))))
+                                          : ((0x40000000U 
+                                              & __Vfunc_writes_gpr__83__i)
+                                              ? ((0x20000000U 
                                                   & __Vfunc_writes_gpr__83__i)
                                                   ? 
                                                  (~ 
                                                   ([&]() {
-                                                        __Vfunc_is_store__90__i 
+                                                        __Vfunc_is_store__89__i 
                                                             = __Vfunc_writes_gpr__83__i;
-                                                        __Vfunc_is_store__90__Vfuncout 
+                                                        __Vfunc_is_store__89__Vfuncout 
                                                             = 
                                                             (((((0x28U 
                                                                  == 
-                                                                 (__Vfunc_is_store__90__i 
+                                                                 (__Vfunc_is_store__89__i 
                                                                   >> 0x1aU)) 
                                                                 | (0x29U 
                                                                    == 
-                                                                   (__Vfunc_is_store__90__i 
+                                                                   (__Vfunc_is_store__89__i 
                                                                     >> 0x1aU))) 
                                                                | (0x2bU 
                                                                   == 
-                                                                  (__Vfunc_is_store__90__i 
+                                                                  (__Vfunc_is_store__89__i 
                                                                    >> 0x1aU))) 
                                                               | (0x2aU 
                                                                  == 
-                                                                 (__Vfunc_is_store__90__i 
+                                                                 (__Vfunc_is_store__89__i 
                                                                   >> 0x1aU))) 
                                                              | (0x2eU 
                                                                 == 
-                                                                (__Vfunc_is_store__90__i 
+                                                                (__Vfunc_is_store__89__i 
                                                                  >> 0x1aU)));
-                                                    }(), (IData)(__Vfunc_is_store__90__Vfuncout)))
+                                                    }(), (IData)(__Vfunc_is_store__89__Vfuncout)))
                                                   : 
-                                                 ((0x8000000U 
+                                                 ((0x10000000U 
                                                    & __Vfunc_writes_gpr__83__i)
                                                    ? 
                                                   (~ 
                                                    ([&]() {
-                                                            __Vfunc_is_store__91__i 
+                                                            __Vfunc_is_store__90__i 
                                                                 = __Vfunc_writes_gpr__83__i;
-                                                            __Vfunc_is_store__91__Vfuncout 
+                                                            __Vfunc_is_store__90__Vfuncout 
                                                                 = 
                                                                 (((((0x28U 
                                                                      == 
-                                                                     (__Vfunc_is_store__91__i 
+                                                                     (__Vfunc_is_store__90__i 
                                                                       >> 0x1aU)) 
                                                                     | (0x29U 
                                                                        == 
-                                                                       (__Vfunc_is_store__91__i 
+                                                                       (__Vfunc_is_store__90__i 
                                                                         >> 0x1aU))) 
                                                                    | (0x2bU 
                                                                       == 
-                                                                      (__Vfunc_is_store__91__i 
+                                                                      (__Vfunc_is_store__90__i 
                                                                        >> 0x1aU))) 
                                                                   | (0x2aU 
                                                                      == 
-                                                                     (__Vfunc_is_store__91__i 
+                                                                     (__Vfunc_is_store__90__i 
                                                                       >> 0x1aU))) 
                                                                  | (0x2eU 
                                                                     == 
-                                                                    (__Vfunc_is_store__91__i 
+                                                                    (__Vfunc_is_store__90__i 
                                                                      >> 0x1aU)));
-                                                        }(), (IData)(__Vfunc_is_store__91__Vfuncout)))
+                                                        }(), (IData)(__Vfunc_is_store__90__Vfuncout)))
                                                    : 
-                                                  ((0x4000000U 
+                                                  ((0x8000000U 
                                                     & __Vfunc_writes_gpr__83__i)
                                                     ? 
                                                    (~ 
                                                     ([&]() {
-                                                                __Vfunc_is_store__92__i 
+                                                                __Vfunc_is_store__91__i 
                                                                     = __Vfunc_writes_gpr__83__i;
-                                                                __Vfunc_is_store__92__Vfuncout 
+                                                                __Vfunc_is_store__91__Vfuncout 
                                                                     = 
                                                                     (((((0x28U 
                                                                          == 
-                                                                         (__Vfunc_is_store__92__i 
+                                                                         (__Vfunc_is_store__91__i 
                                                                           >> 0x1aU)) 
                                                                         | (0x29U 
                                                                            == 
-                                                                           (__Vfunc_is_store__92__i 
+                                                                           (__Vfunc_is_store__91__i 
                                                                             >> 0x1aU))) 
                                                                        | (0x2bU 
                                                                           == 
-                                                                          (__Vfunc_is_store__92__i 
+                                                                          (__Vfunc_is_store__91__i 
                                                                            >> 0x1aU))) 
                                                                       | (0x2aU 
                                                                          == 
-                                                                         (__Vfunc_is_store__92__i 
+                                                                         (__Vfunc_is_store__91__i 
                                                                           >> 0x1aU))) 
                                                                      | (0x2eU 
                                                                         == 
-                                                                        (__Vfunc_is_store__92__i 
+                                                                        (__Vfunc_is_store__91__i 
                                                                          >> 0x1aU)));
-                                                            }(), (IData)(__Vfunc_is_store__92__Vfuncout)))
+                                                            }(), (IData)(__Vfunc_is_store__91__Vfuncout)))
                                                     : 
-                                                   (0U 
-                                                    == 
-                                                    (0x1fU 
-                                                     & (__Vfunc_writes_gpr__83__i 
-                                                        >> 0x15U)))))))
-                                          : ((0x20000000U 
-                                              & __Vfunc_writes_gpr__83__i)
-                                              ? (~ 
-                                                 ([&]() {
-                                                    __Vfunc_is_store__93__i 
-                                                        = __Vfunc_writes_gpr__83__i;
-                                                    __Vfunc_is_store__93__Vfuncout 
-                                                        = 
-                                                        (((((0x28U 
-                                                             == 
-                                                             (__Vfunc_is_store__93__i 
-                                                              >> 0x1aU)) 
-                                                            | (0x29U 
-                                                               == 
-                                                               (__Vfunc_is_store__93__i 
-                                                                >> 0x1aU))) 
-                                                           | (0x2bU 
-                                                              == 
-                                                              (__Vfunc_is_store__93__i 
-                                                               >> 0x1aU))) 
-                                                          | (0x2aU 
-                                                             == 
-                                                             (__Vfunc_is_store__93__i 
-                                                              >> 0x1aU))) 
-                                                         | (0x2eU 
-                                                            == 
-                                                            (__Vfunc_is_store__93__i 
-                                                             >> 0x1aU)));
-                                                }(), (IData)(__Vfunc_is_store__93__Vfuncout)))
-                                              : ((1U 
-                                                  & (~ 
-                                                     (__Vfunc_writes_gpr__83__i 
-                                                      >> 0x1cU))) 
-                                                 && (1U 
-                                                     & ((0x8000000U 
-                                                         & __Vfunc_writes_gpr__83__i)
-                                                         ? 
-                                                        (__Vfunc_writes_gpr__83__i 
-                                                         >> 0x1aU)
-                                                         : 
-                                                        ((0x4000000U 
+                                                   ((0x4000000U 
+                                                     & __Vfunc_writes_gpr__83__i)
+                                                     ? 
+                                                    (~ 
+                                                     ([&]() {
+                                                                    __Vfunc_is_store__92__i 
+                                                                        = __Vfunc_writes_gpr__83__i;
+                                                                    __Vfunc_is_store__92__Vfuncout 
+                                                                        = 
+                                                                        (((((0x28U 
+                                                                             == 
+                                                                             (__Vfunc_is_store__92__i 
+                                                                              >> 0x1aU)) 
+                                                                            | (0x29U 
+                                                                               == 
+                                                                               (__Vfunc_is_store__92__i 
+                                                                                >> 0x1aU))) 
+                                                                           | (0x2bU 
+                                                                              == 
+                                                                              (__Vfunc_is_store__92__i 
+                                                                               >> 0x1aU))) 
+                                                                          | (0x2aU 
+                                                                             == 
+                                                                             (__Vfunc_is_store__92__i 
+                                                                              >> 0x1aU))) 
+                                                                         | (0x2eU 
+                                                                            == 
+                                                                            (__Vfunc_is_store__92__i 
+                                                                             >> 0x1aU)));
+                                                                }(), (IData)(__Vfunc_is_store__92__Vfuncout)))
+                                                     : 
+                                                    (0U 
+                                                     == 
+                                                     (0x1fU 
+                                                      & (__Vfunc_writes_gpr__83__i 
+                                                         >> 0x15U)))))))
+                                              : ((0x20000000U 
+                                                  & __Vfunc_writes_gpr__83__i)
+                                                  ? 
+                                                 (~ 
+                                                  ([&]() {
+                                                        __Vfunc_is_store__93__i 
+                                                            = __Vfunc_writes_gpr__83__i;
+                                                        __Vfunc_is_store__93__Vfuncout 
+                                                            = 
+                                                            (((((0x28U 
+                                                                 == 
+                                                                 (__Vfunc_is_store__93__i 
+                                                                  >> 0x1aU)) 
+                                                                | (0x29U 
+                                                                   == 
+                                                                   (__Vfunc_is_store__93__i 
+                                                                    >> 0x1aU))) 
+                                                               | (0x2bU 
+                                                                  == 
+                                                                  (__Vfunc_is_store__93__i 
+                                                                   >> 0x1aU))) 
+                                                              | (0x2aU 
+                                                                 == 
+                                                                 (__Vfunc_is_store__93__i 
+                                                                  >> 0x1aU))) 
+                                                             | (0x2eU 
+                                                                == 
+                                                                (__Vfunc_is_store__93__i 
+                                                                 >> 0x1aU)));
+                                                    }(), (IData)(__Vfunc_is_store__93__Vfuncout)))
+                                                  : 
+                                                 ((1U 
+                                                   & (~ 
+                                                      (__Vfunc_writes_gpr__83__i 
+                                                       >> 0x1cU))) 
+                                                  && (1U 
+                                                      & ((0x8000000U 
                                                           & __Vfunc_writes_gpr__83__i)
                                                           ? 
-                                                         ((0x10U 
-                                                           == 
-                                                           (0x1fU 
-                                                            & (__Vfunc_writes_gpr__83__i 
-                                                               >> 0x10U))) 
-                                                          | (0x11U 
-                                                             == 
-                                                             (0x1fU 
-                                                              & (__Vfunc_writes_gpr__83__i 
-                                                                 >> 0x10U))))
+                                                         (__Vfunc_writes_gpr__83__i 
+                                                          >> 0x1aU)
                                                           : 
-                                                         ((1U 
-                                                           & (__Vfunc_writes_gpr__83__i 
-                                                              >> 5U)) 
-                                                          || (1U 
-                                                              & ((0x10U 
-                                                                  & __Vfunc_writes_gpr__83__i)
-                                                                  ? 
-                                                                 ((8U 
+                                                         ((0x4000000U 
+                                                           & __Vfunc_writes_gpr__83__i)
+                                                           ? 
+                                                          ((0x10U 
+                                                            == 
+                                                            (0x1fU 
+                                                             & (__Vfunc_writes_gpr__83__i 
+                                                                >> 0x10U))) 
+                                                           | (0x11U 
+                                                              == 
+                                                              (0x1fU 
+                                                               & (__Vfunc_writes_gpr__83__i 
+                                                                  >> 0x10U))))
+                                                           : 
+                                                          ((1U 
+                                                            & (__Vfunc_writes_gpr__83__i 
+                                                               >> 5U)) 
+                                                           || (1U 
+                                                               & ((0x10U 
                                                                    & __Vfunc_writes_gpr__83__i)
                                                                    ? 
-                                                                  (__Vfunc_writes_gpr__83__i 
-                                                                   >> 2U)
+                                                                  ((8U 
+                                                                    & __Vfunc_writes_gpr__83__i)
+                                                                    ? 
+                                                                   (__Vfunc_writes_gpr__83__i 
+                                                                    >> 2U)
+                                                                    : 
+                                                                   ((1U 
+                                                                     & (__Vfunc_writes_gpr__83__i 
+                                                                        >> 2U)) 
+                                                                    || (1U 
+                                                                        & (~ __Vfunc_writes_gpr__83__i))))
                                                                    : 
                                                                   ((1U 
-                                                                    & (__Vfunc_writes_gpr__83__i 
-                                                                       >> 2U)) 
+                                                                    & (~ 
+                                                                       (__Vfunc_writes_gpr__83__i 
+                                                                        >> 3U))) 
                                                                    || (1U 
-                                                                       & (~ __Vfunc_writes_gpr__83__i))))
-                                                                  : 
-                                                                 ((1U 
-                                                                   & (~ 
-                                                                      (__Vfunc_writes_gpr__83__i 
-                                                                       >> 3U))) 
-                                                                  || (1U 
-                                                                      & ((4U 
-                                                                          & __Vfunc_writes_gpr__83__i)
-                                                                          ? 
-                                                                         (__Vfunc_writes_gpr__83__i 
-                                                                          >> 1U)
-                                                                          : 
-                                                                         ((1U 
-                                                                           & (__Vfunc_writes_gpr__83__i 
-                                                                              >> 1U)) 
-                                                                          || (1U 
-                                                                              & __Vfunc_writes_gpr__83__i))))))))))))))));
-                    }(), (IData)(__Vfunc_writes_gpr__83__Vfuncout)) 
-                                    & (~ (IData)(vlSelf->__PVT__me_exc_out_v)));
-            vlSelf->__PVT__wb_wa = __Vfunc_dest_reg__94__Vfuncout;
-            vlSelf->__PVT__wb_hi = vlSelf->__PVT__me_hi;
-            vlSelf->__PVT__wb_lo = vlSelf->__PVT__me_lo;
-            vlSelf->__PVT__wb_hilo_we = ((IData)(vlSelf->__PVT__me_hilo_we) 
-                                         & (~ (IData)(vlSelf->__PVT__me_exc_out_v)));
-            vlSelf->__PVT__wb_cache = ((0x2fU == (vlSelf->__PVT__i_me 
+                                                                       & ((4U 
+                                                                           & __Vfunc_writes_gpr__83__i)
+                                                                           ? 
+                                                                          (__Vfunc_writes_gpr__83__i 
+                                                                           >> 1U)
+                                                                           : 
+                                                                          ((1U 
+                                                                            & (__Vfunc_writes_gpr__83__i 
+                                                                               >> 1U)) 
+                                                                           || (1U 
+                                                                               & __Vfunc_writes_gpr__83__i))))))))))))))));
+                        }(), (IData)(__Vfunc_writes_gpr__83__Vfuncout)) 
+                                        & (~ (IData)(vlSelf->__PVT__me_exc_out_v)));
+                vlSelf->__PVT__wb_wa = __Vfunc_dest_reg__94__Vfuncout;
+                vlSelf->__PVT__wb_hi = vlSelf->__PVT__me_hi;
+                vlSelf->__PVT__wb_lo = vlSelf->__PVT__me_lo;
+                vlSelf->__PVT__wb_hilo_we = ((IData)(vlSelf->__PVT__me_hilo_we) 
+                                             & (~ (IData)(vlSelf->__PVT__me_exc_out_v)));
+                vlSelf->__PVT__wb_cache = ((0x2fU == 
+                                            (vlSelf->__PVT__i_me 
+                                             >> 0x1aU)) 
+                                           & (~ (IData)(vlSelf->__PVT__me_exc_out_v)));
+                vlSelf->__PVT__wb_cp0_we = (((0x10U 
+                                              == (vlSelf->__PVT__i_me 
                                                   >> 0x1aU)) 
-                                       & (~ (IData)(vlSelf->__PVT__me_exc_out_v)));
-            vlSelf->__PVT__wb_cp0_we = (((0x10U == 
-                                          (vlSelf->__PVT__i_me 
-                                           >> 0x1aU)) 
-                                         & (~ (IData)(vlSelf->__PVT__me_exc_out_v))) 
-                                        & ((4U == (0x1fU 
+                                             & (~ (IData)(vlSelf->__PVT__me_exc_out_v))) 
+                                            & ((4U 
+                                                == 
+                                                (0x1fU 
+                                                 & (vlSelf->__PVT__i_me 
+                                                    >> 0x15U))) 
+                                               | (0x10U 
+                                                  == 
+                                                  (0x1fU 
                                                    & (vlSelf->__PVT__i_me 
-                                                      >> 0x15U))) 
-                                           | (0x10U 
-                                              == (0x1fU 
-                                                  & (vlSelf->__PVT__i_me 
-                                                     >> 0x15U)))));
-            vlSelf->__PVT__wb_cp0_a = ((0x10U == (0x1fU 
-                                                  & (vlSelf->__PVT__i_me 
-                                                     >> 0x15U)))
-                                        ? 0x1fU : (0x1fU 
-                                                   & (vlSelf->__PVT__i_me 
-                                                      >> 0xbU)));
-            vlSelf->__PVT__wb_cp0_d = vlSelf->__PVT__me_rt;
-            __Vdly__me_phase = 0U;
-            vlSelf->__PVT__wb_value = (([&]() {
-                        __Vfunc_is_load__95__i = vlSelf->__PVT__i_me;
-                        __Vfunc_is_load__95__Vfuncout 
-                            = (((((((0x20U == (__Vfunc_is_load__95__i 
-                                               >> 0x1aU)) 
-                                    | (0x21U == (__Vfunc_is_load__95__i 
+                                                      >> 0x15U)))));
+                vlSelf->__PVT__wb_cp0_a = ((0x10U == 
+                                            (0x1fU 
+                                             & (vlSelf->__PVT__i_me 
+                                                >> 0x15U)))
+                                            ? 0x1fU
+                                            : (0x1fU 
+                                               & (vlSelf->__PVT__i_me 
+                                                  >> 0xbU)));
+                vlSelf->__PVT__wb_cp0_d = vlSelf->__PVT__me_rt;
+                __Vdly__me_phase = 0U;
+                vlSelf->__PVT__wb_value = (([&]() {
+                            __Vfunc_is_load__95__i 
+                                = vlSelf->__PVT__i_me;
+                            __Vfunc_is_load__95__Vfuncout 
+                                = (((((((0x20U == (__Vfunc_is_load__95__i 
+                                                   >> 0x1aU)) 
+                                        | (0x21U == 
+                                           (__Vfunc_is_load__95__i 
+                                            >> 0x1aU))) 
+                                       | (0x23U == 
+                                          (__Vfunc_is_load__95__i 
+                                           >> 0x1aU))) 
+                                      | (0x24U == (__Vfunc_is_load__95__i 
+                                                   >> 0x1aU))) 
+                                     | (0x25U == (__Vfunc_is_load__95__i 
+                                                  >> 0x1aU))) 
+                                    | (0x22U == (__Vfunc_is_load__95__i 
                                                  >> 0x1aU))) 
-                                   | (0x23U == (__Vfunc_is_load__95__i 
-                                                >> 0x1aU))) 
-                                  | (0x24U == (__Vfunc_is_load__95__i 
-                                               >> 0x1aU))) 
-                                 | (0x25U == (__Vfunc_is_load__95__i 
-                                              >> 0x1aU))) 
-                                | (0x22U == (__Vfunc_is_load__95__i 
-                                             >> 0x1aU))) 
-                               | (0x26U == (__Vfunc_is_load__95__i 
-                                            >> 0x1aU)));
-                    }(), (IData)(__Vfunc_is_load__95__Vfuncout))
-                                        ? vlSelf->__PVT__load_value
-                                        : vlSelf->__PVT__me_result);
-        } else if ((((((IData)(vlSelf->__PVT__me_needs_mem) 
-                       & (IData)(vlSymsp->TOP__tb_sdram__cpu.__PVT__dack)) 
-                      & (~ (IData)(vlSymsp->TOP__tb_sdram__cpu.__PVT__derr))) 
-                     & ([&]() {
-                            __Vfunc_is_rmw__96__i = vlSelf->__PVT__i_me;
-                            __Vfunc_is_rmw__96__Vfuncout 
-                                = ((0x2aU == (__Vfunc_is_rmw__96__i 
-                                              >> 0x1aU)) 
-                                   | (0x2eU == (__Vfunc_is_rmw__96__i 
+                                   | (0x26U == (__Vfunc_is_load__95__i 
                                                 >> 0x1aU)));
-                        }(), (IData)(__Vfunc_is_rmw__96__Vfuncout))) 
-                    & (~ (IData)(vlSelf->__PVT__me_phase)))) {
-            vlSelf->__PVT__me_rmw_word = vlSymsp->TOP__tb_sdram__cpu.__PVT__drd;
-            __Vdly__me_phase = 1U;
-        }
-        if (vlSelf->__PVT__adv_mem) {
-            vlSelf->__PVT__me_v = ((IData)(vlSelf->__PVT__ex_v) 
-                                   & (~ (IData)(vlSelf->__PVT__exc_flush)));
-            __Vdly__me_pc = vlSelf->__PVT__ex_pc;
-            vlSelf->__PVT__me_insn = vlSelf->__PVT__ex_insn;
-            vlSelf->__PVT__me_next_pc = vlSelf->__PVT__ex_next_pc;
-            vlSelf->__PVT__me_result = vlSelf->__PVT__alu;
-            vlSelf->__PVT__me_rt = vlSelf->__PVT__t;
-            vlSelf->__PVT__me_va = vlSelf->__PVT__addi_r;
-            __Vdly__me_ds = vlSelf->__PVT__ex_ds;
-            vlSelf->__PVT__me_exc_v = vlSelf->__PVT__ex_exc_out_v;
-            vlSelf->__PVT__me_exc_code = vlSelf->__PVT__ex_exc_out_code;
-            vlSelf->__PVT__me_exc_bad = vlSelf->__PVT__ex_exc_out_bad;
-            vlSelf->__PVT__me_exc_bad_v = vlSelf->__PVT__ex_exc_out_badv;
-            vlSelf->__PVT__me_exc_ret = vlSelf->__PVT__ex_exc_out_ret;
-            vlSelf->__PVT__me_hilo_we = 0U;
-            if (((IData)(vlSelf->__PVT__ex_v) & (0U 
-                                                 == 
-                                                 (vlSelf->__PVT__i_ex 
-                                                  >> 0x1aU)))) {
-                if ((1U & (~ (vlSelf->__PVT__i_ex >> 5U)))) {
-                    if ((0x10U & vlSelf->__PVT__i_ex)) {
-                        if ((8U & vlSelf->__PVT__i_ex)) {
-                            if ((1U & (~ (vlSelf->__PVT__i_ex 
-                                          >> 2U)))) {
-                                if ((2U & vlSelf->__PVT__i_ex)) {
-                                    vlSelf->__PVT__me_hilo_we = 1U;
-                                    if (vlSelf->__PVT__md_skip) {
+                        }(), (IData)(__Vfunc_is_load__95__Vfuncout))
+                                            ? vlSelf->__PVT__load_value
+                                            : vlSelf->__PVT__me_result);
+            } else if ((((((IData)(vlSelf->__PVT__me_needs_mem) 
+                           & (IData)(vlSymsp->TOP__tb_sdram__cpu.__PVT__dack)) 
+                          & (~ (IData)(vlSymsp->TOP__tb_sdram__cpu.__PVT__derr))) 
+                         & ([&]() {
+                                __Vfunc_is_rmw__96__i 
+                                    = vlSelf->__PVT__i_me;
+                                __Vfunc_is_rmw__96__Vfuncout 
+                                    = ((0x2aU == (__Vfunc_is_rmw__96__i 
+                                                  >> 0x1aU)) 
+                                       | (0x2eU == 
+                                          (__Vfunc_is_rmw__96__i 
+                                           >> 0x1aU)));
+                            }(), (IData)(__Vfunc_is_rmw__96__Vfuncout))) 
+                        & (~ (IData)(vlSelf->__PVT__me_phase)))) {
+                vlSelf->__PVT__me_rmw_word = vlSymsp->TOP__tb_sdram__cpu.__PVT__drd;
+                __Vdly__me_phase = 1U;
+            }
+            if (vlSelf->__PVT__adv_mem) {
+                vlSelf->__PVT__me_v = ((IData)(vlSelf->__PVT__ex_v) 
+                                       & (~ (IData)(vlSelf->__PVT__exc_flush)));
+                __Vdly__me_pc = vlSelf->__PVT__ex_pc;
+                vlSelf->__PVT__me_insn = vlSelf->__PVT__ex_insn;
+                vlSelf->__PVT__me_next_pc = vlSelf->__PVT__ex_next_pc;
+                vlSelf->__PVT__me_result = vlSelf->__PVT__alu;
+                vlSelf->__PVT__me_rt = vlSelf->__PVT__t;
+                vlSelf->__PVT__me_va = vlSelf->__PVT__addi_r;
+                __Vdly__me_ds = vlSelf->__PVT__ex_ds;
+                vlSelf->__PVT__me_exc_v = vlSelf->__PVT__ex_exc_out_v;
+                vlSelf->__PVT__me_exc_code = vlSelf->__PVT__ex_exc_out_code;
+                vlSelf->__PVT__me_exc_bad = vlSelf->__PVT__ex_exc_out_bad;
+                vlSelf->__PVT__me_exc_bad_v = vlSelf->__PVT__ex_exc_out_badv;
+                vlSelf->__PVT__me_exc_ret = vlSelf->__PVT__ex_exc_out_ret;
+                vlSelf->__PVT__me_hilo_we = 0U;
+                if (((IData)(vlSelf->__PVT__ex_v) & 
+                     (0U == (vlSelf->__PVT__i_ex >> 0x1aU)))) {
+                    if ((1U & (~ (vlSelf->__PVT__i_ex 
+                                  >> 5U)))) {
+                        if ((0x10U & vlSelf->__PVT__i_ex)) {
+                            if ((8U & vlSelf->__PVT__i_ex)) {
+                                if ((1U & (~ (vlSelf->__PVT__i_ex 
+                                              >> 2U)))) {
+                                    if ((2U & vlSelf->__PVT__i_ex)) {
+                                        vlSelf->__PVT__me_hilo_we = 1U;
+                                        if (vlSelf->__PVT__md_skip) {
+                                            vlSelf->__PVT__me_hi 
+                                                = vlSelf->__PVT__md_fix_hi;
+                                            vlSelf->__PVT__me_lo 
+                                                = vlSelf->__PVT__md_fix_lo;
+                                        } else {
+                                            vlSelf->__PVT__me_hi 
+                                                = vlSelf->__PVT__div_r;
+                                            vlSelf->__PVT__me_lo 
+                                                = vlSelf->__PVT__div_q;
+                                        }
+                                    } else if ((1U 
+                                                & vlSelf->__PVT__i_ex)) {
+                                        vlSelf->__PVT__me_hilo_we = 1U;
                                         vlSelf->__PVT__me_hi 
-                                            = vlSelf->__PVT__md_fix_hi;
+                                            = (IData)(
+                                                      (vlSelf->__PVT__mul_u 
+                                                       >> 0x20U));
                                         vlSelf->__PVT__me_lo 
-                                            = vlSelf->__PVT__md_fix_lo;
+                                            = (IData)(vlSelf->__PVT__mul_u);
                                     } else {
+                                        vlSelf->__PVT__me_hilo_we = 1U;
                                         vlSelf->__PVT__me_hi 
-                                            = vlSelf->__PVT__div_r;
+                                            = (IData)(
+                                                      (vlSelf->__PVT__mul_s 
+                                                       >> 0x20U));
                                         vlSelf->__PVT__me_lo 
-                                            = vlSelf->__PVT__div_q;
+                                            = (IData)(vlSelf->__PVT__mul_s);
+                                    }
+                                }
+                            } else if ((1U & (~ (vlSelf->__PVT__i_ex 
+                                                 >> 2U)))) {
+                                if ((2U & vlSelf->__PVT__i_ex)) {
+                                    if ((1U & vlSelf->__PVT__i_ex)) {
+                                        vlSelf->__PVT__me_hilo_we = 1U;
+                                        vlSelf->__PVT__me_hi 
+                                            = vlSelf->hi;
+                                        vlSelf->__PVT__me_lo 
+                                            = vlSelf->__PVT__s;
                                     }
                                 } else if ((1U & vlSelf->__PVT__i_ex)) {
                                     vlSelf->__PVT__me_hilo_we = 1U;
                                     vlSelf->__PVT__me_hi 
-                                        = (IData)((vlSelf->__PVT__mul_u 
-                                                   >> 0x20U));
-                                    vlSelf->__PVT__me_lo 
-                                        = (IData)(vlSelf->__PVT__mul_u);
-                                } else {
-                                    vlSelf->__PVT__me_hilo_we = 1U;
-                                    vlSelf->__PVT__me_hi 
-                                        = (IData)((vlSelf->__PVT__mul_s 
-                                                   >> 0x20U));
-                                    vlSelf->__PVT__me_lo 
-                                        = (IData)(vlSelf->__PVT__mul_s);
-                                }
-                            }
-                        } else if ((1U & (~ (vlSelf->__PVT__i_ex 
-                                             >> 2U)))) {
-                            if ((2U & vlSelf->__PVT__i_ex)) {
-                                if ((1U & vlSelf->__PVT__i_ex)) {
-                                    vlSelf->__PVT__me_hilo_we = 1U;
-                                    vlSelf->__PVT__me_hi 
-                                        = vlSelf->hi;
-                                    vlSelf->__PVT__me_lo 
                                         = vlSelf->__PVT__s;
+                                    vlSelf->__PVT__me_lo 
+                                        = vlSelf->lo;
                                 }
-                            } else if ((1U & vlSelf->__PVT__i_ex)) {
-                                vlSelf->__PVT__me_hilo_we = 1U;
-                                vlSelf->__PVT__me_hi 
-                                    = vlSelf->__PVT__s;
-                                vlSelf->__PVT__me_lo 
-                                    = vlSelf->lo;
                             }
                         }
                     }
                 }
-            }
-            if ((1U & (~ (IData)(vlSelf->__PVT__adv_ex)))) {
-                vlSelf->__PVT__me_v = 0U;
-            }
-        }
-        if (((IData)(vlSelf->__PVT__ex_is_div) & (~ (IData)(vlSelf->__PVT__md_run)))) {
-            __Vdly__md_run = 1U;
-            __Vdly__md_count = 0x20U;
-            if ((0x1bU == (0x3fU & vlSelf->__PVT__i_ex))) {
-                vlSelf->__PVT__md_rq = (QData)((IData)(vlSelf->__PVT__s));
-                vlSelf->__PVT__md_d = vlSelf->__PVT__t;
-                vlSelf->__PVT__md_neg_q = 0U;
-                vlSelf->__PVT__md_neg_r = 0U;
-                __Vdly__md_skip = (0U == vlSelf->__PVT__t);
-                vlSelf->__PVT__md_fix_lo = 0xffffffffU;
-                vlSelf->__PVT__md_fix_hi = vlSelf->__PVT__s;
-            } else {
-                vlSelf->__PVT__md_rq = (QData)((IData)(vlSelf->__PVT__s_mag));
-                vlSelf->__PVT__md_d = vlSelf->__PVT__t_mag;
-                vlSelf->__PVT__md_neg_q = ((vlSelf->__PVT__s 
-                                            ^ vlSelf->__PVT__t) 
-                                           >> 0x1fU);
-                vlSelf->__PVT__md_neg_r = (vlSelf->__PVT__s 
-                                           >> 0x1fU);
-                if ((0U == vlSelf->__PVT__t)) {
-                    __Vdly__md_skip = 1U;
-                    vlSelf->__PVT__md_fix_lo = ((vlSelf->__PVT__s 
-                                                 >> 0x1fU)
-                                                 ? 1U
-                                                 : 0xffffffffU);
-                    vlSelf->__PVT__md_fix_hi = vlSelf->__PVT__s;
-                } else if (((0x80000000U == vlSelf->__PVT__s) 
-                            & (0xffffffffU == vlSelf->__PVT__t))) {
-                    __Vdly__md_skip = 1U;
-                    vlSelf->__PVT__md_fix_lo = 0x80000000U;
-                    vlSelf->__PVT__md_fix_hi = 0U;
-                } else {
-                    __Vdly__md_skip = 0U;
+                if ((1U & (~ (IData)(vlSelf->__PVT__adv_ex)))) {
+                    vlSelf->__PVT__me_v = 0U;
                 }
             }
-        } else if ((((IData)(vlSelf->__PVT__md_run) 
-                     & (~ (IData)(vlSelf->__PVT__md_skip))) 
-                    & (0U != (IData)(vlSelf->__PVT__md_count)))) {
-            __Vdly__md_count = (0x3fU & ((IData)(vlSelf->__PVT__md_count) 
-                                         - (IData)(1U)));
-            vlSelf->__PVT__md_rq = ((1U & (IData)((vlSelf->__PVT__md_diff 
-                                                   >> 0x20U)))
-                                     ? vlSelf->__PVT__md_shifted
-                                     : (((QData)((IData)(vlSelf->__PVT__md_diff)) 
-                                         << 0x20U) 
-                                        | (QData)((IData)(
-                                                          (1U 
-                                                           | ((IData)(
-                                                                      (vlSelf->__PVT__md_shifted 
-                                                                       >> 1U)) 
-                                                              << 1U))))));
-        }
-        if (vlSelf->__PVT__adv_ex) {
-            __Vdly__md_run = 0U;
-            __Vdly__md_skip = 0U;
-            __Vdly__md_count = 0U;
-        }
-        if (vlSelf->__PVT__adv_ex) {
-            vlSelf->__PVT__ex_v = ((((IData)(vlSelf->__PVT__adv_id) 
-                                     & (IData)(vlSelf->__PVT__id_v)) 
-                                    & (~ (IData)(vlSelf->__PVT__exc_flush))) 
-                                   & (~ (IData)(vlSelf->__PVT__id_take_irq)));
-            vlSelf->__PVT__ex_pc = vlSelf->__PVT__id_pc;
-            vlSelf->__PVT__ex_insn = vlSelf->__PVT__id_insn;
-            vlSelf->__PVT__ex_next_pc = vlSelf->__PVT__id_next_pc;
-            vlSelf->__PVT__ex_rs_raw = vlSelf->__PVT__id_s;
-            vlSelf->__PVT__ex_rt_raw = vlSelf->__PVT__id_t;
-            vlSelf->__PVT__ex_ds = vlSelf->__PVT__id_ds;
-            vlSelf->__PVT__ex_exc_bad = vlSelf->__PVT__id_exc_bad;
-            vlSelf->__PVT__ex_exc_bad_v = vlSelf->__PVT__id_exc_bad_v;
-            if (vlSelf->__PVT__id_exc_v) {
-                vlSelf->__PVT__ex_exc_v = 1U;
-                vlSelf->__PVT__ex_exc_code = vlSelf->__PVT__id_exc_code;
-                vlSelf->__PVT__ex_exc_ret = 0U;
-            } else if (vlSelf->__PVT__id_take_irq) {
-                vlSelf->__PVT__ex_v = (((IData)(vlSelf->__PVT__adv_id) 
-                                        & (IData)(vlSelf->__PVT__id_v)) 
-                                       & (~ (IData)(vlSelf->__PVT__exc_flush)));
-                vlSelf->__PVT__ex_exc_v = 1U;
-                vlSelf->__PVT__ex_exc_code = 0U;
-                vlSelf->__PVT__ex_exc_bad_v = 0U;
-                vlSelf->__PVT__ex_exc_ret = 0U;
-            } else if (((IData)(vlSelf->__PVT__id_v) 
-                        & ([&]() {
-                            __Vfunc_illegal__97__i 
-                                = vlSelf->__PVT__id_insn;
-                            __Vfunc_illegal__97__Vfuncout 
-                                = ((__Vfunc_illegal__97__i 
-                                    >> 0x1fU) ? ((1U 
-                                                  & (__Vfunc_illegal__97__i 
-                                                     >> 0x1eU)) 
-                                                 || ((0x20000000U 
-                                                      & __Vfunc_illegal__97__i)
-                                                      ? 
-                                                     ((1U 
-                                                       & (__Vfunc_illegal__97__i 
-                                                          >> 0x1cU)) 
-                                                      && (1U 
-                                                          & (~ 
-                                                             (__Vfunc_illegal__97__i 
-                                                              >> 0x1bU))))
-                                                      : 
-                                                     ((1U 
-                                                       & (__Vfunc_illegal__97__i 
-                                                          >> 0x1cU)) 
-                                                      && ((1U 
-                                                           & (__Vfunc_illegal__97__i 
-                                                              >> 0x1bU)) 
-                                                          && (1U 
-                                                              & (__Vfunc_illegal__97__i 
-                                                                 >> 0x1aU))))))
-                                    : ((0x40000000U 
-                                        & __Vfunc_illegal__97__i)
-                                        ? ((1U & (__Vfunc_illegal__97__i 
-                                                  >> 0x1dU)) 
-                                           || ((1U 
+            if (((IData)(vlSelf->__PVT__ex_is_div) 
+                 & (~ (IData)(vlSelf->__PVT__md_run)))) {
+                __Vdly__md_run = 1U;
+                __Vdly__md_count = 0x20U;
+                if ((0x1bU == (0x3fU & vlSelf->__PVT__i_ex))) {
+                    vlSelf->__PVT__md_rq = (QData)((IData)(vlSelf->__PVT__s));
+                    vlSelf->__PVT__md_d = vlSelf->__PVT__t;
+                    vlSelf->__PVT__md_neg_q = 0U;
+                    vlSelf->__PVT__md_neg_r = 0U;
+                    __Vdly__md_skip = (0U == vlSelf->__PVT__t);
+                    vlSelf->__PVT__md_fix_lo = 0xffffffffU;
+                    vlSelf->__PVT__md_fix_hi = vlSelf->__PVT__s;
+                } else {
+                    vlSelf->__PVT__md_rq = (QData)((IData)(vlSelf->__PVT__s_mag));
+                    vlSelf->__PVT__md_d = vlSelf->__PVT__t_mag;
+                    vlSelf->__PVT__md_neg_q = ((vlSelf->__PVT__s 
+                                                ^ vlSelf->__PVT__t) 
+                                               >> 0x1fU);
+                    vlSelf->__PVT__md_neg_r = (vlSelf->__PVT__s 
+                                               >> 0x1fU);
+                    if ((0U == vlSelf->__PVT__t)) {
+                        __Vdly__md_skip = 1U;
+                        vlSelf->__PVT__md_fix_lo = 
+                            ((vlSelf->__PVT__s >> 0x1fU)
+                              ? 1U : 0xffffffffU);
+                        vlSelf->__PVT__md_fix_hi = vlSelf->__PVT__s;
+                    } else if (((0x80000000U == vlSelf->__PVT__s) 
+                                & (0xffffffffU == vlSelf->__PVT__t))) {
+                        __Vdly__md_skip = 1U;
+                        vlSelf->__PVT__md_fix_lo = 0x80000000U;
+                        vlSelf->__PVT__md_fix_hi = 0U;
+                    } else {
+                        __Vdly__md_skip = 0U;
+                    }
+                }
+            } else if ((((IData)(vlSelf->__PVT__md_run) 
+                         & (~ (IData)(vlSelf->__PVT__md_skip))) 
+                        & (0U != (IData)(vlSelf->__PVT__md_count)))) {
+                __Vdly__md_count = (0x3fU & ((IData)(vlSelf->__PVT__md_count) 
+                                             - (IData)(1U)));
+                vlSelf->__PVT__md_rq = ((1U & (IData)(
+                                                      (vlSelf->__PVT__md_diff 
+                                                       >> 0x20U)))
+                                         ? vlSelf->__PVT__md_shifted
+                                         : (((QData)((IData)(vlSelf->__PVT__md_diff)) 
+                                             << 0x20U) 
+                                            | (QData)((IData)(
+                                                              (1U 
+                                                               | ((IData)(
+                                                                          (vlSelf->__PVT__md_shifted 
+                                                                           >> 1U)) 
+                                                                  << 1U))))));
+            }
+            if (vlSelf->__PVT__adv_ex) {
+                __Vdly__md_run = 0U;
+                __Vdly__md_skip = 0U;
+                __Vdly__md_count = 0U;
+            }
+            if (vlSelf->__PVT__adv_ex) {
+                vlSelf->__PVT__ex_v = ((((IData)(vlSelf->__PVT__adv_id) 
+                                         & (IData)(vlSelf->__PVT__id_v)) 
+                                        & (~ (IData)(vlSelf->__PVT__exc_flush))) 
+                                       & (~ (IData)(vlSelf->__PVT__id_take_irq)));
+                vlSelf->__PVT__ex_pc = vlSelf->__PVT__id_pc;
+                vlSelf->__PVT__ex_insn = vlSelf->__PVT__id_insn;
+                vlSelf->__PVT__ex_next_pc = vlSelf->__PVT__id_next_pc;
+                vlSelf->__PVT__ex_rs_raw = vlSelf->__PVT__id_s;
+                vlSelf->__PVT__ex_rt_raw = vlSelf->__PVT__id_t;
+                vlSelf->__PVT__ex_ds = vlSelf->__PVT__id_ds;
+                vlSelf->__PVT__ex_exc_bad = vlSelf->__PVT__id_exc_bad;
+                vlSelf->__PVT__ex_exc_bad_v = vlSelf->__PVT__id_exc_bad_v;
+                if (vlSelf->__PVT__id_exc_v) {
+                    vlSelf->__PVT__ex_exc_v = 1U;
+                    vlSelf->__PVT__ex_exc_code = vlSelf->__PVT__id_exc_code;
+                    vlSelf->__PVT__ex_exc_ret = 0U;
+                } else if (vlSelf->__PVT__id_take_irq) {
+                    vlSelf->__PVT__ex_v = (((IData)(vlSelf->__PVT__adv_id) 
+                                            & (IData)(vlSelf->__PVT__id_v)) 
+                                           & (~ (IData)(vlSelf->__PVT__exc_flush)));
+                    vlSelf->__PVT__ex_exc_v = 1U;
+                    vlSelf->__PVT__ex_exc_code = 0U;
+                    vlSelf->__PVT__ex_exc_bad_v = 0U;
+                    vlSelf->__PVT__ex_exc_ret = 0U;
+                } else if (((IData)(vlSelf->__PVT__id_v) 
+                            & ([&]() {
+                                __Vfunc_illegal__97__i 
+                                    = vlSelf->__PVT__id_insn;
+                                __Vfunc_illegal__97__Vfuncout 
+                                    = ((__Vfunc_illegal__97__i 
+                                        >> 0x1fU) ? 
+                                       ((1U & (__Vfunc_illegal__97__i 
+                                               >> 0x1eU)) 
+                                        || ((0x20000000U 
+                                             & __Vfunc_illegal__97__i)
+                                             ? ((1U 
+                                                 & (__Vfunc_illegal__97__i 
+                                                    >> 0x1cU)) 
+                                                && (1U 
+                                                    & (~ 
+                                                       (__Vfunc_illegal__97__i 
+                                                        >> 0x1bU))))
+                                             : ((1U 
+                                                 & (__Vfunc_illegal__97__i 
+                                                    >> 0x1cU)) 
+                                                && ((1U 
+                                                     & (__Vfunc_illegal__97__i 
+                                                        >> 0x1bU)) 
+                                                    && (1U 
+                                                        & (__Vfunc_illegal__97__i 
+                                                           >> 0x1aU))))))
+                                        : ((0x40000000U 
+                                            & __Vfunc_illegal__97__i)
+                                            ? ((1U 
                                                 & (__Vfunc_illegal__97__i 
-                                                   >> 0x1cU)) 
+                                                   >> 0x1dU)) 
                                                || ((1U 
                                                     & (__Vfunc_illegal__97__i 
-                                                       >> 0x1bU)) 
+                                                       >> 0x1cU)) 
                                                    || ((1U 
                                                         & (__Vfunc_illegal__97__i 
-                                                           >> 0x1aU)) 
-                                                       || (1U 
-                                                           & (~ 
-                                                              (((0U 
-                                                                 == 
-                                                                 (0x1fU 
-                                                                  & (__Vfunc_illegal__97__i 
-                                                                     >> 0x15U))) 
-                                                                | (4U 
-                                                                   == 
-                                                                   (0x1fU 
-                                                                    & (__Vfunc_illegal__97__i 
-                                                                       >> 0x15U)))) 
-                                                               | (IData)(
-                                                                         (0x2000010U 
-                                                                          == 
-                                                                          (0x3e0003fU 
-                                                                           & __Vfunc_illegal__97__i))))))))))
-                                        : ((1U & (~ 
-                                                  (__Vfunc_illegal__97__i 
-                                                   >> 0x1dU))) 
-                                           && ((1U 
+                                                           >> 0x1bU)) 
+                                                       || ((1U 
+                                                            & (__Vfunc_illegal__97__i 
+                                                               >> 0x1aU)) 
+                                                           || (1U 
+                                                               & (~ 
+                                                                  (((0U 
+                                                                     == 
+                                                                     (0x1fU 
+                                                                      & (__Vfunc_illegal__97__i 
+                                                                         >> 0x15U))) 
+                                                                    | (4U 
+                                                                       == 
+                                                                       (0x1fU 
+                                                                        & (__Vfunc_illegal__97__i 
+                                                                           >> 0x15U)))) 
+                                                                   | (IData)(
+                                                                             (0x2000010U 
+                                                                              == 
+                                                                              (0x3e0003fU 
+                                                                               & __Vfunc_illegal__97__i))))))))))
+                                            : ((1U 
                                                 & (~ 
                                                    (__Vfunc_illegal__97__i 
-                                                    >> 0x1cU))) 
+                                                    >> 0x1dU))) 
                                                && ((1U 
                                                     & (~ 
                                                        (__Vfunc_illegal__97__i 
-                                                        >> 0x1bU))) 
-                                                   && (1U 
-                                                       & ((0x4000000U 
-                                                           & __Vfunc_illegal__97__i)
-                                                           ? 
-                                                          (~ 
-                                                           ((((0U 
-                                                               == 
-                                                               (0x1fU 
-                                                                & (__Vfunc_illegal__97__i 
-                                                                   >> 0x10U))) 
-                                                              | (1U 
-                                                                 == 
-                                                                 (0x1fU 
-                                                                  & (__Vfunc_illegal__97__i 
-                                                                     >> 0x10U)))) 
-                                                             | (0x10U 
-                                                                == 
-                                                                (0x1fU 
-                                                                 & (__Vfunc_illegal__97__i 
-                                                                    >> 0x10U)))) 
-                                                            | (0x11U 
-                                                               == 
-                                                               (0x1fU 
-                                                                & (__Vfunc_illegal__97__i 
-                                                                   >> 0x10U)))))
-                                                           : 
-                                                          ((0x20U 
-                                                            & __Vfunc_illegal__97__i)
-                                                            ? 
-                                                           ((1U 
-                                                             & (__Vfunc_illegal__97__i 
-                                                                >> 4U)) 
-                                                            || ((1U 
-                                                                 & (__Vfunc_illegal__97__i 
-                                                                    >> 3U)) 
-                                                                && ((1U 
+                                                        >> 0x1cU))) 
+                                                   && ((1U 
+                                                        & (~ 
+                                                           (__Vfunc_illegal__97__i 
+                                                            >> 0x1bU))) 
+                                                       && (1U 
+                                                           & ((0x4000000U 
+                                                               & __Vfunc_illegal__97__i)
+                                                               ? 
+                                                              (~ 
+                                                               ((((0U 
+                                                                   == 
+                                                                   (0x1fU 
+                                                                    & (__Vfunc_illegal__97__i 
+                                                                       >> 0x10U))) 
+                                                                  | (1U 
+                                                                     == 
+                                                                     (0x1fU 
+                                                                      & (__Vfunc_illegal__97__i 
+                                                                         >> 0x10U)))) 
+                                                                 | (0x10U 
+                                                                    == 
+                                                                    (0x1fU 
                                                                      & (__Vfunc_illegal__97__i 
-                                                                        >> 2U)) 
-                                                                    || (1U 
-                                                                        & (~ 
-                                                                           (__Vfunc_illegal__97__i 
-                                                                            >> 1U))))))
-                                                            : 
-                                                           ((0x10U 
-                                                             & __Vfunc_illegal__97__i)
-                                                             ? 
-                                                            (__Vfunc_illegal__97__i 
-                                                             >> 2U)
-                                                             : 
-                                                            ((8U 
-                                                              & __Vfunc_illegal__97__i)
-                                                              ? 
-                                                             (__Vfunc_illegal__97__i 
-                                                              >> 1U)
-                                                              : 
-                                                             ((1U 
-                                                               & (~ 
-                                                                  (__Vfunc_illegal__97__i 
-                                                                   >> 1U))) 
-                                                              && (1U 
-                                                                  & __Vfunc_illegal__97__i))))))))))));
-                        }(), (IData)(__Vfunc_illegal__97__Vfuncout)))) {
-                vlSelf->__PVT__ex_exc_v = 1U;
-                vlSelf->__PVT__ex_exc_code = 0xaU;
-                vlSelf->__PVT__ex_exc_bad_v = 0U;
-                vlSelf->__PVT__ex_exc_ret = 1U;
-            } else {
-                vlSelf->__PVT__ex_exc_v = 0U;
-                vlSelf->__PVT__ex_exc_ret = 1U;
+                                                                        >> 0x10U)))) 
+                                                                | (0x11U 
+                                                                   == 
+                                                                   (0x1fU 
+                                                                    & (__Vfunc_illegal__97__i 
+                                                                       >> 0x10U)))))
+                                                               : 
+                                                              ((0x20U 
+                                                                & __Vfunc_illegal__97__i)
+                                                                ? 
+                                                               ((1U 
+                                                                 & (__Vfunc_illegal__97__i 
+                                                                    >> 4U)) 
+                                                                || ((1U 
+                                                                     & (__Vfunc_illegal__97__i 
+                                                                        >> 3U)) 
+                                                                    && ((1U 
+                                                                         & (__Vfunc_illegal__97__i 
+                                                                            >> 2U)) 
+                                                                        || (1U 
+                                                                            & (~ 
+                                                                               (__Vfunc_illegal__97__i 
+                                                                                >> 1U))))))
+                                                                : 
+                                                               ((0x10U 
+                                                                 & __Vfunc_illegal__97__i)
+                                                                 ? 
+                                                                (__Vfunc_illegal__97__i 
+                                                                 >> 2U)
+                                                                 : 
+                                                                ((8U 
+                                                                  & __Vfunc_illegal__97__i)
+                                                                  ? 
+                                                                 (__Vfunc_illegal__97__i 
+                                                                  >> 1U)
+                                                                  : 
+                                                                 ((1U 
+                                                                   & (~ 
+                                                                      (__Vfunc_illegal__97__i 
+                                                                       >> 1U))) 
+                                                                  && (1U 
+                                                                      & __Vfunc_illegal__97__i))))))))))));
+                            }(), (IData)(__Vfunc_illegal__97__Vfuncout)))) {
+                    vlSelf->__PVT__ex_exc_v = 1U;
+                    vlSelf->__PVT__ex_exc_code = 0xaU;
+                    vlSelf->__PVT__ex_exc_bad_v = 0U;
+                    vlSelf->__PVT__ex_exc_ret = 1U;
+                } else {
+                    vlSelf->__PVT__ex_exc_v = 0U;
+                    vlSelf->__PVT__ex_exc_ret = 1U;
+                }
+                if ((1U & (~ (IData)(vlSelf->__PVT__adv_id)))) {
+                    vlSelf->__PVT__ex_v = 0U;
+                }
             }
-            if ((1U & (~ (IData)(vlSelf->__PVT__adv_id)))) {
-                vlSelf->__PVT__ex_v = 0U;
-            }
-        }
-        if (vlSelf->__PVT__adv_id) {
-            if (vlSelf->__PVT__fetch_ok) {
-                vlSelf->__PVT__id_pc = vlSelf->__PVT__fpc;
-                vlSelf->__PVT__id_insn = ((IData)(vlSymsp->TOP__tb_sdram__cpu.__PVT__cache__DOT__i_hit)
-                                           ? vlSymsp->TOP__tb_sdram__cpu.__PVT__cache__DOT__iram_q
-                                           : vlSymsp->TOP__tb_sdram.__PVT__ird);
-                vlSelf->__PVT__id_ds = (((IData)(vlSelf->__PVT__id_v) 
-                                         & ([&]() {
-                                __Vfunc_is_branch__98__i 
-                                    = vlSelf->__PVT__i_id;
-                                __Vfunc_is_branch__98__Vfuncout 
-                                    = ((1U & (~ (__Vfunc_is_branch__98__i 
-                                                 >> 0x1fU))) 
-                                       && ((1U & (~ 
+            if (vlSelf->__PVT__adv_id) {
+                if (vlSelf->__PVT__fetch_ok) {
+                    vlSelf->__PVT__id_pc = vlSelf->__PVT__fpc;
+                    vlSelf->__PVT__id_insn = ((IData)(vlSymsp->TOP__tb_sdram__cpu.__PVT__cache__DOT__i_hit)
+                                               ? vlSymsp->TOP__tb_sdram__cpu.__PVT__cache__DOT__iram_q
+                                               : vlSymsp->TOP__tb_sdram.__PVT__ird);
+                    vlSelf->__PVT__id_ds = (((IData)(vlSelf->__PVT__id_v) 
+                                             & ([&]() {
+                                    __Vfunc_is_branch__98__i 
+                                        = vlSelf->__PVT__i_id;
+                                    __Vfunc_is_branch__98__Vfuncout 
+                                        = ((1U & (~ 
                                                   (__Vfunc_is_branch__98__i 
-                                                   >> 0x1eU))) 
+                                                   >> 0x1fU))) 
                                            && ((1U 
                                                 & (~ 
                                                    (__Vfunc_is_branch__98__i 
-                                                    >> 0x1dU))) 
+                                                    >> 0x1eU))) 
                                                && ((1U 
-                                                    & (__Vfunc_is_branch__98__i 
-                                                       >> 0x1cU)) 
-                                                   || ((1U 
+                                                    & (~ 
+                                                       (__Vfunc_is_branch__98__i 
+                                                        >> 0x1dU))) 
+                                                   && ((1U 
                                                         & (__Vfunc_is_branch__98__i 
-                                                           >> 0x1bU)) 
+                                                           >> 0x1cU)) 
                                                        || ((1U 
                                                             & (__Vfunc_is_branch__98__i 
-                                                               >> 0x1aU)) 
-                                                           || ((8U 
-                                                                == 
-                                                                (0x3fU 
-                                                                 & __Vfunc_is_branch__98__i)) 
-                                                               | (9U 
-                                                                  == 
-                                                                  (0x3fU 
-                                                                   & __Vfunc_is_branch__98__i)))))))));
-                            }(), (IData)(__Vfunc_is_branch__98__Vfuncout))) 
-                                        & (IData)(vlSelf->__PVT__id_taken));
-                vlSelf->__PVT__id_exc_v = (((IData)(vlSymsp->TOP__tb_sdram__cpu.cache__DOT____VdfgTmp_h6d079f16__0) 
-                                            & (IData)(vlSymsp->TOP__tb_sdram.__PVT__ierr)) 
-                                           | (IData)(vlSymsp->TOP__tb_sdram__cpu.__PVT__cache__DOT__i_fill_fail));
-                vlSelf->__PVT__id_exc_code = 6U;
-                vlSelf->__PVT__id_exc_bad = vlSelf->__PVT__fpc;
-                vlSelf->__PVT__id_exc_bad_v = (((IData)(vlSymsp->TOP__tb_sdram__cpu.cache__DOT____VdfgTmp_h6d079f16__0) 
+                                                               >> 0x1bU)) 
+                                                           || ((1U 
+                                                                & (__Vfunc_is_branch__98__i 
+                                                                   >> 0x1aU)) 
+                                                               || ((8U 
+                                                                    == 
+                                                                    (0x3fU 
+                                                                     & __Vfunc_is_branch__98__i)) 
+                                                                   | (9U 
+                                                                      == 
+                                                                      (0x3fU 
+                                                                       & __Vfunc_is_branch__98__i)))))))));
+                                }(), (IData)(__Vfunc_is_branch__98__Vfuncout))) 
+                                            & (IData)(vlSelf->__PVT__id_taken));
+                    vlSelf->__PVT__id_exc_v = (((IData)(vlSymsp->TOP__tb_sdram__cpu.cache__DOT____VdfgTmp_h6d079f16__0) 
                                                 & (IData)(vlSymsp->TOP__tb_sdram.__PVT__ierr)) 
                                                | (IData)(vlSymsp->TOP__tb_sdram__cpu.__PVT__cache__DOT__i_fill_fail));
+                    vlSelf->__PVT__id_exc_code = 6U;
+                    vlSelf->__PVT__id_exc_bad = vlSelf->__PVT__fpc;
+                    vlSelf->__PVT__id_exc_bad_v = (
+                                                   ((IData)(vlSymsp->TOP__tb_sdram__cpu.cache__DOT____VdfgTmp_h6d079f16__0) 
+                                                    & (IData)(vlSymsp->TOP__tb_sdram.__PVT__ierr)) 
+                                                   | (IData)(vlSymsp->TOP__tb_sdram__cpu.__PVT__cache__DOT__i_fill_fail));
+                }
+                __Vdly__id_v = ((IData)(vlSelf->__PVT__fetch_ok) 
+                                & (~ (IData)(vlSelf->__PVT__exc_flush)));
             }
-            __Vdly__id_v = ((IData)(vlSelf->__PVT__fetch_ok) 
-                            & (~ (IData)(vlSelf->__PVT__exc_flush)));
-        }
-        if ((((IData)(vlSelf->__PVT__adv_id) & (IData)(vlSelf->__PVT__id_v)) 
-             & (~ (IData)(vlSelf->__PVT__exc_flush)))) {
-            vlSelf->__PVT__a_next_pc = vlSelf->__PVT__id_next_pc;
-        }
-        if (((IData)(vlSelf->__PVT__fetch_ok) & (~ (IData)(vlSelf->__PVT__exc_flush)))) {
-            if (vlSelf->__PVT__redir_v) {
+            if ((((IData)(vlSelf->__PVT__adv_id) & (IData)(vlSelf->__PVT__id_v)) 
+                 & (~ (IData)(vlSelf->__PVT__exc_flush)))) {
+                vlSelf->__PVT__a_next_pc = vlSelf->__PVT__id_next_pc;
+            }
+            if (((IData)(vlSelf->__PVT__fetch_ok) & 
+                 (~ (IData)(vlSelf->__PVT__exc_flush)))) {
+                if (vlSelf->__PVT__redir_v) {
+                    vlSelf->__PVT__redir_v = 0U;
+                }
+                vlSelf->__PVT__fpc = vlSelf->__PVT__fpc_nxt;
+            } else if (((IData)(vlSelf->__PVT__id_redirect) 
+                        & (~ (IData)(vlSelf->__PVT__exc_flush)))) {
+                vlSelf->__PVT__redir_v = 1U;
+                vlSelf->__PVT__redir_pc = vlSelf->__PVT__id_tgt;
+            }
+            if (vlSelf->__PVT__exc_flush) {
+                vlSelf->exc_count = (1ULL + vlSelf->exc_count);
+                __Vdlyvval__cp0__v12 = ((IData)(vlSelf->__PVT__me_ds)
+                                         ? (vlSelf->__PVT__me_pc 
+                                            - (IData)(4U))
+                                         : vlSelf->__PVT__me_pc);
+                __Vdlyvset__cp0__v12 = 1U;
                 vlSelf->__PVT__redir_v = 0U;
+                __Vdlyvval__cp0__v13 = (((0x7fffff83U 
+                                          & vlSelf->__PVT__cause_live) 
+                                         | VL_SHIFTL_III(32,32,32, (IData)(vlSelf->__PVT__me_exc_out_code), 2U)) 
+                                        | ((IData)(vlSelf->__PVT__me_ds)
+                                            ? 0x80000000U
+                                            : 0U));
+                __Vdlyvset__cp0__v13 = 1U;
+                vlSelf->__PVT__fpc = vlSelf->__PVT__exc_vector;
+                vlSelf->__PVT__a_next_pc = ((IData)(4U) 
+                                            + vlSelf->__PVT__exc_vector);
+                __Vdly__id_v = 0U;
+                vlSelf->__PVT__ex_v = 0U;
+                vlSelf->__PVT__me_v = 0U;
+                vlSelf->__PVT__id_ds = 0U;
+                vlSelf->__PVT__id_exc_v = 0U;
+                vlSelf->__PVT__ex_exc_v = 0U;
+                vlSelf->__PVT__me_exc_v = 0U;
+                __Vdly__me_phase = 0U;
+                if (vlSelf->__PVT__me_exc_out_badv) {
+                    __Vdlyvval__cp0__v14 = vlSelf->__PVT__me_exc_out_bad;
+                    __Vdlyvset__cp0__v14 = 1U;
+                }
+                __Vdlyvval__cp0__v15 = ((0xffffffc0U 
+                                         & vlSelf->__PVT__cp0
+                                         [0xcU]) | 
+                                        (0x3cU & VL_SHIFTL_III(32,32,32, 
+                                                               vlSelf->__PVT__cp0
+                                                               [0xcU], 2U)));
+                __Vdlyvset__cp0__v15 = 1U;
             }
-            vlSelf->__PVT__fpc = vlSelf->__PVT__fpc_nxt;
-        } else if (((IData)(vlSelf->__PVT__id_redirect) 
-                    & (~ (IData)(vlSelf->__PVT__exc_flush)))) {
-            vlSelf->__PVT__redir_v = 1U;
-            vlSelf->__PVT__redir_pc = vlSelf->__PVT__id_tgt;
-        }
-        if (vlSelf->__PVT__exc_flush) {
-            vlSelf->exc_count = (1ULL + vlSelf->exc_count);
-            __Vdlyvval__cp0__v12 = ((IData)(vlSelf->__PVT__me_ds)
-                                     ? (vlSelf->__PVT__me_pc 
-                                        - (IData)(4U))
-                                     : vlSelf->__PVT__me_pc);
-            __Vdlyvset__cp0__v12 = 1U;
-            vlSelf->__PVT__redir_v = 0U;
-            __Vdlyvval__cp0__v13 = (((0x7fffff83U & vlSelf->__PVT__cause_live) 
-                                     | VL_SHIFTL_III(32,32,32, (IData)(vlSelf->__PVT__me_exc_out_code), 2U)) 
-                                    | ((IData)(vlSelf->__PVT__me_ds)
-                                        ? 0x80000000U
-                                        : 0U));
-            __Vdlyvset__cp0__v13 = 1U;
-            vlSelf->__PVT__fpc = vlSelf->__PVT__exc_vector;
-            vlSelf->__PVT__a_next_pc = ((IData)(4U) 
-                                        + vlSelf->__PVT__exc_vector);
-            __Vdly__id_v = 0U;
-            vlSelf->__PVT__ex_v = 0U;
-            vlSelf->__PVT__me_v = 0U;
-            vlSelf->__PVT__id_ds = 0U;
-            vlSelf->__PVT__id_exc_v = 0U;
-            vlSelf->__PVT__ex_exc_v = 0U;
-            vlSelf->__PVT__me_exc_v = 0U;
-            __Vdly__me_phase = 0U;
-            if (vlSelf->__PVT__me_exc_out_badv) {
-                __Vdlyvval__cp0__v14 = vlSelf->__PVT__me_exc_out_bad;
-                __Vdlyvset__cp0__v14 = 1U;
-            }
-            __Vdlyvval__cp0__v15 = ((0xffffffc0U & 
-                                     vlSelf->__PVT__cp0
-                                     [0xcU]) | (0x3cU 
-                                                & VL_SHIFTL_III(32,32,32, 
-                                                                vlSelf->__PVT__cp0
-                                                                [0xcU], 2U)));
-            __Vdlyvset__cp0__v15 = 1U;
         }
     } else {
         __Vdlyvset__cp0__v16 = 1U;
@@ -2187,12 +2209,6 @@ VL_INLINE_OPT void Vtb_sdram_r3900__Cz2___nba_sequent__TOP__tb_sdram__cpu__cpu__
     __Vfunc_cacheable__1__va = vlSelf->__PVT__fpc;
     __Vfunc_cacheable__1__Vfuncout = (0xa0000000U > __Vfunc_cacheable__1__va);
     vlSelf->__PVT__ibus_cached = __Vfunc_cacheable__1__Vfuncout;
-    __Vfunc_phys__0__va = vlSelf->__PVT__fpc;
-    __Vfunc_phys__0__Vfuncout = (((0x80000000U <= __Vfunc_phys__0__va) 
-                                  & (0xc0000000U > __Vfunc_phys__0__va))
-                                  ? (0x1fffffffU & __Vfunc_phys__0__va)
-                                  : __Vfunc_phys__0__va);
-    vlSelf->__PVT__ibus_addr = __Vfunc_phys__0__Vfuncout;
     vlSelf->__PVT__i_id = vlSelf->__PVT__id_insn;
     vlSelf->__VdfgExtracted_h84f92045__0 = ((8U == 
                                              (0x3fU 
@@ -2950,14 +2966,6 @@ VL_INLINE_OPT void Vtb_sdram_r3900__Cz2___nba_sequent__TOP__tb_sdram__cpu__cpu__
     __Vfunc_cacheable__79__Vfuncout = (0xa0000000U 
                                        > __Vfunc_cacheable__79__va);
     vlSelf->__PVT__dbus_cached = __Vfunc_cacheable__79__Vfuncout;
-    vlSelf->__PVT__dbus_addr = (0xfffffffcU & ([&]() {
-                vlSelf->__Vfunc_phys__78__va = vlSelf->__PVT__me_va;
-                vlSelf->__Vfunc_phys__78__Vfuncout 
-                    = (((0x80000000U <= vlSelf->__Vfunc_phys__78__va) 
-                        & (0xc0000000U > vlSelf->__Vfunc_phys__78__va))
-                        ? (0x1fffffffU & vlSelf->__Vfunc_phys__78__va)
-                        : vlSelf->__Vfunc_phys__78__va);
-            }(), vlSelf->__Vfunc_phys__78__Vfuncout));
     vlSelf->__PVT__i_me = vlSelf->__PVT__me_insn;
     vlSelf->__PVT__me_be = ((vlSelf->__PVT__me_insn 
                              >> 0x1fU) ? ((0x40000000U 
@@ -3566,180 +3574,6 @@ VL_INLINE_OPT void Vtb_sdram_r3900__Cz2___nba_sequent__TOP__tb_sdram__cpu__cpu__
                                                         (__Vfunc_dest_reg__28__i 
                                                          >> 0xbU)))))))));
     vlSelf->__PVT__me_wa = __Vfunc_dest_reg__28__Vfuncout;
-    vlSelf->__PVT__dbus_we = (([&]() {
-                vlSelf->__Vfunc_is_rmw__76__i = vlSelf->__PVT__me_insn;
-                vlSelf->__Vfunc_is_rmw__76__Vfuncout 
-                    = ((0x2aU == (vlSelf->__Vfunc_is_rmw__76__i 
-                                  >> 0x1aU)) | (0x2eU 
-                                                == 
-                                                (vlSelf->__Vfunc_is_rmw__76__i 
-                                                 >> 0x1aU)));
-            }(), (IData)(vlSelf->__Vfunc_is_rmw__76__Vfuncout))
-                               ? (IData)(vlSelf->__PVT__me_phase)
-                               : ([&]() {
-                vlSelf->__Vfunc_is_store__77__i = vlSelf->__PVT__me_insn;
-                vlSelf->__Vfunc_is_store__77__Vfuncout 
-                    = (((((0x28U == (vlSelf->__Vfunc_is_store__77__i 
-                                     >> 0x1aU)) | (0x29U 
-                                                   == 
-                                                   (vlSelf->__Vfunc_is_store__77__i 
-                                                    >> 0x1aU))) 
-                         | (0x2bU == (vlSelf->__Vfunc_is_store__77__i 
-                                      >> 0x1aU))) | 
-                        (0x2aU == (vlSelf->__Vfunc_is_store__77__i 
-                                   >> 0x1aU))) | (0x2eU 
-                                                  == 
-                                                  (vlSelf->__Vfunc_is_store__77__i 
-                                                   >> 0x1aU)));
-            }(), (IData)(vlSelf->__Vfunc_is_store__77__Vfuncout)));
-    vlSelf->__PVT__me_needs_mem = (((IData)(vlSelf->__PVT__me_v) 
-                                    & ([&]() {
-                    vlSelf->__Vfunc_is_mem__72__i = vlSelf->__PVT__me_insn;
-                    vlSelf->__Vfunc_is_mem__72__Vfuncout 
-                        = (([&]() {
-                                vlSelf->__Vfunc_is_load__73__i 
-                                    = vlSelf->__Vfunc_is_mem__72__i;
-                                vlSelf->__Vfunc_is_load__73__Vfuncout 
-                                    = (((((((0x20U 
-                                             == (vlSelf->__Vfunc_is_load__73__i 
-                                                 >> 0x1aU)) 
-                                            | (0x21U 
-                                               == (vlSelf->__Vfunc_is_load__73__i 
-                                                   >> 0x1aU))) 
-                                           | (0x23U 
-                                              == (vlSelf->__Vfunc_is_load__73__i 
-                                                  >> 0x1aU))) 
-                                          | (0x24U 
-                                             == (vlSelf->__Vfunc_is_load__73__i 
-                                                 >> 0x1aU))) 
-                                         | (0x25U == 
-                                            (vlSelf->__Vfunc_is_load__73__i 
-                                             >> 0x1aU))) 
-                                        | (0x22U == 
-                                           (vlSelf->__Vfunc_is_load__73__i 
-                                            >> 0x1aU))) 
-                                       | (0x26U == 
-                                          (vlSelf->__Vfunc_is_load__73__i 
-                                           >> 0x1aU)));
-                            }(), (IData)(vlSelf->__Vfunc_is_load__73__Vfuncout)) 
-                           | ([&]() {
-                                vlSelf->__Vfunc_is_store__74__i 
-                                    = vlSelf->__Vfunc_is_mem__72__i;
-                                vlSelf->__Vfunc_is_store__74__Vfuncout 
-                                    = (((((0x28U == 
-                                           (vlSelf->__Vfunc_is_store__74__i 
-                                            >> 0x1aU)) 
-                                          | (0x29U 
-                                             == (vlSelf->__Vfunc_is_store__74__i 
-                                                 >> 0x1aU))) 
-                                         | (0x2bU == 
-                                            (vlSelf->__Vfunc_is_store__74__i 
-                                             >> 0x1aU))) 
-                                        | (0x2aU == 
-                                           (vlSelf->__Vfunc_is_store__74__i 
-                                            >> 0x1aU))) 
-                                       | (0x2eU == 
-                                          (vlSelf->__Vfunc_is_store__74__i 
-                                           >> 0x1aU)));
-                            }(), (IData)(vlSelf->__Vfunc_is_store__74__Vfuncout)));
-                }(), (IData)(vlSelf->__Vfunc_is_mem__72__Vfuncout))) 
-                                   & (~ (IData)(vlSelf->__PVT__me_exc_v)));
-    vlSelf->__PVT__store_word = ((vlSelf->__PVT__me_insn 
-                                  >> 0x1fU) ? ((0x40000000U 
-                                                & vlSelf->__PVT__me_insn)
-                                                ? vlSelf->__PVT__me_rt
-                                                : (
-                                                   (0x20000000U 
-                                                    & vlSelf->__PVT__me_insn)
-                                                    ? 
-                                                   ((0x10000000U 
-                                                     & vlSelf->__PVT__me_insn)
-                                                     ? 
-                                                    ((0x8000000U 
-                                                      & vlSelf->__PVT__me_insn)
-                                                      ? 
-                                                     ((0x4000000U 
-                                                       & vlSelf->__PVT__me_insn)
-                                                       ? vlSelf->__PVT__me_rt
-                                                       : 
-                                                      ((2U 
-                                                        & vlSelf->__PVT__me_va)
-                                                        ? 
-                                                       ((1U 
-                                                         & vlSelf->__PVT__me_va)
-                                                         ? vlSelf->__PVT__me_rt
-                                                         : 
-                                                        ((vlSelf->__PVT__me_rt 
-                                                          << 8U) 
-                                                         | (0xffU 
-                                                            & vlSelf->__PVT__me_rmw_word)))
-                                                        : 
-                                                       ((1U 
-                                                         & vlSelf->__PVT__me_va)
-                                                         ? 
-                                                        ((vlSelf->__PVT__me_rt 
-                                                          << 0x10U) 
-                                                         | (0xffffU 
-                                                            & vlSelf->__PVT__me_rmw_word))
-                                                         : 
-                                                        ((vlSelf->__PVT__me_rt 
-                                                          << 0x18U) 
-                                                         | (0xffffffU 
-                                                            & vlSelf->__PVT__me_rmw_word)))))
-                                                      : vlSelf->__PVT__me_rt)
-                                                     : 
-                                                    ((0x8000000U 
-                                                      & vlSelf->__PVT__me_insn)
-                                                      ? 
-                                                     ((0x4000000U 
-                                                       & vlSelf->__PVT__me_insn)
-                                                       ? vlSelf->__PVT__me_rt
-                                                       : 
-                                                      ((2U 
-                                                        & vlSelf->__PVT__me_va)
-                                                        ? 
-                                                       ((1U 
-                                                         & vlSelf->__PVT__me_va)
-                                                         ? 
-                                                        ((0xffffff00U 
-                                                          & vlSelf->__PVT__me_rmw_word) 
-                                                         | (vlSelf->__PVT__me_rt 
-                                                            >> 0x18U))
-                                                         : 
-                                                        ((0xffff0000U 
-                                                          & vlSelf->__PVT__me_rmw_word) 
-                                                         | (vlSelf->__PVT__me_rt 
-                                                            >> 0x10U)))
-                                                        : 
-                                                       ((1U 
-                                                         & vlSelf->__PVT__me_va)
-                                                         ? 
-                                                        ((0xff000000U 
-                                                          & vlSelf->__PVT__me_rmw_word) 
-                                                         | (vlSelf->__PVT__me_rt 
-                                                            >> 8U))
-                                                         : vlSelf->__PVT__me_rt)))
-                                                      : 
-                                                     ((0x4000000U 
-                                                       & vlSelf->__PVT__me_insn)
-                                                       ? 
-                                                      ((vlSelf->__PVT__me_rt 
-                                                        << 0x10U) 
-                                                       | (0xffffU 
-                                                          & vlSelf->__PVT__me_rt))
-                                                       : 
-                                                      ((vlSelf->__PVT__me_rt 
-                                                        << 0x18U) 
-                                                       | ((0xff0000U 
-                                                           & (vlSelf->__PVT__me_rt 
-                                                              << 0x10U)) 
-                                                          | ((0xff00U 
-                                                              & (vlSelf->__PVT__me_rt 
-                                                                 << 8U)) 
-                                                             | (0xffU 
-                                                                & vlSelf->__PVT__me_rt)))))))
-                                                    : vlSelf->__PVT__me_rt))
-                                  : vlSelf->__PVT__me_rt);
     vlSelf->__PVT__ex_sys = ((IData)(__VdfgTmp_hc3cd8cde__0) 
                              & (0xcU == (0x3fU & vlSelf->__PVT__ex_insn)));
     vlSelf->__PVT__ex_bp = ((IData)(__VdfgTmp_hc3cd8cde__0) 

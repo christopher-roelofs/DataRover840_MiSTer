@@ -32,6 +32,7 @@ module r3900_cache #(
     parameter DSETS = 64        // 1 KB / 16 B
 ) (
     input  wire        clk,
+    input  wire        cen,           // see r3900.sv; the core's rate
     input  wire        rst_n,
 
     // ---- core side, instruction
@@ -137,7 +138,7 @@ module r3900_cache #(
 
     reg [31:0]    iram_q;
     reg [ITAGW:0] itagv_q;
-    always @(posedge clk) begin
+    always @(posedge clk) if (cen) begin
         iram_q  <= idata[iram_ra];
         itagv_q <= itagv[itag_ra];
         if (idata_we) idata[idata_wa] <= idata_wd;
@@ -196,7 +197,7 @@ module r3900_cache #(
     reg [31:0]     dram_q;
     reg [DTAGW:0]  dtagv_q;
     reg [DIDX+1:0] dram_ra_q;
-    always @(posedge clk) begin
+    always @(posedge clk) if (cen) begin
         dram_q    <= ddata[dram_ra];
         dtagv_q   <= dtagv[dtag_ra];
         dram_ra_q <= dram_ra;
@@ -318,11 +319,11 @@ module r3900_cache #(
             ihit_count <= 32'd0; imiss_count <= 32'd0;
             dhit_count <= 32'd0; dmiss_count <= 32'd0;
             stf_v <= 1'b0;
-        end else if (init_busy) begin
+        end else if (cen && init_busy) begin
             // Walk both tag RAMs invalid. A couple of hundred cycles at
             // reset, before the first fetch can be answered.
             init_cnt <= init_cnt + 1'b1;
-        end else begin
+        end else if (cen) begin
             stf_v <= d_store_hit;
             stf_a <= {d_idx, dbus_addr[3:2]};
             stf_d <= d_merged;
@@ -395,6 +396,7 @@ module r3900_cached #(
     parameter bit COUNT_PER_INSN = 1'b0
 ) (
     input  wire        clk,
+    input  wire        cen,
     input  wire        rst_n,
 
     output wire [31:0] imem_addr,
@@ -436,7 +438,7 @@ module r3900_cached #(
     wire [31:0] cop_addr;
 
     r3900 #(.COUNT_PER_INSN(COUNT_PER_INSN)) cpu (
-        .clk(clk), .rst_n(rst_n),
+        .clk(clk), .cen(cen), .rst_n(rst_n),
         .ibus_addr(ia), .ibus_req(ireq), .ibus_addr_la(ila),
         .ibus_cached(ic), .ibus_ack(iack), .ibus_rdata(ird), .ibus_err(ierr),
         .dbus_addr(da), .dbus_req(dreq), .dbus_addr_la(dla),
@@ -448,7 +450,7 @@ module r3900_cached #(
     );
 
     r3900_cache cache (
-        .clk(clk), .rst_n(rst_n),
+        .clk(clk), .cen(cen), .rst_n(rst_n),
         .ibus_addr(ia), .ibus_addr_la(ila), .ibus_cached(ic),
         .ibus_req(ireq), .ibus_ack(iack), .ibus_rdata(ird), .ibus_err(ierr),
         .dbus_addr(da), .dbus_addr_la(dla), .dbus_cached(dc),

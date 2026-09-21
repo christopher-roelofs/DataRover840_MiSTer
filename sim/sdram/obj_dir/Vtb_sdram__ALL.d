@@ -17,7 +17,8 @@ Vtb_sdram__ALL.o: Vtb_sdram__ALL.cpp Vtb_sdram.cpp Vtb_sdram__pch.h \
  Vtb_sdram_sdram_mt48lc16m16a2__DepSet_hbd9dea3d__0.cpp \
  Vtb_sdram_sdram_mt48lc16m16a2__DepSet_h87112264__0.cpp \
  Vtb_sdram_r3900_cached__Cz1__DepSet_h9bf53649__0.cpp \
- Vtb_sdram_r3900__Cz2__DepSet_h3a4a1839__0.cpp Vtb_sdram__Dpi.cpp \
+ Vtb_sdram_r3900__Cz2__DepSet_h3a4a1839__0.cpp \
+ Vtb_sdram_r3900__Cz2__DepSet_h0a67d060__0.cpp Vtb_sdram__Dpi.cpp \
  Vtb_sdram__Dpi.h Vtb_sdram__ConstPool_0.cpp \
  Vtb_sdram___024root__Slow.cpp \
  Vtb_sdram___024root__DepSet_hc4ec621d__0__Slow.cpp \

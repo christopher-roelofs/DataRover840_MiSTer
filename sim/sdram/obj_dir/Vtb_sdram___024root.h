@@ -19,6 +19,7 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_sdram___024root final : public VerilatedM
     // DESIGN SPECIFIC STATE
     VL_IN8(clk,0,0);
     VL_IN8(rst_n,0,0);
+    VL_IN8(clk_div,7,0);
     VL_OUT8(io_req,0,0);
     VL_OUT8(io_we,0,0);
     VL_OUT8(io_be,3,0);
@@ -37,6 +38,7 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_sdram___024root final : public VerilatedM
     VL_OUT8(dbg_start,0,0);
     VL_OUT8(dbg_start_kind,1,0);
     VL_OUT8(dbg_state,3,0);
+    VL_OUT8(dbg_cen,0,0);
     CData/*0:0*/ __VstlFirstIteration;
     CData/*0:0*/ __VicoFirstIteration;
     CData/*0:0*/ __Vtrigprevexpr___TOP__clk__0;

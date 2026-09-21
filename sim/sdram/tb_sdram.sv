@@ -10,6 +10,11 @@
 
 module tb_sdram (
     input  wire        clk,
+    // How many memory clocks there are to one core clock. 1 runs the core
+    // at the memory's rate; 2 is the arrangement a single PLL gives on the
+    // DE10-Nano, the SDRAM at twice what the core gets. A port rather than
+    // a parameter so one build can be measured at several ratios.
+    input  wire [7:0]  clk_div,
     input  wire        rst_n,
 
     output wire [31:0] io_addr,
@@ -58,14 +63,25 @@ module tb_sdram (
     output wire        dbg_start,
     output wire [24:0] dbg_start_addr,
     output wire [1:0]  dbg_start_kind,
-    output wire [3:0]  dbg_state
+    output wire [3:0]  dbg_state,
+    output wire        dbg_cen
 );
+    // The core's clock enable, from the same clock the memory uses.
+    reg [7:0] cdiv;
+    wire      cen = (clk_div <= 8'd1) || (cdiv == 8'd0);
+    always @(posedge clk or negedge rst_n)
+        if (!rst_n)                       cdiv <= 8'd0;
+        else if (cdiv + 8'd1 >= clk_div)  cdiv <= 8'd0;
+        else                              cdiv <= cdiv + 8'd1;
+
+    assign dbg_cen = cen;
+
     wire [31:0] ia, ird, da, dwd, drd;
     wire        ireq, ibur, iack, ierr, dreq, dbur, dwe, dack, derr;
     wire [3:0]  dbe;
 
     r3900_cached #(.COUNT_PER_INSN(1'b1)) cpu (
-        .clk(clk), .rst_n(rst_n),
+        .clk(clk), .cen(cen), .rst_n(rst_n),
         .imem_addr(ia), .imem_req(ireq), .imem_burst(ibur),
         .imem_ack(iack), .imem_rdata(ird), .imem_err(ierr),
         .dmem_addr(da), .dmem_req(dreq), .dmem_burst(dbur), .dmem_we(dwe),
@@ -116,7 +132,7 @@ module tb_sdram (
     assign dbg_ram_rdata = ram_rdata;
 
     dr840_sdram adapter (
-        .clk(clk), .rst_n(rst_n),
+        .clk(clk), .cen(cen), .rst_n(rst_n),
         .ram_addr(ram_addr), .ram_req(ram_req), .ram_burst(ram_burst),
         .ram_we(ram_we), .ram_be(ram_be), .ram_wdata(ram_wdata),
         .ram_ack(ram_ack), .ram_rdata(ram_rdata), .ram_busy(ram_busy),
@@ -140,7 +156,9 @@ module tb_sdram (
     wire        SDRAM_DQML, SDRAM_DQMH, SDRAM_nCS, SDRAM_nWE;
     wire        SDRAM_nRAS, SDRAM_nCAS, SDRAM_CKE, SDRAM_CLK;
 
-    sdram ctl (
+    // 95 MHz is what a divide-by-two PLL gives alongside a core at the
+    // 47.5 MHz it closes at.
+    sdram #(.CLK_MHZ(95)) ctl (
         .init(~rst_n), .clk(clk),
         .SDRAM_DQ_O(ctl_dq_o), .SDRAM_DQ_OE(ctl_dq_oe), .SDRAM_DQ_I(dq_bus),
         .SDRAM_A(SDRAM_A),

@@ -133,6 +133,7 @@ VL_ATTR_COLD void Vtb_sdram___024root___ctor_var_reset(Vtb_sdram___024root* vlSe
     VL_DEBUG_IF(VL_DBG_MSGF("+    Vtb_sdram___024root___ctor_var_reset\n"); );
     // Body
     vlSelf->clk = VL_RAND_RESET_I(1);
+    vlSelf->clk_div = VL_RAND_RESET_I(8);
     vlSelf->rst_n = VL_RAND_RESET_I(1);
     vlSelf->io_addr = VL_RAND_RESET_I(32);
     vlSelf->io_req = VL_RAND_RESET_I(1);
@@ -175,6 +176,7 @@ VL_ATTR_COLD void Vtb_sdram___024root___ctor_var_reset(Vtb_sdram___024root* vlSe
     vlSelf->dbg_start_addr = VL_RAND_RESET_I(25);
     vlSelf->dbg_start_kind = VL_RAND_RESET_I(2);
     vlSelf->dbg_state = VL_RAND_RESET_I(4);
+    vlSelf->dbg_cen = VL_RAND_RESET_I(1);
     vlSelf->__Vtrigprevexpr___TOP__clk__0 = VL_RAND_RESET_I(1);
     vlSelf->__Vtrigprevexpr___TOP__rst_n__0 = VL_RAND_RESET_I(1);
 }

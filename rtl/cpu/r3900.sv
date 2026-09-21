@@ -44,6 +44,10 @@ module r3900 #(
     parameter bit COUNT_PER_INSN = 1'b0
 ) (
     input  wire        clk,
+    // Clock enable. The memory runs faster than this core does, so the core
+    // is the same clock gated down: one PLL, one domain, nothing to cross.
+    // Held high gives a core clocked at the full rate.
+    input  wire        cen,
     input  wire        rst_n,
 
     output wire [31:0] ibus_addr,
@@ -824,7 +828,7 @@ module r3900 #(
             md_count <= 6'd0; md_run <= 1'b0; md_skip <= 1'b0;
             insn_count <= 64'd0; cycle_count <= 64'd0;
             cache_ops  <= 64'd0; exc_count   <= 64'd0;
-        end else begin
+        end else if (cen) begin
             if (!COUNT_PER_INSN) cp0[CP0_COUNT] <= cp0[CP0_COUNT] + 32'd1;
 
             // ------------------------------------------------ WB commit

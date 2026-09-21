@@ -23,6 +23,7 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_sdram_tb_sdram final : public VerilatedMo
     struct {
         VL_IN8(clk,0,0);
         VL_IN8(rst_n,0,0);
+        VL_IN8(clk_div,7,0);
         VL_OUT8(io_req,0,0);
         VL_OUT8(io_we,0,0);
         VL_OUT8(io_be,3,0);
@@ -41,6 +42,8 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_sdram_tb_sdram final : public VerilatedMo
         VL_OUT8(dbg_start,0,0);
         VL_OUT8(dbg_start_kind,1,0);
         VL_OUT8(dbg_state,3,0);
+        VL_OUT8(dbg_cen,0,0);
+        CData/*7:0*/ __PVT__cdiv;
         CData/*0:0*/ __PVT__ierr;
         CData/*0:0*/ __PVT__derr;
         CData/*0:0*/ __PVT__ram_we;
@@ -61,6 +64,7 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_sdram_tb_sdram final : public VerilatedMo
         CData/*0:0*/ board__DOT____VdfgTmp_hdb4dbddb__0;
         CData/*0:0*/ board__DOT____VdfgTmp_h223955ac__0;
         CData/*3:0*/ __PVT__adapter__DOT__state;
+        CData/*0:0*/ __PVT__adapter__DOT__ack_taken;
         CData/*3:0*/ __PVT__ctl__DOT__state;
         CData/*2:0*/ __PVT__ctl__DOT__command;
         CData/*0:0*/ __PVT__ctl__DOT__chip;
@@ -72,6 +76,8 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_sdram_tb_sdram final : public VerilatedMo
         CData/*0:0*/ __PVT__ctl__DOT__unnamedblk1__DOT__ch2_rq;
         CData/*0:0*/ __PVT__ctl__DOT__unnamedblk1__DOT__ch3_rq;
         CData/*1:0*/ __PVT__ctl__DOT__unnamedblk1__DOT__ch;
+        CData/*0:0*/ __Vdly__ram_ack;
+        CData/*3:0*/ __Vdly__adapter__DOT__state;
         CData/*0:0*/ __Vdly__ch1_ready;
         CData/*0:0*/ __Vdly__ch2_ready;
         CData/*3:0*/ __Vdly__ctl__DOT__state;
@@ -79,14 +85,14 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_sdram_tb_sdram final : public VerilatedMo
         CData/*1:0*/ __Vdly__ctl__DOT__unnamedblk1__DOT__ch;
         VL_OUT16(dbg_max_refresh_gap,15,0);
         VL_OUT16(dbg_violations,15,0);
+    };
+    struct {
         VL_OUT16(dbg_last_col,15,0);
         VL_OUT16(dbg_last_row,15,0);
         VL_OUT16(dbg_last_a,15,0);
         SData/*12:0*/ __PVT__SDRAM_A;
         SData/*15:0*/ __PVT__ctl_dq_o;
         SData/*15:0*/ __PVT__dq_bus;
-    };
-    struct {
         SData/*13:0*/ __PVT__ctl__DOT__refresh_count;
         SData/*12:0*/ __PVT__ctl__DOT__unnamedblk1__DOT__cas_addr;
         SData/*15:0*/ __PVT__ctl__DOT__unnamedblk1__DOT__dq_reg;

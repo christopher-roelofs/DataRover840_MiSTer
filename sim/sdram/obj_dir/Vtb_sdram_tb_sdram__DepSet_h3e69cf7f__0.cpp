@@ -14,6 +14,8 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___ico_sequent__TOP__tb_sdram__0(Vtb_sdram_
     CData/*0:0*/ board__DOT____VdfgTmp_hab3cb56a__0;
     board__DOT____VdfgTmp_hab3cb56a__0 = 0;
     // Body
+    vlSelf->dbg_cen = ((1U >= (IData)(vlSymsp->TOP.clk_div)) 
+                       | (0U == (IData)(vlSelf->__PVT__cdiv)));
     if (vlSelf->__PVT__board__DOT__d_wants_io) {
         vlSelf->__PVT__drd = vlSymsp->TOP.io_rdata;
         board__DOT____VdfgTmp_hab3cb56a__0 = vlSymsp->TOP.io_ack;
@@ -21,6 +23,8 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___ico_sequent__TOP__tb_sdram__0(Vtb_sdram_
         vlSelf->__PVT__drd = vlSelf->__PVT__ram_rdata;
         board__DOT____VdfgTmp_hab3cb56a__0 = 0U;
     }
+    vlSelf->__PVT__adapter__DOT__ack_taken = ((IData)(vlSelf->dbg_cen) 
+                                              & (IData)(vlSelf->__PVT__ram_ack));
     vlSelf->__PVT__derr = ((IData)(vlSelf->board__DOT____VdfgTmp_h223955ac__0) 
                            | ((IData)(board__DOT____VdfgTmp_hab3cb56a__0) 
                               & (IData)(vlSymsp->TOP.io_err)));
@@ -83,10 +87,43 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___ico_sequent__TOP__tb_sdram__1(Vtb_sdram_
                            | (IData)(board__DOT____VdfgTmp_h288a1ef5__0)));
 }
 
-VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__1(Vtb_sdram_tb_sdram* vlSelf) {
+extern const VlUnpacked<CData/*0:0*/, 64> Vtb_sdram__ConstPool__TABLE_ha033e788_0;
+extern const VlUnpacked<CData/*1:0*/, 64> Vtb_sdram__ConstPool__TABLE_h8b08f1f0_0;
+
+VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__0(Vtb_sdram_tb_sdram* vlSelf) {
     if (false && vlSelf) {}  // Prevent unused
     Vtb_sdram__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
-    VL_DEBUG_IF(VL_DBG_MSGF("+      Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__1\n"); );
+    VL_DEBUG_IF(VL_DBG_MSGF("+      Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__0\n"); );
+    // Init
+    CData/*5:0*/ __Vtableidx1;
+    __Vtableidx1 = 0;
+    // Body
+    vlSelf->__Vdly__adapter__DOT__state = vlSelf->__PVT__adapter__DOT__state;
+    vlSelf->__Vdly__ram_ack = vlSelf->__PVT__ram_ack;
+    vlSelf->__PVT__cdiv = ((IData)(vlSymsp->TOP.rst_n)
+                            ? (((0xffU & ((IData)(1U) 
+                                          + (IData)(vlSelf->__PVT__cdiv))) 
+                                >= (IData)(vlSymsp->TOP.clk_div))
+                                ? 0U : (0xffU & ((IData)(1U) 
+                                                 + (IData)(vlSelf->__PVT__cdiv))))
+                            : 0U);
+    __Vtableidx1 = (((0U != (IData)(vlSelf->__PVT__adapter__DOT__state)) 
+                     << 5U) | (((IData)(vlSelf->__PVT__board__DOT__i_wants_ram) 
+                                << 4U) | (((IData)(vlSelf->__PVT__board__DOT__d_wants_ram) 
+                                           << 3U) | 
+                                          (((IData)(vlSelf->__PVT__board__DOT__owner) 
+                                            << 1U) 
+                                           | (IData)(vlSymsp->TOP.rst_n)))));
+    if (Vtb_sdram__ConstPool__TABLE_ha033e788_0[__Vtableidx1]) {
+        vlSelf->__PVT__board__DOT__owner = Vtb_sdram__ConstPool__TABLE_h8b08f1f0_0
+            [__Vtableidx1];
+    }
+}
+
+VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__2(Vtb_sdram_tb_sdram* vlSelf) {
+    if (false && vlSelf) {}  // Prevent unused
+    Vtb_sdram__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
+    VL_DEBUG_IF(VL_DBG_MSGF("+      Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__2\n"); );
     // Init
     SData/*15:0*/ __PVT__ctl__DOT__ch3_dout;
     __PVT__ctl__DOT__ch3_dout = 0;
@@ -215,12 +252,12 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__1(Vtb_sdram_
             vlSelf->__Vdly__ctl__DOT__state = 5U;
         } else if ((5U == (IData)(vlSelf->__PVT__ctl__DOT__state))) {
             vlSelf->__Vdly__ctl__DOT__state = 4U;
-            if ((0x30cU < (IData)(vlSelf->__PVT__ctl__DOT__refresh_count))) {
+            if ((0x2e5U < (IData)(vlSelf->__PVT__ctl__DOT__refresh_count))) {
                 __Vdly__ctl__DOT__refresh_count = (0x3fffU 
                                                    & ((IData)(1U) 
                                                       + 
                                                       ((IData)(vlSelf->__PVT__ctl__DOT__refresh_count) 
-                                                       - (IData)(0x30cU))));
+                                                       - (IData)(0x2e5U))));
                 vlSelf->__Vdly__ctl__DOT__state = 0xaU;
                 vlSelf->__PVT__ctl__DOT__command = 1U;
                 vlSelf->__PVT__ctl__DOT__chip = 0U;
@@ -229,7 +266,7 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__1(Vtb_sdram_
             vlSelf->__Vdly__ctl__DOT__state = 9U;
             vlSelf->__PVT__ctl__DOT__command = 1U;
             vlSelf->__PVT__ctl__DOT__chip = 1U;
-        } else if ((0x618U < (IData)(vlSelf->__PVT__ctl__DOT__refresh_count))) {
+        } else if ((0x5caU < (IData)(vlSelf->__PVT__ctl__DOT__refresh_count))) {
             vlSelf->__Vdly__ctl__DOT__state = 5U;
         } else if (vlSelf->__PVT__ctl__DOT__unnamedblk1__DOT__ch1_rq) {
             vlSelf->__Vdly__ctl__DOT__unnamedblk1__DOT__cas_addr 
@@ -339,7 +376,7 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__1(Vtb_sdram_
     }
     if ((1U & (~ (IData)(vlSymsp->TOP.rst_n)))) {
         vlSelf->__Vdly__ctl__DOT__state = 0U;
-        __Vdly__ctl__DOT__refresh_count = 0x10bbU;
+        __Vdly__ctl__DOT__refresh_count = 0x1318U;
     }
     vlSelf->__PVT__ctl__DOT__unnamedblk1__DOT__ch1_rq 
         = __Vdly__ctl__DOT__unnamedblk1__DOT__ch1_rq;
@@ -371,13 +408,10 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__1(Vtb_sdram_
                                   : 0xffffU));
 }
 
-extern const VlUnpacked<CData/*0:0*/, 64> Vtb_sdram__ConstPool__TABLE_ha033e788_0;
-extern const VlUnpacked<CData/*1:0*/, 64> Vtb_sdram__ConstPool__TABLE_h8b08f1f0_0;
-
-VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__2(Vtb_sdram_tb_sdram* vlSelf) {
+VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__3(Vtb_sdram_tb_sdram* vlSelf) {
     if (false && vlSelf) {}  // Prevent unused
     Vtb_sdram__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
-    VL_DEBUG_IF(VL_DBG_MSGF("+      Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__2\n"); );
+    VL_DEBUG_IF(VL_DBG_MSGF("+      Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__3\n"); );
     // Init
     IData/*31:0*/ __Vfunc_adapter__DOT__swap__2__Vfuncout;
     __Vfunc_adapter__DOT__swap__2__Vfuncout = 0;
@@ -411,30 +445,15 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__2(Vtb_sdram_
     __Vfunc_adapter__DOT__swap__9__Vfuncout = 0;
     IData/*31:0*/ __Vfunc_adapter__DOT__swap__9__x;
     __Vfunc_adapter__DOT__swap__9__x = 0;
-    CData/*5:0*/ __Vtableidx1;
-    __Vtableidx1 = 0;
-    CData/*0:0*/ __Vdly__ram_ack;
-    __Vdly__ram_ack = 0;
-    CData/*3:0*/ __Vdly__adapter__DOT__state;
-    __Vdly__adapter__DOT__state = 0;
     // Body
-    __Vdly__adapter__DOT__state = vlSelf->__PVT__adapter__DOT__state;
-    __Vdly__ram_ack = vlSelf->__PVT__ram_ack;
-    __Vtableidx1 = (((0U != (IData)(vlSelf->__PVT__adapter__DOT__state)) 
-                     << 5U) | (((IData)(vlSelf->__PVT__board__DOT__i_wants_ram) 
-                                << 4U) | (((IData)(vlSelf->__PVT__board__DOT__d_wants_ram) 
-                                           << 3U) | 
-                                          (((IData)(vlSelf->__PVT__board__DOT__owner) 
-                                            << 1U) 
-                                           | (IData)(vlSymsp->TOP.rst_n)))));
-    if (Vtb_sdram__ConstPool__TABLE_ha033e788_0[__Vtableidx1]) {
-        vlSelf->__PVT__board__DOT__owner = Vtb_sdram__ConstPool__TABLE_h8b08f1f0_0
-            [__Vtableidx1];
-    }
+    vlSelf->dbg_cen = ((1U >= (IData)(vlSymsp->TOP.clk_div)) 
+                       | (0U == (IData)(vlSelf->__PVT__cdiv)));
     if (vlSymsp->TOP.rst_n) {
         vlSelf->__PVT__ch1_req = 0U;
         vlSelf->__PVT__ch2_req = 0U;
-        __Vdly__ram_ack = 0U;
+        if (vlSelf->__PVT__adapter__DOT__ack_taken) {
+            vlSelf->__Vdly__ram_ack = 0U;
+        }
         vlSelf->dbg_start = 0U;
         if ((((0U == (IData)(vlSelf->__PVT__adapter__DOT__state)) 
               & (IData)(vlSelf->dbg_ram_req)) & (~ (IData)(vlSelf->__PVT__ram_ack)))) {
@@ -451,53 +470,59 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__2(Vtb_sdram_
         }
         if ((8U & (IData)(vlSelf->__PVT__adapter__DOT__state))) {
             if ((4U & (IData)(vlSelf->__PVT__adapter__DOT__state))) {
-                __Vdly__adapter__DOT__state = 0U;
+                vlSelf->__Vdly__adapter__DOT__state = 0U;
             } else if ((2U & (IData)(vlSelf->__PVT__adapter__DOT__state))) {
-                __Vdly__adapter__DOT__state = 0U;
+                if ((1U & (IData)(vlSelf->__PVT__adapter__DOT__state))) {
+                    if (vlSelf->__PVT__adapter__DOT__ack_taken) {
+                        vlSelf->__Vdly__adapter__DOT__state = 0U;
+                    }
+                } else if (vlSelf->__PVT__adapter__DOT__ack_taken) {
+                    __Vfunc_adapter__DOT__swap__2__x 
+                        = (IData)((vlSelf->__PVT__ch1_dout 
+                                   >> 0x20U));
+                    __Vfunc_adapter__DOT__swap__2__Vfuncout 
+                        = ((__Vfunc_adapter__DOT__swap__2__x 
+                            << 0x10U) | (__Vfunc_adapter__DOT__swap__2__x 
+                                         >> 0x10U));
+                    vlSelf->__PVT__ram_rdata = __Vfunc_adapter__DOT__swap__2__Vfuncout;
+                    vlSelf->__Vdly__ram_ack = 1U;
+                    vlSelf->__Vdly__adapter__DOT__state = 0xbU;
+                }
             } else if ((1U & (IData)(vlSelf->__PVT__adapter__DOT__state))) {
-                __Vfunc_adapter__DOT__swap__2__x = (IData)(
-                                                           (vlSelf->__PVT__ch1_dout 
-                                                            >> 0x20U));
-                __Vfunc_adapter__DOT__swap__2__Vfuncout 
-                    = ((__Vfunc_adapter__DOT__swap__2__x 
-                        << 0x10U) | (__Vfunc_adapter__DOT__swap__2__x 
-                                     >> 0x10U));
-                vlSelf->__PVT__ram_rdata = __Vfunc_adapter__DOT__swap__2__Vfuncout;
-                __Vdly__ram_ack = 1U;
-                __Vdly__adapter__DOT__state = 0U;
-            } else if (vlSelf->__PVT__ch1_ready) {
-                __Vfunc_adapter__DOT__swap__3__x = (IData)(vlSelf->__PVT__ch1_dout);
-                __Vfunc_adapter__DOT__swap__3__Vfuncout 
-                    = ((__Vfunc_adapter__DOT__swap__3__x 
-                        << 0x10U) | (__Vfunc_adapter__DOT__swap__3__x 
-                                     >> 0x10U));
-                vlSelf->__PVT__ram_rdata = __Vfunc_adapter__DOT__swap__3__Vfuncout;
-                __Vdly__ram_ack = 1U;
-                __Vdly__adapter__DOT__state = 9U;
+                if (vlSelf->__PVT__ch1_ready) {
+                    __Vfunc_adapter__DOT__swap__3__x 
+                        = (IData)(vlSelf->__PVT__ch1_dout);
+                    __Vfunc_adapter__DOT__swap__3__Vfuncout 
+                        = ((__Vfunc_adapter__DOT__swap__3__x 
+                            << 0x10U) | (__Vfunc_adapter__DOT__swap__3__x 
+                                         >> 0x10U));
+                    vlSelf->__PVT__ram_rdata = __Vfunc_adapter__DOT__swap__3__Vfuncout;
+                    vlSelf->__Vdly__ram_ack = 1U;
+                    vlSelf->__Vdly__adapter__DOT__state = 0xaU;
+                }
+            } else if (vlSelf->__PVT__adapter__DOT__ack_taken) {
+                vlSelf->__PVT__ch1_addr = (4U | (0xfffff8U 
+                                                 & (vlSelf->__PVT__adapter__DOT__line 
+                                                    >> 1U)));
+                vlSelf->__PVT__ch1_req = 1U;
+                vlSelf->__Vdly__adapter__DOT__state = 9U;
             }
         } else if ((4U & (IData)(vlSelf->__PVT__adapter__DOT__state))) {
             if ((2U & (IData)(vlSelf->__PVT__adapter__DOT__state))) {
                 if ((1U & (IData)(vlSelf->__PVT__adapter__DOT__state))) {
-                    vlSelf->__PVT__ch1_addr = (4U | 
-                                               (0xfffff8U 
-                                                & (vlSelf->__PVT__adapter__DOT__line 
-                                                   >> 1U)));
-                    vlSelf->__PVT__ch1_req = 1U;
-                    __Vdly__adapter__DOT__state = 8U;
-                } else {
-                    __Vfunc_adapter__DOT__swap__4__x 
-                        = (IData)((vlSelf->__PVT__ch1_dout 
-                                   >> 0x20U));
-                    __Vfunc_adapter__DOT__swap__4__Vfuncout 
-                        = ((__Vfunc_adapter__DOT__swap__4__x 
-                            << 0x10U) | (__Vfunc_adapter__DOT__swap__4__x 
-                                         >> 0x10U));
-                    vlSelf->__PVT__ram_rdata = __Vfunc_adapter__DOT__swap__4__Vfuncout;
-                    __Vdly__ram_ack = 1U;
-                    __Vdly__adapter__DOT__state = 7U;
-                }
-            } else if ((1U & (IData)(vlSelf->__PVT__adapter__DOT__state))) {
-                if (vlSelf->__PVT__ch1_ready) {
+                    if (vlSelf->__PVT__adapter__DOT__ack_taken) {
+                        __Vfunc_adapter__DOT__swap__4__x 
+                            = (IData)((vlSelf->__PVT__ch1_dout 
+                                       >> 0x20U));
+                        __Vfunc_adapter__DOT__swap__4__Vfuncout 
+                            = ((__Vfunc_adapter__DOT__swap__4__x 
+                                << 0x10U) | (__Vfunc_adapter__DOT__swap__4__x 
+                                             >> 0x10U));
+                        vlSelf->__PVT__ram_rdata = __Vfunc_adapter__DOT__swap__4__Vfuncout;
+                        vlSelf->__Vdly__ram_ack = 1U;
+                        vlSelf->__Vdly__adapter__DOT__state = 8U;
+                    }
+                } else if (vlSelf->__PVT__ch1_ready) {
                     __Vfunc_adapter__DOT__swap__5__x 
                         = (IData)(vlSelf->__PVT__ch1_dout);
                     __Vfunc_adapter__DOT__swap__5__Vfuncout 
@@ -505,8 +530,12 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__2(Vtb_sdram_
                             << 0x10U) | (__Vfunc_adapter__DOT__swap__5__x 
                                          >> 0x10U));
                     vlSelf->__PVT__ram_rdata = __Vfunc_adapter__DOT__swap__5__Vfuncout;
-                    __Vdly__ram_ack = 1U;
-                    __Vdly__adapter__DOT__state = 6U;
+                    vlSelf->__Vdly__ram_ack = 1U;
+                    vlSelf->__Vdly__adapter__DOT__state = 7U;
+                }
+            } else if ((1U & (IData)(vlSelf->__PVT__adapter__DOT__state))) {
+                if (vlSelf->__PVT__adapter__DOT__ack_taken) {
+                    vlSelf->__Vdly__adapter__DOT__state = 0U;
                 }
             } else {
                 __Vfunc_adapter__DOT__swap__6__x = vlSelf->__PVT__adapter__DOT__merged;
@@ -516,7 +545,7 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__2(Vtb_sdram_
                                      >> 0x10U));
                 vlSelf->__PVT__ch2_din = __Vfunc_adapter__DOT__swap__6__Vfuncout;
                 vlSelf->__PVT__ch2_req = 1U;
-                __Vdly__adapter__DOT__state = 2U;
+                vlSelf->__Vdly__adapter__DOT__state = 2U;
             }
         } else if ((2U & (IData)(vlSelf->__PVT__adapter__DOT__state))) {
             if ((1U & (IData)(vlSelf->__PVT__adapter__DOT__state))) {
@@ -530,11 +559,11 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__2(Vtb_sdram_
                     vlSelf->__PVT__adapter__DOT__hold 
                         = __Vfunc_adapter__DOT__swap__7__Vfuncout;
                     vlSelf->__PVT__ch2_rnw = 0U;
-                    __Vdly__adapter__DOT__state = 4U;
+                    vlSelf->__Vdly__adapter__DOT__state = 4U;
                 }
             } else if (vlSelf->__PVT__ch2_ready) {
-                __Vdly__ram_ack = 1U;
-                __Vdly__adapter__DOT__state = 0U;
+                vlSelf->__Vdly__ram_ack = 1U;
+                vlSelf->__Vdly__adapter__DOT__state = 5U;
             }
         } else if ((1U & (IData)(vlSelf->__PVT__adapter__DOT__state))) {
             if (vlSelf->__PVT__ch2_ready) {
@@ -544,8 +573,8 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__2(Vtb_sdram_
                         << 0x10U) | (__Vfunc_adapter__DOT__swap__8__x 
                                      >> 0x10U));
                 vlSelf->__PVT__ram_rdata = __Vfunc_adapter__DOT__swap__8__Vfuncout;
-                __Vdly__ram_ack = 1U;
-                __Vdly__adapter__DOT__state = 0U;
+                vlSelf->__Vdly__ram_ack = 1U;
+                vlSelf->__Vdly__adapter__DOT__state = 5U;
             }
         } else if (((IData)(vlSelf->dbg_ram_req) & 
                     (~ (IData)(vlSelf->__PVT__ram_ack)))) {
@@ -556,7 +585,7 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__2(Vtb_sdram_
                                            & (vlSelf->dbg_ram_addr 
                                               >> 1U));
                 vlSelf->__PVT__ch1_req = 1U;
-                __Vdly__adapter__DOT__state = 5U;
+                vlSelf->__Vdly__adapter__DOT__state = 6U;
             } else if (((IData)(vlSelf->__PVT__ram_we) 
                         & (0xfU == (IData)(vlSelf->__PVT__ram_be)))) {
                 __Vfunc_adapter__DOT__swap__9__x = vlSymsp->TOP__tb_sdram__cpu__cpu.__PVT__store_word;
@@ -570,38 +599,40 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__2(Vtb_sdram_
                 vlSelf->__PVT__ch2_din = __Vfunc_adapter__DOT__swap__9__Vfuncout;
                 vlSelf->__PVT__ch2_rnw = 0U;
                 vlSelf->__PVT__ch2_req = 1U;
-                __Vdly__adapter__DOT__state = 2U;
+                vlSelf->__Vdly__adapter__DOT__state = 2U;
             } else if (vlSelf->__PVT__ram_we) {
                 vlSelf->__PVT__ch2_addr = (0xffffffU 
                                            & (vlSelf->dbg_ram_addr 
                                               >> 1U));
                 vlSelf->__PVT__ch2_rnw = 1U;
                 vlSelf->__PVT__ch2_req = 1U;
-                __Vdly__adapter__DOT__state = 3U;
+                vlSelf->__Vdly__adapter__DOT__state = 3U;
             } else {
                 vlSelf->__PVT__ch2_addr = (0xffffffU 
                                            & (vlSelf->dbg_ram_addr 
                                               >> 1U));
                 vlSelf->__PVT__ch2_rnw = 1U;
                 vlSelf->__PVT__ch2_req = 1U;
-                __Vdly__adapter__DOT__state = 1U;
+                vlSelf->__Vdly__adapter__DOT__state = 1U;
             }
         }
     } else {
-        __Vdly__adapter__DOT__state = 0U;
+        vlSelf->__Vdly__adapter__DOT__state = 0U;
         vlSelf->dbg_start = 0U;
         vlSelf->__PVT__ch1_req = 0U;
         vlSelf->__PVT__ch2_req = 0U;
-        __Vdly__ram_ack = 0U;
+        vlSelf->__Vdly__ram_ack = 0U;
     }
-    vlSelf->__PVT__adapter__DOT__state = __Vdly__adapter__DOT__state;
-    vlSelf->__PVT__ram_ack = __Vdly__ram_ack;
+    vlSelf->__PVT__adapter__DOT__state = vlSelf->__Vdly__adapter__DOT__state;
+    vlSelf->__PVT__ram_ack = vlSelf->__Vdly__ram_ack;
+    vlSelf->__PVT__adapter__DOT__ack_taken = ((IData)(vlSelf->dbg_cen) 
+                                              & (IData)(vlSelf->__PVT__ram_ack));
 }
 
-VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__3(Vtb_sdram_tb_sdram* vlSelf) {
+VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__4(Vtb_sdram_tb_sdram* vlSelf) {
     if (false && vlSelf) {}  // Prevent unused
     Vtb_sdram__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
-    VL_DEBUG_IF(VL_DBG_MSGF("+      Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__3\n"); );
+    VL_DEBUG_IF(VL_DBG_MSGF("+      Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__4\n"); );
     // Init
     CData/*1:0*/ __PVT__board__DOT__decode__Vstatic__t;
     __PVT__board__DOT__decode__Vstatic__t = 0;

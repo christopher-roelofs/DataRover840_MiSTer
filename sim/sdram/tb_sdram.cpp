@@ -99,12 +99,14 @@ int main(int argc, char **argv) {
     Verilated::commandArgs(argc, argv);
     const char *state_path = nullptr, *bus_path = nullptr, *rom_path = nullptr;
     uint64_t limit = 0;
+    int clk_div = 1;
 
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "--state") && i + 1 < argc) state_path = argv[++i];
         else if (!strcmp(argv[i], "--bus") && i + 1 < argc) bus_path = argv[++i];
         else if (!strcmp(argv[i], "--rom") && i + 1 < argc) rom_path = argv[++i];
         else if (!strcmp(argv[i], "-n") && i + 1 < argc) limit = strtoull(argv[++i], nullptr, 0);
+        else if (!strcmp(argv[i], "--div") && i + 1 < argc) clk_div = atoi(argv[++i]);
     }
     if (!state_path || !bus_path || !rom_path) {
         fprintf(stderr, "usage: Vtb_sdram --state F --bus F --rom F "
@@ -151,6 +153,7 @@ int main(int argc, char **argv) {
             (uint16_t)((rom[i] << 8) | rom[i + 1]);
     printf("sdram: %zu-byte ROM at %06X, DRAM at %06X\n",
            rom.size(), ROM_BASE, DRAM_BASE);
+    dut->clk_div = clk_div;
     dut->rst_n = 0; dut->irq_in = 0;
     dut->io_ack = 0; dut->io_err = 0;
     for (int i = 0; i < 8; i++) { dut->clk = 0; dut->eval(); dut->clk = 1; dut->eval(); }
@@ -168,7 +171,10 @@ int main(int argc, char **argv) {
         // ---- peripherals, replayed in order
         dut->io_ack = 0; dut->io_err = 0;
         bool io_fire = false;
-        if (dut->io_req) {
+        // The peripheral bus is in the core's clock domain: it answers on
+        // the core's edges, not the memory's. Answering between them would
+        // be an acknowledgement the core never sees.
+        if (dut->io_req && dut->dbg_cen) {
             if (ioidx >= IO.size()) {
                 // Near the end the pipeline holds instructions past the last
                 // retire; let them finish rather than call it a failure.
@@ -218,6 +224,10 @@ int main(int argc, char **argv) {
             }
         }
 
+        // The core only moves on an enabled edge, so its retire pulse
+        // stands for a whole core period. Counting it per memory clock
+        // would retire every instruction twice over at a divider of two.
+        bool cen_now = dut->dbg_cen;
         dut->eval();
         dut->clk = 1; dut->eval();
         if (io_fire)  ioidx++;
@@ -246,7 +256,7 @@ int main(int argc, char **argv) {
             dbgn++;
         }
 
-        if (dut->retire_valid) {
+        if (dut->retire_valid && cen_now) {
             const state_rec &e = S[idx];
             bool bad = false;
             if (dut->retire_pc != e.pc || dut->retire_insn != e.insn) {
@@ -280,10 +290,14 @@ int main(int argc, char **argv) {
         }
     }
 
+    // The core's own cycles are what matter: its clock is what Fmax caps,
+    // and the memory's being faster is the whole point of the divider.
+    uint64_t core_cycles = cycles / (clk_div < 1 ? 1 : clk_div);
     printf("\nmatched %" PRIu64 " of %" PRIu64 " instructions, %zu device "
-           "access(es), %" PRIu64 " cycles (%.3f IPC)\n",
-           idx, n_state, ioidx, cycles,
-           cycles ? (double)idx / (double)cycles : 0.0);
+           "access(es), %" PRIu64 " memory clocks, %" PRIu64
+           " core clocks (%.3f IPC at core rate, divider %d)\n",
+           idx, n_state, ioidx, cycles, core_cycles,
+           core_cycles ? (double)idx / (double)core_cycles : 0.0, clk_div);
     printf("sdram chip: %u read(s), %u write(s), %u refresh(es), "
            "worst refresh gap %u clk, %u violation(s)\n",
            dut->dbg_reads, dut->dbg_writes, dut->dbg_refreshes,

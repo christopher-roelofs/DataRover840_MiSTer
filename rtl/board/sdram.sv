@@ -37,7 +37,15 @@
 // You should have received a copy of the GNU General Public License 
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-module sdram
+module sdram #(
+	// The clock this runs at, in MHz. Both constants below are derived
+	// from it, and the original had them written out for 100 MHz. At the
+	// 95 MHz a 47.5 MHz core and a divide-by-two PLL actually give, 100
+	// MHz constants refresh every 8.2 us where the part wants 7.8 -- about
+	// 7,800 refreshes in the 64 ms that needs 8,192. Close enough to look
+	// fine and not close enough to be right.
+	parameter CLK_MHZ = 100
+)
 (
 	input             init,        // reset to initialize RAM
 	input             clk,         // clock ~100MHz
@@ -95,8 +103,8 @@ localparam OP_MODE             = 2'b00;    // only 00 (standard operation) allow
 localparam NO_WRITE_BURST      = 1'b1;     // 0= write burst enabled, 1=only single access write
 localparam MODE                = {3'b000, NO_WRITE_BURST, OP_MODE, CAS_LATENCY, ACCESS_TYPE, BURST_CODE};
 
-localparam sdram_startup_cycles= 14'd12100;// 100us, plus a little more, @ 100MHz
-localparam cycles_per_refresh  = 14'd780;  // (64000*100)/8192-1 Calc'd as (64ms @ 100MHz)/8192 rose
+localparam sdram_startup_cycles= 14'((CLK_MHZ * 121));      // ~100us, plus a little
+localparam cycles_per_refresh  = 14'((64000 * CLK_MHZ) / 8192 - 1);
 localparam startup_refresh_max = 14'b11111111111111;
 
 // SDRAM commands

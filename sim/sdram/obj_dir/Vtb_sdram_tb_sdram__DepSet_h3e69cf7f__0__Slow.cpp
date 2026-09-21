@@ -16,4 +16,8 @@ VL_ATTR_COLD void Vtb_sdram_tb_sdram___stl_sequent__TOP__tb_sdram__0(Vtb_sdram_t
                               : ((IData)(vlSymsp->TOP__tb_sdram__chip.__PVT__dq_oe)
                                   ? (IData)(vlSymsp->TOP__tb_sdram__chip.__PVT__dq_out)
                                   : 0xffffU));
+    vlSelf->dbg_cen = ((1U >= (IData)(vlSymsp->TOP.clk_div)) 
+                       | (0U == (IData)(vlSelf->__PVT__cdiv)));
+    vlSelf->__PVT__adapter__DOT__ack_taken = ((IData)(vlSelf->dbg_cen) 
+                                              & (IData)(vlSelf->__PVT__ram_ack));
 }

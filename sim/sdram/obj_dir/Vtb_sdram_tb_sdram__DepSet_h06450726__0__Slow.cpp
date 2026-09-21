@@ -11,7 +11,7 @@ VL_ATTR_COLD void Vtb_sdram_tb_sdram___eval_static__TOP__tb_sdram(Vtb_sdram_tb_s
     VL_DEBUG_IF(VL_DBG_MSGF("+      Vtb_sdram_tb_sdram___eval_static__TOP__tb_sdram\n"); );
     // Body
     vlSelf->__PVT__ctl__DOT__state = 0U;
-    vlSelf->__PVT__ctl__DOT__refresh_count = 0x10bbU;
+    vlSelf->__PVT__ctl__DOT__refresh_count = 0x1318U;
 }
 
 VL_ATTR_COLD void Vtb_sdram_tb_sdram___ctor_var_reset(Vtb_sdram_tb_sdram* vlSelf) {
@@ -20,6 +20,7 @@ VL_ATTR_COLD void Vtb_sdram_tb_sdram___ctor_var_reset(Vtb_sdram_tb_sdram* vlSelf
     VL_DEBUG_IF(VL_DBG_MSGF("+      Vtb_sdram_tb_sdram___ctor_var_reset\n"); );
     // Body
     vlSelf->clk = VL_RAND_RESET_I(1);
+    vlSelf->clk_div = VL_RAND_RESET_I(8);
     vlSelf->rst_n = VL_RAND_RESET_I(1);
     vlSelf->io_addr = VL_RAND_RESET_I(32);
     vlSelf->io_req = VL_RAND_RESET_I(1);
@@ -62,6 +63,8 @@ VL_ATTR_COLD void Vtb_sdram_tb_sdram___ctor_var_reset(Vtb_sdram_tb_sdram* vlSelf
     vlSelf->dbg_start_addr = VL_RAND_RESET_I(25);
     vlSelf->dbg_start_kind = VL_RAND_RESET_I(2);
     vlSelf->dbg_state = VL_RAND_RESET_I(4);
+    vlSelf->dbg_cen = VL_RAND_RESET_I(1);
+    vlSelf->__PVT__cdiv = VL_RAND_RESET_I(8);
     vlSelf->__PVT__ird = VL_RAND_RESET_I(32);
     vlSelf->__PVT__drd = VL_RAND_RESET_I(32);
     vlSelf->__PVT__ierr = VL_RAND_RESET_I(1);
@@ -97,6 +100,7 @@ VL_ATTR_COLD void Vtb_sdram_tb_sdram___ctor_var_reset(Vtb_sdram_tb_sdram* vlSelf
     vlSelf->__PVT__adapter__DOT__hold = VL_RAND_RESET_I(32);
     vlSelf->__PVT__adapter__DOT__line = VL_RAND_RESET_I(25);
     vlSelf->__PVT__adapter__DOT__merged = VL_RAND_RESET_I(32);
+    vlSelf->__PVT__adapter__DOT__ack_taken = VL_RAND_RESET_I(1);
     vlSelf->__PVT__ctl__DOT__state = VL_RAND_RESET_I(4);
     vlSelf->__PVT__ctl__DOT__refresh_count = VL_RAND_RESET_I(14);
     vlSelf->__PVT__ctl__DOT__command = VL_RAND_RESET_I(3);
@@ -112,6 +116,8 @@ VL_ATTR_COLD void Vtb_sdram_tb_sdram___ctor_var_reset(Vtb_sdram_tb_sdram* vlSelf
     vlSelf->__PVT__ctl__DOT__unnamedblk1__DOT__ch2_rq = VL_RAND_RESET_I(1);
     vlSelf->__PVT__ctl__DOT__unnamedblk1__DOT__ch3_rq = VL_RAND_RESET_I(1);
     vlSelf->__PVT__ctl__DOT__unnamedblk1__DOT__ch = VL_RAND_RESET_I(2);
+    vlSelf->__Vdly__ram_ack = VL_RAND_RESET_I(1);
+    vlSelf->__Vdly__adapter__DOT__state = VL_RAND_RESET_I(4);
     vlSelf->__Vdly__ch1_ready = VL_RAND_RESET_I(1);
     vlSelf->__Vdly__ch2_ready = VL_RAND_RESET_I(1);
     vlSelf->__Vdly__ch1_dout = VL_RAND_RESET_Q(64);
