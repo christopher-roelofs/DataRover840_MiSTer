@@ -186,6 +186,41 @@ The retire port names the instruction whose writes have already landed,
 which is one edge behind WB. That is deliberate: naming it while it is still
 in WB would point at state it has not written yet.
 
+## The board
+
+`rtl/board/dr840_mem.sv`. The address decode and the arbiter that puts the
+two cache ports onto one memory. The map is the reference's, which prints it
+at startup: 4 MB of DRAM across a 60 MB decode, flash at three separate chip
+selects (its own base, the one the OS runs from, and the reset alias), two
+PC Card controllers, the TX39 peripheral block, four card windows and the
+unidentified chip in kseg3. Anything else is a bus error, which is how the
+ROM's own probes find out what is not there.
+
+RAM and flash both live in the one SDRAM -- ROM at its base, DRAM above it
+-- so a single chip serves both and the HPS can load the ROM into it before
+the core leaves reset.
+
+Data wins arbitration. Anything in MEM was fetched before whatever IF is
+asking for, so making the younger access wait is free where making the older
+one wait is not. A burst holds the grant, which needs no counter: the cache
+keeps its request asserted for all four beats.
+
+`sim/cosim/tb_board.cpp` runs the same lockstep one level further out, and
+the split it uses is the board's rather than a guess. Whatever the decode
+calls memory is served from a model of the SDRAM with the ROM loaded at its
+base, exactly as the HPS will load it; whatever it calls a peripheral is
+replayed from the reference's bus trace in order. An access sent to the
+wrong side shows up at once, as a device access that does not match or as a
+wrong instruction retired.
+
+One deliberate difference from the reference: a chip select mirrors through
+the space it decodes, and the reference does that with a real modulo of the
+installed size -- 4,528,151 bytes, not a power of two. Here the window is
+masked to 8 MB instead. In ten million instructions nothing reads past the
+image at all (the furthest access is its very last byte), and the ROM does
+not use mirroring to find its size -- it does not find it at all, it is a
+constant. A real modulo would put a 32-bit divide on the path to memory.
+
 ## Caches
 
 `rtl/cpu/r3900_cache.sv`. 4 KB of instruction cache and 1 KB of data cache,
@@ -217,6 +252,7 @@ walk exactly those sizes in 16-byte lines.
 ```
 rtl/cpu/r3900.sv     the core
 rtl/cpu/r3900_cache.sv  the caches, and the core wrapped in them
+rtl/board/dr840_mem.sv  address decode and the memory arbiter
 sim/cosim/           Verilator lockstep harness against magicrecomp
 sim/golden/          reference traces (regenerated, not committed)
 scripts/mktrace      regenerates them

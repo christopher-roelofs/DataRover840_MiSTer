@@ -39,7 +39,19 @@ $(CACHED_OBJ)/Vtb_top: $(CACHED_RTL) tb_top.sv tb_r3900.cpp goldtrace.h
 	  -CFLAGS "-O2 -DCACHED -I$(CURDIR)" -Mdir $(CACHED_OBJ) \
 	  tb_top.sv $(CACHED_RTL) tb_r3900.cpp
 
-clean:
-	rm -rf $(OBJ) $(CACHED_OBJ)
+# The core, its caches and the board's address decode together.
+BOARD_RTL := ../../rtl/cpu/r3900.sv ../../rtl/cpu/r3900_cache.sv ../../rtl/board/dr840_mem.sv
+BOARD_OBJ := obj_board
 
-.PHONY: all run clean cached
+board: $(BOARD_OBJ)/Vtb_board
+
+$(BOARD_OBJ)/Vtb_board: $(BOARD_RTL) tb_board.sv tb_board.cpp goldtrace.h
+	$(VERILATOR) --cc --exe --build -j 0 -Wall -Wno-fatal \
+	  +define+SIMULATION --top-module tb_board \
+	  -CFLAGS "-O2 -I$(CURDIR)" -Mdir $(BOARD_OBJ) \
+	  tb_board.sv $(BOARD_RTL) tb_board.cpp
+
+clean:
+	rm -rf $(OBJ) $(CACHED_OBJ) $(BOARD_OBJ)
+
+.PHONY: all run clean cached board
