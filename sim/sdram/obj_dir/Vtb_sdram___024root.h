@@ -34,6 +34,9 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_sdram___024root final : public VerilatedM
     VL_OUT8(dbg_iack,0,0);
     VL_OUT8(dbg_dreq,0,0);
     VL_OUT8(dbg_ireq,0,0);
+    VL_OUT8(dbg_start,0,0);
+    VL_OUT8(dbg_start_kind,1,0);
+    VL_OUT8(dbg_state,3,0);
     CData/*0:0*/ __VstlFirstIteration;
     CData/*0:0*/ __VicoFirstIteration;
     CData/*0:0*/ __Vtrigprevexpr___TOP__clk__0;
@@ -61,6 +64,7 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_sdram___024root final : public VerilatedM
     VL_OUT(dbg_ram_rdata,31,0);
     VL_OUT(dbg_last_index,31,0);
     VL_OUT(dbg_ch2_addr,26,1);
+    VL_OUT(dbg_start_addr,24,0);
     IData/*31:0*/ __VactIterCount;
     VlTriggerVec<1> __VstlTriggered;
     VlTriggerVec<1> __VicoTriggered;

@@ -125,6 +125,10 @@ VL_INLINE_OPT void Vtb_sdram___024root___nba_sequent__TOP__1(Vtb_sdram___024root
     VL_DEBUG_IF(VL_DBG_MSGF("+    Vtb_sdram___024root___nba_sequent__TOP__1\n"); );
     // Body
     vlSelf->dbg_ch2_req = vlSymsp->TOP__tb_sdram.__PVT__ch2_req;
+    vlSelf->dbg_start = vlSymsp->TOP__tb_sdram.dbg_start;
+    vlSelf->dbg_start_addr = vlSymsp->TOP__tb_sdram.dbg_start_addr;
+    vlSelf->dbg_start_kind = vlSymsp->TOP__tb_sdram.dbg_start_kind;
+    vlSelf->dbg_state = vlSymsp->TOP__tb_sdram.__PVT__adapter__DOT__state;
     vlSelf->dbg_ch2_addr = vlSymsp->TOP__tb_sdram.__PVT__ch2_addr;
     vlSelf->dbg_ram_rdata = vlSymsp->TOP__tb_sdram.__PVT__ram_rdata;
     vlSelf->dbg_ram_ack = vlSymsp->TOP__tb_sdram.__PVT__ram_ack;

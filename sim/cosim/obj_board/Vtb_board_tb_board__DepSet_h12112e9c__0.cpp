@@ -35,6 +35,8 @@ VL_INLINE_OPT void Vtb_board_tb_board___ico_sequent__TOP__tb_board__1(Vtb_board_
     Vtb_board__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
     VL_DEBUG_IF(VL_DBG_MSGF("+      Vtb_board_tb_board___ico_sequent__TOP__tb_board__1\n"); );
     // Init
+    CData/*0:0*/ board__DOT____VdfgTmp_h22b91ed1__0;
+    board__DOT____VdfgTmp_h22b91ed1__0 = 0;
     CData/*0:0*/ board__DOT____VdfgTmp_h56676f03__0;
     board__DOT____VdfgTmp_h56676f03__0 = 0;
     CData/*0:0*/ board__DOT____VdfgTmp_h288a1ef5__0;
@@ -56,16 +58,15 @@ VL_INLINE_OPT void Vtb_board_tb_board___ico_sequent__TOP__tb_board__1(Vtb_board_
                                                 == 
                                                 (0x6000000U 
                                                  & vlSelf->__PVT__board__DOT__i_dec)));
-    vlSelf->board__DOT____VdfgTmp_h22b91ed1__0 = ((
-                                                   (2U 
-                                                    == (IData)(vlSelf->__PVT__board__DOT__owner)) 
-                                                   | ((0U 
-                                                       == (IData)(vlSelf->__PVT__board__DOT__owner)) 
-                                                      & ((~ (IData)(vlSelf->__PVT__board__DOT__d_wants_ram)) 
-                                                         & (IData)(vlSelf->__PVT__board__DOT__i_wants_ram)))) 
-                                                  & (IData)(vlSelf->__PVT__board__DOT__i_wants_ram));
+    board__DOT____VdfgTmp_h22b91ed1__0 = (((2U == (IData)(vlSelf->__PVT__board__DOT__owner)) 
+                                           | ((0U == (IData)(vlSelf->__PVT__board__DOT__owner)) 
+                                              & ((~ (IData)(vlSelf->__PVT__board__DOT__d_wants_ram)) 
+                                                 & (IData)(vlSelf->__PVT__board__DOT__i_wants_ram)))) 
+                                          & (IData)(vlSelf->__PVT__board__DOT__i_wants_ram));
     board__DOT____VdfgTmp_h8306d34d__0 = ((~ (IData)(vlSelf->__PVT__board__DOT__d_wants_io)) 
                                           & (IData)(vlSelf->__PVT__board__DOT__i_wants_io));
+    vlSelf->ram_req = ((IData)(vlSelf->board__DOT____VdfgTmp_hdb4dbddb__0) 
+                       | (IData)(board__DOT____VdfgTmp_h22b91ed1__0));
     if (board__DOT____VdfgTmp_h8306d34d__0) {
         vlSelf->__PVT__ird = vlSymsp->TOP.io_rdata;
         board__DOT____VdfgTmp_h56676f03__0 = vlSymsp->TOP.io_ack;
@@ -76,29 +77,32 @@ VL_INLINE_OPT void Vtb_board_tb_board___ico_sequent__TOP__tb_board__1(Vtb_board_
     vlSelf->__PVT__ierr = ((IData)(board__DOT____VdfgTmp_h288a1ef5__0) 
                            | ((IData)(board__DOT____VdfgTmp_h56676f03__0) 
                               & (IData)(vlSymsp->TOP.io_err)));
-    vlSelf->__PVT__iack = (((IData)(vlSelf->board__DOT____VdfgTmp_h22b91ed1__0) 
+    vlSelf->__PVT__iack = (((IData)(board__DOT____VdfgTmp_h22b91ed1__0) 
                             & (IData)(vlSymsp->TOP.ram_ack)) 
                            | ((IData)(board__DOT____VdfgTmp_h56676f03__0) 
                               | (IData)(board__DOT____VdfgTmp_h288a1ef5__0)));
 }
 
-extern const VlUnpacked<CData/*0:0*/, 32> Vtb_board__ConstPool__TABLE_h887a1d27_0;
-extern const VlUnpacked<CData/*1:0*/, 32> Vtb_board__ConstPool__TABLE_hfd7cc7e5_0;
+extern const VlUnpacked<CData/*0:0*/, 64> Vtb_board__ConstPool__TABLE_ha033e788_0;
+extern const VlUnpacked<CData/*1:0*/, 64> Vtb_board__ConstPool__TABLE_h8b08f1f0_0;
 
 VL_INLINE_OPT void Vtb_board_tb_board___nba_sequent__TOP__tb_board__0(Vtb_board_tb_board* vlSelf) {
     if (false && vlSelf) {}  // Prevent unused
     Vtb_board__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
     VL_DEBUG_IF(VL_DBG_MSGF("+      Vtb_board_tb_board___nba_sequent__TOP__tb_board__0\n"); );
     // Init
-    CData/*4:0*/ __Vtableidx1;
+    CData/*5:0*/ __Vtableidx1;
     __Vtableidx1 = 0;
     // Body
-    __Vtableidx1 = (((IData)(vlSelf->__PVT__board__DOT__i_wants_ram) 
-                     << 4U) | (((IData)(vlSelf->__PVT__board__DOT__d_wants_ram) 
-                                << 3U) | (((IData)(vlSelf->__PVT__board__DOT__owner) 
-                                           << 1U) | (IData)(vlSymsp->TOP.rst_n))));
-    if (Vtb_board__ConstPool__TABLE_h887a1d27_0[__Vtableidx1]) {
-        vlSelf->__PVT__board__DOT__owner = Vtb_board__ConstPool__TABLE_hfd7cc7e5_0
+    __Vtableidx1 = ((((~ (IData)(vlSymsp->TOP.ram_ack)) 
+                      & (IData)(vlSelf->ram_req)) << 5U) 
+                    | (((IData)(vlSelf->__PVT__board__DOT__i_wants_ram) 
+                        << 4U) | (((IData)(vlSelf->__PVT__board__DOT__d_wants_ram) 
+                                   << 3U) | (((IData)(vlSelf->__PVT__board__DOT__owner) 
+                                              << 1U) 
+                                             | (IData)(vlSymsp->TOP.rst_n)))));
+    if (Vtb_board__ConstPool__TABLE_ha033e788_0[__Vtableidx1]) {
+        vlSelf->__PVT__board__DOT__owner = Vtb_board__ConstPool__TABLE_h8b08f1f0_0
             [__Vtableidx1];
     }
 }

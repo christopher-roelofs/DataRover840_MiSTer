@@ -50,6 +50,10 @@ VL_ATTR_COLD void Vtb_sdram___024root___stl_sequent__TOP__0(Vtb_sdram___024root*
     Vtb_sdram__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
     VL_DEBUG_IF(VL_DBG_MSGF("+    Vtb_sdram___024root___stl_sequent__TOP__0\n"); );
     // Body
+    vlSelf->dbg_state = vlSymsp->TOP__tb_sdram.__PVT__adapter__DOT__state;
+    vlSelf->dbg_start_kind = vlSymsp->TOP__tb_sdram.dbg_start_kind;
+    vlSelf->dbg_start_addr = vlSymsp->TOP__tb_sdram.dbg_start_addr;
+    vlSelf->dbg_start = vlSymsp->TOP__tb_sdram.dbg_start;
     vlSelf->dbg_ch2_req = vlSymsp->TOP__tb_sdram.__PVT__ch2_req;
     vlSelf->dbg_ch2_addr = vlSymsp->TOP__tb_sdram.__PVT__ch2_addr;
     vlSelf->dbg_last_a = vlSymsp->TOP__tb_sdram__chip.__PVT__dbg_last_a;

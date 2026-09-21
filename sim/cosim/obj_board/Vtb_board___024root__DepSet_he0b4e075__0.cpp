@@ -30,8 +30,7 @@ VL_INLINE_OPT void Vtb_board___024root___ico_sequent__TOP__0(Vtb_board___024root
     // Body
     vlSelf->io_req = ((IData)(vlSymsp->TOP__tb_board.__PVT__board__DOT__d_wants_io) 
                       | (IData)(vlSymsp->TOP__tb_board.__PVT__board__DOT__i_wants_io));
-    vlSelf->ram_req = ((IData)(vlSymsp->TOP__tb_board.board__DOT____VdfgTmp_hdb4dbddb__0) 
-                       | (IData)(vlSymsp->TOP__tb_board.board__DOT____VdfgTmp_h22b91ed1__0));
+    vlSelf->ram_req = vlSymsp->TOP__tb_board.ram_req;
 }
 
 void Vtb_board_r3900__Cz2___ico_sequent__TOP__tb_board__cpu__cpu__0(Vtb_board_r3900__Cz2* vlSelf);

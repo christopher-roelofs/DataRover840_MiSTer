@@ -69,6 +69,8 @@ module dr840_mem #(
     output wire [31:0] ram_wdata,
     input  wire        ram_ack,
     input  wire [31:0] ram_rdata,
+    // Whether the memory still has a transaction of ours in it.
+    input  wire        ram_busy,
 
     // ---- to the peripheral bus, physical addresses, never cached
     output wire [31:0] io_addr,
@@ -133,6 +135,15 @@ module dr840_mem #(
     //
     // A burst holds the grant. The cache keeps its request asserted for all
     // four beats, so the grant follows the request rather than a counter.
+    //
+    // The grant also has to outlive the request. A requester can stop asking
+    // while its access is still in the memory -- an instruction fetch does
+    // exactly that when the data cache misses, because the stall reaches
+    // back and the fetch stage stops asking for anything. If the grant went
+    // with it, the acknowledgement for that fetch would arrive after the
+    // arbiter had moved on and be handed to the data side, which would take
+    // it as the first word of its own line. Every word after that lands one
+    // slot late and the line is quietly wrong.
     localparam [1:0] A_FREE = 2'd0, A_DATA = 2'd1, A_INSN = 2'd2;
     reg [1:0] owner;
 
@@ -149,8 +160,8 @@ module dr840_mem #(
         else case (owner)
             A_FREE: if (d_wants_ram)      owner <= A_DATA;
                     else if (i_wants_ram) owner <= A_INSN;
-            A_DATA: if (!d_wants_ram)     owner <= A_FREE;
-            A_INSN: if (!i_wants_ram)     owner <= A_FREE;
+            A_DATA: if (!d_wants_ram && !ram_busy) owner <= A_FREE;
+            A_INSN: if (!i_wants_ram && !ram_busy) owner <= A_FREE;
             default:                      owner <= A_FREE;
         endcase
     end

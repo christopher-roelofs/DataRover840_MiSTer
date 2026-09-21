@@ -51,7 +51,6 @@ VL_ATTR_COLD void Vtb_board_tb_board___ctor_var_reset(Vtb_board_tb_board* vlSelf
     vlSelf->__PVT__board__DOT__grant_d = VL_RAND_RESET_I(1);
     vlSelf->__PVT__board__DOT__d_wants_io = VL_RAND_RESET_I(1);
     vlSelf->__PVT__board__DOT__i_wants_io = VL_RAND_RESET_I(1);
-    vlSelf->board__DOT____VdfgTmp_h22b91ed1__0 = 0;
     vlSelf->board__DOT____VdfgTmp_hdb4dbddb__0 = 0;
     vlSelf->board__DOT____VdfgTmp_h223955ac__0 = 0;
 }

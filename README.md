@@ -265,30 +265,42 @@ each part of it exists for one mismatch:
   instructions. Adding masking to an otherwise proven controller is the
   worse trade.
 
-`sim/sdram/` runs the whole path against a model of the chip that **checks
-the controller as it goes**: bank state, tRCD, reads from an unopened row,
+**One million instructions match through the whole path**, with the chip
+reporting no protocol violation.
+
+`sim/sdram/` runs it against a model of the chip that **checks the
+controller as it goes**: bank state, tRCD, reads from an unopened row,
 refresh interval. The model came from TI83Plus_MiSTer and was extended here
 for burst reads, since answering only the first word of a four-word burst
 would make a controller look correct while three quarters of every cache
 line came back as whatever was on the bus.
 
-### Known broken: the first line refill through real SDRAM
+### What the chip model caught
 
-Twenty thousand instructions match, with no protocol violation reported by
-the chip. The first *cache line refill* does not, and the run stops at
-instruction 81,302.
+Two things, and both were real.
 
-What is known: all four beats are flagged as a burst and carry the right
-addresses, and the words the chip returns are right. The adapter issues
-**three** SDRAM transactions for the line where it should issue two --
-acknowledging once, then twice, then once -- so the first burst loses an
-acknowledge and every word after it lands one slot late. The line ends up
-holding `0,0,0,1` where the ROM has `0,0,1,0`.
+**An acknowledgement reached the wrong requester.** A fetch was issued to
+memory, the data cache then missed, the stall reached back and the fetch
+stage stopped asking for anything -- and the arbiter, which derived its
+grant from who was asking *now*, moved on. The reply to that fetch arrived
+afterwards and was handed to the data side, which took it as the first word
+of its own cache line. Every word after it landed one slot late and the line
+was quietly wrong: `0,0,0,1` where the ROM has `0,0,1,0`.
 
-Everything above this level still passes: the same ten million instructions
-match through `sim/cosim` with the caches and the board, against modelled
-memory at every latency tried. This is the adapter's burst sequencing and
-nothing further up.
+A grant has to outlive the request that earned it. It is now held until the
+memory says it is finished, and a reply that nobody is waiting for is
+dropped rather than given to whoever happens to be asking.
+
+This is the kind of fault that only appears once a real controller is in the
+loop: with memory that answers immediately, or on a fixed delay, the
+requester never has time to withdraw.
+
+**A refresh alarm calibrated for a different controller.** The model warned
+above a 1200-clock gap, which suits a controller refreshing every 390. This
+one refreshes every 780 and forces one at 1560, so ordinary catch-up -- a
+worst gap of 1522 -- tripped it. Retuned to 1700, which is above what this
+controller allows itself and far below losing data: a row has 64 ms, or 6.4
+million clocks at 100 MHz.
 
 ## Caches
 

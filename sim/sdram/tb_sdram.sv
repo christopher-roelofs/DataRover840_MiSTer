@@ -54,7 +54,11 @@ module tb_sdram (
     output wire        dbg_dack,
     output wire        dbg_iack,
     output wire        dbg_dreq,
-    output wire        dbg_ireq
+    output wire        dbg_ireq,
+    output wire        dbg_start,
+    output wire [24:0] dbg_start_addr,
+    output wire [1:0]  dbg_start_kind,
+    output wire [3:0]  dbg_state
 );
     wire [31:0] ia, ird, da, dwd, drd;
     wire        ireq, ibur, iack, ierr, dreq, dbur, dwe, dack, derr;
@@ -77,6 +81,7 @@ module tb_sdram (
     wire        ram_req, ram_burst, ram_we, ram_ack;
     wire [3:0]  ram_be;
     wire [31:0] ram_wdata, ram_rdata;
+    wire        ram_busy;
 
     dr840_mem board (
         .clk(clk), .rst_n(rst_n),
@@ -87,7 +92,7 @@ module tb_sdram (
         .dmem_err(derr),
         .ram_addr(ram_addr), .ram_req(ram_req), .ram_burst(ram_burst),
         .ram_we(ram_we), .ram_be(ram_be), .ram_wdata(ram_wdata),
-        .ram_ack(ram_ack), .ram_rdata(ram_rdata),
+        .ram_ack(ram_ack), .ram_rdata(ram_rdata), .ram_busy(ram_busy),
         .io_addr(io_addr), .io_req(io_req), .io_we(io_we), .io_be(io_be),
         .io_wdata(io_wdata), .io_ack(io_ack), .io_rdata(io_rdata),
         .io_err(io_err)
@@ -114,7 +119,9 @@ module tb_sdram (
         .clk(clk), .rst_n(rst_n),
         .ram_addr(ram_addr), .ram_req(ram_req), .ram_burst(ram_burst),
         .ram_we(ram_we), .ram_be(ram_be), .ram_wdata(ram_wdata),
-        .ram_ack(ram_ack), .ram_rdata(ram_rdata),
+        .ram_ack(ram_ack), .ram_rdata(ram_rdata), .ram_busy(ram_busy),
+        .dbg_start(dbg_start), .dbg_start_addr(dbg_start_addr),
+        .dbg_start_kind(dbg_start_kind), .dbg_state(dbg_state),
         .ch1_addr(ch1_addr), .ch1_dout(ch1_dout), .ch1_req(ch1_req),
         .ch1_ready(ch1_ready),
         .ch2_addr(ch2_addr), .ch2_dout(ch2_dout), .ch2_din(ch2_din),

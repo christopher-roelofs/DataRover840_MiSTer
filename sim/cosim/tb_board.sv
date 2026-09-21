@@ -65,6 +65,9 @@ module tb_board (
         .ram_addr(ram_addr), .ram_req(ram_req), .ram_burst(ram_burst),
         .ram_we(ram_we), .ram_be(ram_be), .ram_wdata(ram_wdata),
         .ram_ack(ram_ack), .ram_rdata(ram_rdata),
+        // No adapter here: the harness answers directly, so a transaction
+        // is in the memory exactly while a request is up and unanswered.
+        .ram_busy(ram_req & ~ram_ack),
         .io_addr(io_addr), .io_req(io_req), .io_we(io_we), .io_be(io_be),
         .io_wdata(io_wdata), .io_ack(io_ack), .io_rdata(io_rdata),
         .io_err(io_err)

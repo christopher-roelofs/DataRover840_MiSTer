@@ -26,6 +26,9 @@ Vtb_sdram::Vtb_sdram(VerilatedContext* _vcontextp__, const char* _vcname__)
     , dbg_iack{vlSymsp->TOP.dbg_iack}
     , dbg_dreq{vlSymsp->TOP.dbg_dreq}
     , dbg_ireq{vlSymsp->TOP.dbg_ireq}
+    , dbg_start{vlSymsp->TOP.dbg_start}
+    , dbg_start_kind{vlSymsp->TOP.dbg_start_kind}
+    , dbg_state{vlSymsp->TOP.dbg_state}
     , dbg_max_refresh_gap{vlSymsp->TOP.dbg_max_refresh_gap}
     , dbg_violations{vlSymsp->TOP.dbg_violations}
     , dbg_last_col{vlSymsp->TOP.dbg_last_col}
@@ -48,6 +51,7 @@ Vtb_sdram::Vtb_sdram(VerilatedContext* _vcontextp__, const char* _vcname__)
     , dbg_ram_rdata{vlSymsp->TOP.dbg_ram_rdata}
     , dbg_last_index{vlSymsp->TOP.dbg_last_index}
     , dbg_ch2_addr{vlSymsp->TOP.dbg_ch2_addr}
+    , dbg_start_addr{vlSymsp->TOP.dbg_start_addr}
     , tb_sdram{vlSymsp->TOP.tb_sdram}
     , rootp{&(vlSymsp->TOP)}
 {

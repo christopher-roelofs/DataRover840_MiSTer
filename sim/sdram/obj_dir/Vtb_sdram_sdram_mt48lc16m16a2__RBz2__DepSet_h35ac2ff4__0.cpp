@@ -4,7 +4,7 @@
 
 #include "Vtb_sdram__pch.h"
 #include "Vtb_sdram__Syms.h"
-#include "Vtb_sdram_sdram_mt48lc16m16a2.h"
+#include "Vtb_sdram_sdram_mt48lc16m16a2__RBz2.h"
 
 extern const VlWide<32>/*1023:0*/ Vtb_sdram__ConstPool__CONST_h66c1db22_0;
 extern const VlWide<32>/*1023:0*/ Vtb_sdram__ConstPool__CONST_hfcf63cb2_0;
@@ -21,10 +21,10 @@ extern const VlWide<32>/*1023:0*/ Vtb_sdram__ConstPool__CONST_hf11d036f_0;
 extern const VlWide<32>/*1023:0*/ Vtb_sdram__ConstPool__CONST_h1ed05db8_0;
 extern const VlWide<32>/*1023:0*/ Vtb_sdram__ConstPool__CONST_h66ec84ff_0;
 
-VL_INLINE_OPT void Vtb_sdram_sdram_mt48lc16m16a2___nba_sequent__TOP__tb_sdram__chip__0(Vtb_sdram_sdram_mt48lc16m16a2* vlSelf) {
+VL_INLINE_OPT void Vtb_sdram_sdram_mt48lc16m16a2__RBz2___nba_sequent__TOP__tb_sdram__chip__0(Vtb_sdram_sdram_mt48lc16m16a2__RBz2* vlSelf) {
     if (false && vlSelf) {}  // Prevent unused
     Vtb_sdram__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
-    VL_DEBUG_IF(VL_DBG_MSGF("+        Vtb_sdram_sdram_mt48lc16m16a2___nba_sequent__TOP__tb_sdram__chip__0\n"); );
+    VL_DEBUG_IF(VL_DBG_MSGF("+        Vtb_sdram_sdram_mt48lc16m16a2__RBz2___nba_sequent__TOP__tb_sdram__chip__0\n"); );
     // Init
     VlWide<32>/*1023:0*/ __Vtask_report__0__msg;
     VL_ZERO_W(1024, __Vtask_report__0__msg);
@@ -1906,10 +1906,10 @@ VL_INLINE_OPT void Vtb_sdram_sdram_mt48lc16m16a2___nba_sequent__TOP__tb_sdram__c
                                : 0U);
 }
 
-VL_INLINE_OPT void Vtb_sdram_sdram_mt48lc16m16a2___nba_sequent__TOP__tb_sdram__chip__1(Vtb_sdram_sdram_mt48lc16m16a2* vlSelf) {
+VL_INLINE_OPT void Vtb_sdram_sdram_mt48lc16m16a2__RBz2___nba_sequent__TOP__tb_sdram__chip__1(Vtb_sdram_sdram_mt48lc16m16a2__RBz2* vlSelf) {
     if (false && vlSelf) {}  // Prevent unused
     Vtb_sdram__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
-    VL_DEBUG_IF(VL_DBG_MSGF("+        Vtb_sdram_sdram_mt48lc16m16a2___nba_sequent__TOP__tb_sdram__chip__1\n"); );
+    VL_DEBUG_IF(VL_DBG_MSGF("+        Vtb_sdram_sdram_mt48lc16m16a2__RBz2___nba_sequent__TOP__tb_sdram__chip__1\n"); );
     // Body
     vlSelf->__PVT__cmd = (((IData)(vlSymsp->TOP__tb_sdram.__PVT__ctl__DOT__chip) 
                            << 3U) | (IData)(vlSymsp->TOP__tb_sdram.__PVT__ctl__DOT__command));

@@ -371,8 +371,8 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__1(Vtb_sdram_
                                   : 0xffffU));
 }
 
-extern const VlUnpacked<CData/*0:0*/, 32> Vtb_sdram__ConstPool__TABLE_h887a1d27_0;
-extern const VlUnpacked<CData/*1:0*/, 32> Vtb_sdram__ConstPool__TABLE_hfd7cc7e5_0;
+extern const VlUnpacked<CData/*0:0*/, 64> Vtb_sdram__ConstPool__TABLE_ha033e788_0;
+extern const VlUnpacked<CData/*1:0*/, 64> Vtb_sdram__ConstPool__TABLE_h8b08f1f0_0;
 
 VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__2(Vtb_sdram_tb_sdram* vlSelf) {
     if (false && vlSelf) {}  // Prevent unused
@@ -411,7 +411,7 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__2(Vtb_sdram_
     __Vfunc_adapter__DOT__swap__9__Vfuncout = 0;
     IData/*31:0*/ __Vfunc_adapter__DOT__swap__9__x;
     __Vfunc_adapter__DOT__swap__9__x = 0;
-    CData/*4:0*/ __Vtableidx1;
+    CData/*5:0*/ __Vtableidx1;
     __Vtableidx1 = 0;
     CData/*0:0*/ __Vdly__ram_ack;
     __Vdly__ram_ack = 0;
@@ -420,18 +420,35 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__2(Vtb_sdram_
     // Body
     __Vdly__adapter__DOT__state = vlSelf->__PVT__adapter__DOT__state;
     __Vdly__ram_ack = vlSelf->__PVT__ram_ack;
-    __Vtableidx1 = (((IData)(vlSelf->__PVT__board__DOT__i_wants_ram) 
-                     << 4U) | (((IData)(vlSelf->__PVT__board__DOT__d_wants_ram) 
-                                << 3U) | (((IData)(vlSelf->__PVT__board__DOT__owner) 
-                                           << 1U) | (IData)(vlSymsp->TOP.rst_n))));
-    if (Vtb_sdram__ConstPool__TABLE_h887a1d27_0[__Vtableidx1]) {
-        vlSelf->__PVT__board__DOT__owner = Vtb_sdram__ConstPool__TABLE_hfd7cc7e5_0
+    __Vtableidx1 = (((0U != (IData)(vlSelf->__PVT__adapter__DOT__state)) 
+                     << 5U) | (((IData)(vlSelf->__PVT__board__DOT__i_wants_ram) 
+                                << 4U) | (((IData)(vlSelf->__PVT__board__DOT__d_wants_ram) 
+                                           << 3U) | 
+                                          (((IData)(vlSelf->__PVT__board__DOT__owner) 
+                                            << 1U) 
+                                           | (IData)(vlSymsp->TOP.rst_n)))));
+    if (Vtb_sdram__ConstPool__TABLE_ha033e788_0[__Vtableidx1]) {
+        vlSelf->__PVT__board__DOT__owner = Vtb_sdram__ConstPool__TABLE_h8b08f1f0_0
             [__Vtableidx1];
     }
     if (vlSymsp->TOP.rst_n) {
         vlSelf->__PVT__ch1_req = 0U;
         vlSelf->__PVT__ch2_req = 0U;
         __Vdly__ram_ack = 0U;
+        vlSelf->dbg_start = 0U;
+        if ((((0U == (IData)(vlSelf->__PVT__adapter__DOT__state)) 
+              & (IData)(vlSelf->dbg_ram_req)) & (~ (IData)(vlSelf->__PVT__ram_ack)))) {
+            vlSelf->dbg_start = 1U;
+            vlSelf->dbg_start_addr = vlSelf->dbg_ram_addr;
+            vlSelf->dbg_start_kind = ((IData)(vlSelf->dbg_ram_burst)
+                                       ? 3U : (((IData)(vlSelf->__PVT__ram_we) 
+                                                & (0xfU 
+                                                   == (IData)(vlSelf->__PVT__ram_be)))
+                                                ? 1U
+                                                : ((IData)(vlSelf->__PVT__ram_we)
+                                                    ? 2U
+                                                    : 0U)));
+        }
         if ((8U & (IData)(vlSelf->__PVT__adapter__DOT__state))) {
             if ((4U & (IData)(vlSelf->__PVT__adapter__DOT__state))) {
                 __Vdly__adapter__DOT__state = 0U;
@@ -541,9 +558,7 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__2(Vtb_sdram_
                 vlSelf->__PVT__ch1_req = 1U;
                 __Vdly__adapter__DOT__state = 5U;
             } else if (((IData)(vlSelf->__PVT__ram_we) 
-                        & (0xfU == ((IData)(vlSelf->__PVT__board__DOT__grant_d)
-                                     ? (IData)(vlSymsp->TOP__tb_sdram__cpu.__PVT__dmem_be)
-                                     : 0xfU)))) {
+                        & (0xfU == (IData)(vlSelf->__PVT__ram_be)))) {
                 __Vfunc_adapter__DOT__swap__9__x = vlSymsp->TOP__tb_sdram__cpu__cpu.__PVT__store_word;
                 __Vfunc_adapter__DOT__swap__9__Vfuncout 
                     = ((__Vfunc_adapter__DOT__swap__9__x 
@@ -573,10 +588,11 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__2(Vtb_sdram_
             }
         }
     } else {
-        __Vdly__ram_ack = 0U;
         __Vdly__adapter__DOT__state = 0U;
+        vlSelf->dbg_start = 0U;
         vlSelf->__PVT__ch1_req = 0U;
         vlSelf->__PVT__ch2_req = 0U;
+        __Vdly__ram_ack = 0U;
     }
     vlSelf->__PVT__adapter__DOT__state = __Vdly__adapter__DOT__state;
     vlSelf->__PVT__ram_ack = __Vdly__ram_ack;
@@ -595,6 +611,8 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__3(Vtb_sdram_
     __PVT__board__DOT__decode__Vstatic__rel = 0;
     IData/*26:0*/ __PVT__board__DOT__d_dec;
     __PVT__board__DOT__d_dec = 0;
+    CData/*0:0*/ __PVT__board__DOT__grant_d;
+    __PVT__board__DOT__grant_d = 0;
     CData/*0:0*/ board__DOT____VdfgTmp_hab3cb56a__0;
     board__DOT____VdfgTmp_hab3cb56a__0 = 0;
     IData/*26:0*/ __Vfunc_board__DOT__decode__0__Vfuncout;
@@ -709,9 +727,9 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__3(Vtb_sdram_
                                                 == 
                                                 (0x6000000U 
                                                  & __PVT__board__DOT__d_dec)));
-    vlSelf->__PVT__board__DOT__grant_d = ((1U == (IData)(vlSelf->__PVT__board__DOT__owner)) 
-                                          | ((0U == (IData)(vlSelf->__PVT__board__DOT__owner)) 
-                                             & (IData)(vlSelf->__PVT__board__DOT__d_wants_ram)));
+    __PVT__board__DOT__grant_d = ((1U == (IData)(vlSelf->__PVT__board__DOT__owner)) 
+                                  | ((0U == (IData)(vlSelf->__PVT__board__DOT__owner)) 
+                                     & (IData)(vlSelf->__PVT__board__DOT__d_wants_ram)));
     if (vlSelf->__PVT__board__DOT__d_wants_io) {
         vlSelf->__PVT__drd = vlSymsp->TOP.io_rdata;
         board__DOT____VdfgTmp_hab3cb56a__0 = vlSymsp->TOP.io_ack;
@@ -719,10 +737,19 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__3(Vtb_sdram_
         vlSelf->__PVT__drd = vlSelf->__PVT__ram_rdata;
         board__DOT____VdfgTmp_hab3cb56a__0 = 0U;
     }
-    vlSelf->__PVT__ram_we = ((IData)(vlSelf->__PVT__board__DOT__grant_d) 
-                             & (IData)(vlSymsp->TOP__tb_sdram__cpu.__PVT__dmem_we));
+    if (__PVT__board__DOT__grant_d) {
+        vlSelf->__PVT__ram_we = vlSymsp->TOP__tb_sdram__cpu.__PVT__dmem_we;
+        vlSelf->__PVT__ram_be = vlSymsp->TOP__tb_sdram__cpu.__PVT__dmem_be;
+        vlSelf->dbg_ram_addr = (0x1ffffffU & __PVT__board__DOT__d_dec);
+        vlSelf->dbg_ram_burst = (1U == (IData)(vlSymsp->TOP__tb_sdram__cpu.__PVT__cache__DOT__dstate));
+    } else {
+        vlSelf->__PVT__ram_we = 0U;
+        vlSelf->__PVT__ram_be = 0xfU;
+        vlSelf->dbg_ram_addr = (0x1ffffffU & vlSelf->__PVT__board__DOT__i_dec);
+        vlSelf->dbg_ram_burst = (1U == (IData)(vlSymsp->TOP__tb_sdram__cpu.__PVT__cache__DOT__istate));
+    }
     vlSelf->__PVT__adapter__DOT__merged = ((((1U & 
-                                              ((~ (IData)(vlSelf->__PVT__board__DOT__grant_d)) 
+                                              ((~ (IData)(__PVT__board__DOT__grant_d)) 
                                                | ((IData)(vlSymsp->TOP__tb_sdram__cpu.__PVT__dmem_be) 
                                                   >> 3U)))
                                               ? (vlSymsp->TOP__tb_sdram__cpu__cpu.__PVT__store_word 
@@ -732,7 +759,7 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__3(Vtb_sdram_
                                             << 0x18U) 
                                            | ((0xff0000U 
                                                & (((1U 
-                                                    & ((~ (IData)(vlSelf->__PVT__board__DOT__grant_d)) 
+                                                    & ((~ (IData)(__PVT__board__DOT__grant_d)) 
                                                        | ((IData)(vlSymsp->TOP__tb_sdram__cpu.__PVT__dmem_be) 
                                                           >> 2U)))
                                                     ? 
@@ -744,7 +771,7 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__3(Vtb_sdram_
                                                   << 0x10U)) 
                                               | ((0xff00U 
                                                   & (((1U 
-                                                       & ((~ (IData)(vlSelf->__PVT__board__DOT__grant_d)) 
+                                                       & ((~ (IData)(__PVT__board__DOT__grant_d)) 
                                                           | ((IData)(vlSymsp->TOP__tb_sdram__cpu.__PVT__dmem_be) 
                                                              >> 1U)))
                                                        ? 
@@ -756,20 +783,12 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__3(Vtb_sdram_
                                                      << 8U)) 
                                                  | (0xffU 
                                                     & ((1U 
-                                                        & ((~ (IData)(vlSelf->__PVT__board__DOT__grant_d)) 
+                                                        & ((~ (IData)(__PVT__board__DOT__grant_d)) 
                                                            | (IData)(vlSymsp->TOP__tb_sdram__cpu.__PVT__dmem_be)))
                                                         ? vlSymsp->TOP__tb_sdram__cpu__cpu.__PVT__store_word
                                                         : vlSelf->__PVT__adapter__DOT__hold)))));
-    if (vlSelf->__PVT__board__DOT__grant_d) {
-        vlSelf->dbg_ram_addr = (0x1ffffffU & __PVT__board__DOT__d_dec);
-        vlSelf->dbg_ram_burst = (1U == (IData)(vlSymsp->TOP__tb_sdram__cpu.__PVT__cache__DOT__dstate));
-        vlSelf->board__DOT____VdfgTmp_hdb4dbddb__0 
-            = vlSelf->__PVT__board__DOT__d_wants_ram;
-    } else {
-        vlSelf->dbg_ram_addr = (0x1ffffffU & vlSelf->__PVT__board__DOT__i_dec);
-        vlSelf->dbg_ram_burst = (1U == (IData)(vlSymsp->TOP__tb_sdram__cpu.__PVT__cache__DOT__istate));
-        vlSelf->board__DOT____VdfgTmp_hdb4dbddb__0 = 0U;
-    }
+    vlSelf->board__DOT____VdfgTmp_hdb4dbddb__0 = ((IData)(__PVT__board__DOT__grant_d) 
+                                                  & (IData)(vlSelf->__PVT__board__DOT__d_wants_ram));
     vlSelf->__PVT__derr = ((IData)(vlSelf->board__DOT____VdfgTmp_h223955ac__0) 
                            | ((IData)(board__DOT____VdfgTmp_hab3cb56a__0) 
                               & (IData)(vlSymsp->TOP.io_err)));

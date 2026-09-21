@@ -41,7 +41,6 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_board_tb_board final : public VerilatedMo
     CData/*0:0*/ __PVT__board__DOT__grant_d;
     CData/*0:0*/ __PVT__board__DOT__d_wants_io;
     CData/*0:0*/ __PVT__board__DOT__i_wants_io;
-    CData/*0:0*/ board__DOT____VdfgTmp_h22b91ed1__0;
     CData/*0:0*/ board__DOT____VdfgTmp_hdb4dbddb__0;
     CData/*0:0*/ board__DOT____VdfgTmp_h223955ac__0;
     VL_OUT(ram_addr,24,0);

@@ -34,12 +34,18 @@ module sdram_mt48lc16m16a2 #(
     parameter BA_BITS   = 2,
     parameter ROW_BITS  = 13,
     parameter COL_BITS  = 9,
-    // Refresh interval to flag on, in clocks.  8192 rows / 64 ms is one
-    // refresh every 7.8125 us; at 50 MHz that is 390 clocks.  The
-    // controller allows itself to drift to twice that when busy, so the
-    // warning threshold is set above the drift and below anything that
-    // would actually lose data.
-    parameter REFRESH_WARN_CLKS = 16'd1200,
+    // Refresh interval to flag on, in clocks.  The alarm belongs to the
+    // controller being tested, not to the chip: it should sit above what
+    // that controller allows itself to drift to, and far below anything
+    // that would actually lose data.
+    //
+    // Retuned here from 1200 for the DataRover core's controller, which
+    // refreshes every 780 clocks nominally and forces one once it has
+    // drifted to twice that.  At 1200 the alarm fired on ordinary catch-up
+    // -- a worst gap of 1522 clocks, inside the controller's own 1560.
+    // Losing data needs a row to go 64 ms unrefreshed, which at 100 MHz is
+    // 6.4 million clocks, so there is a wide gap between the two.
+    parameter REFRESH_WARN_CLKS = 16'd1700,
     // Print at most this many distinct violation messages.
     parameter MAX_REPORTS = 20
 )(
