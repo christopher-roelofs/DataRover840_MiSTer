@@ -19,6 +19,8 @@
 #include <cstring>
 #include <cinttypes>
 #include <vector>
+#include <map>
+#include <algorithm>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/mman.h>
@@ -100,6 +102,7 @@ int main(int argc, char **argv) {
     const char *state_path = nullptr, *bus_path = nullptr, *rom_path = nullptr;
     uint64_t limit = 0;
     int clk_div = 1;
+    bool stub = false;
 
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "--state") && i + 1 < argc) state_path = argv[++i];
@@ -107,6 +110,10 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--rom") && i + 1 < argc) rom_path = argv[++i];
         else if (!strcmp(argv[i], "-n") && i + 1 < argc) limit = strtoull(argv[++i], nullptr, 0);
         else if (!strcmp(argv[i], "--div") && i + 1 < argc) clk_div = atoi(argv[++i]);
+        // Answer devices the way dr840_io_stub does instead of replaying the
+        // reference. The guest then goes wherever the hardware sends it,
+        // which is the only way to predict what the board is doing.
+        else if (!strcmp(argv[i], "--stub")) stub = true;
     }
     if (!state_path || !bus_path || !rom_path) {
         fprintf(stderr, "usage: Vtb_sdram --state F --bus F --rom F "
@@ -160,6 +167,7 @@ int main(int argc, char **argv) {
     dut->rst_n = 1;
 
     uint64_t idx = 0, ioidx = 0, cycles = 0;
+    std::map<uint32_t, uint64_t> pc_seen;
     int failures = 0, dbgn = 0;
     const uint64_t BUDGET = n_state * 200 + 100000;
 
@@ -174,7 +182,13 @@ int main(int argc, char **argv) {
         // The peripheral bus is in the core's clock domain: it answers on
         // the core's edges, not the memory's. Answering between them would
         // be an acknowledgement the core never sees.
-        if (dut->io_req && dut->dbg_cen) {
+        if (stub && dut->io_req && dut->dbg_cen) {
+            bool tx39 = (dut->io_addr >= 0x10C00000u) && (dut->io_addr < 0x10C00400u);
+            dut->io_rdata = tx39 ? 0u : 0xFFFFFFFFu;
+            dut->io_err   = 0;
+            dut->io_ack   = 1;
+            ioidx++;
+        } else if (!stub && dut->io_req && dut->dbg_cen) {
             if (ioidx >= IO.size()) {
                 // Near the end the pipeline holds instructions past the last
                 // retire; let them finish rather than call it a failure.
@@ -256,6 +270,17 @@ int main(int argc, char **argv) {
             dbgn++;
         }
 
+        if (dut->retire_valid && cen_now && stub) {
+            // Nothing to compare against: the reference saw real devices
+            // and this did not, so they part company at the first one.
+            // Record where it goes instead.
+            idx++;
+            pc_seen[dut->retire_pc]++;
+            if (idx <= 30)
+                printf("  %6" PRIu64 "  pc %08X  insn %08X\n",
+                       idx, dut->retire_pc, dut->retire_insn);
+            continue;
+        }
         if (dut->retire_valid && cen_now) {
             const state_rec &e = S[idx];
             bool bad = false;
@@ -298,6 +323,17 @@ int main(int argc, char **argv) {
            " core clocks (%.3f IPC at core rate, divider %d)\n",
            idx, n_state, ioidx, cycles, core_cycles,
            core_cycles ? (double)idx / (double)core_cycles : 0.0, clk_div);
+    if (stub) {
+        printf("\n%zu distinct addresses executed; the ones it spends its "
+               "time on:\n", pc_seen.size());
+        std::vector<std::pair<uint64_t,uint32_t> > top;
+        for (std::map<uint32_t,uint64_t>::iterator it = pc_seen.begin();
+             it != pc_seen.end(); ++it)
+            top.push_back(std::make_pair(it->second, it->first));
+        std::sort(top.rbegin(), top.rend());
+        for (size_t i = 0; i < top.size() && i < 12; i++)
+            printf("   pc %08X  %" PRIu64 " times\n", top[i].second, top[i].first);
+    }
     printf("sdram chip: %u read(s), %u write(s), %u refresh(es), "
            "worst refresh gap %u clk, %u violation(s)\n",
            dut->dbg_reads, dut->dbg_writes, dut->dbg_refreshes,
