@@ -1,0 +1,36 @@
+#!/bin/sh
+#
+# Put the built core and a ROM on the MiSTer and ask it to run them.
+#
+#   scripts/deploy [host]
+#
+# The core goes to /media/fat/_Console, which is where the menu looks. The
+# ROM goes beside it so the file browser opens on it.
+set -e
+cd "$(dirname "$0")/.."
+
+HOST=${1:-192.168.86.171}
+PASS=${MISTER_PASS:-1}
+RBF=output_files/DataRover840.rbf
+ROM=${ROM:-../magicrecomp/roms/Data Rover 840/DataRover-840-USA.image}
+
+[ -f "$RBF" ] || { echo "deploy: no $RBF -- build it first" >&2; exit 1; }
+[ -f "$ROM" ] || { echo "deploy: no ROM at $ROM" >&2; exit 1; }
+
+DEST=/media/fat/_Console
+NAME=DataRover840_$(date +%Y%m%d).rbf
+
+echo "deploy: $RBF -> $HOST:$DEST/$NAME"
+sshpass -p "$PASS" scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+    "$RBF" "root@$HOST:$DEST/$NAME"
+sshpass -p "$PASS" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+    "root@$HOST" "mkdir -p /media/fat/games/DataRover840"
+sshpass -p "$PASS" scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+    "$ROM" "root@$HOST:/media/fat/games/DataRover840/"
+
+echo "deploy: loading the core"
+sshpass -p "$PASS" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+    "root@$HOST" "echo load_core $DEST/$NAME > /dev/MiSTer_cmd" || \
+    echo "deploy: could not ask MiSTer to load it; pick it from the menu"
+
+echo "deploy: done. The ROM is in games/DataRover840; load it from the OSD."

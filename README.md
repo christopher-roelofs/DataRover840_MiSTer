@@ -241,6 +241,48 @@ image at all (the furthest access is its very last byte), and the ROM does
 not use mirroring to find its size -- it does not find it at all, it is a
 constant. A real modulo would put a 32-bit divide on the path to memory.
 
+## Building and running it
+
+```sh
+quartus_sh --flow compile DataRover840     # output_files/DataRover840.rbf
+scripts/deploy                             # copies core and ROM to the MiSTer
+```
+
+`scripts/deploy` puts the core in `_Console` and the ROM in
+`games/DataRover840`, then asks MiSTer to load it. The ROM is chosen from
+the OSD; it arrives over `ioctl` and is written into the SDRAM before the
+core leaves reset.
+
+The HPS sends bytes and the controller has no byte enables, so bytes are
+assembled into whole words first -- four times fewer transactions, and no
+read-modify-write per byte of a four megabyte image. `ioctl_wait` carries
+the back-pressure: the stream is faster than the SDRAM, and without it the
+writes that do not fit are simply dropped, leaving a ROM with holes in it
+that looks exactly like a CPU bug.
+
+### What you see
+
+**No peripheral exists yet**, so the guest can neither draw nor print. A
+build that runs and a build that is wedged would look identical, so the
+video is a debug display instead of the machine's own: eight 32-bit values
+in hex (`rtl/dr840_hud.sv`).
+
+| row | |
+|---|---|
+| 0 | the last retired PC |
+| 1 | the instruction at it |
+| 2 | instructions retired |
+| 3, 4 | instruction cache hits, misses |
+| 5, 6 | data cache hits, misses |
+| 7 | device reads attempted |
+
+Row 2 climbing means the core is fetching from SDRAM and executing. Row 0
+sitting still means it is in a loop -- which is what to expect while
+`rtl/dr840_io_stub.sv` is standing in for the peripherals: the ROM polls a
+register that will never change. The stub answers everything immediately so
+the machine keeps running rather than stalling on the first register it
+touches, and it is wrong on purpose.
+
 ## Clocking
 
 One clock, one domain, nothing to cross. The SDRAM runs at 95 MHz and the
@@ -395,9 +437,13 @@ sys/                 MiSTer framework
 
 ## Next
 
-1. ROM load over the HPS, and the MiSTer top level. The memory is in place
-   and the clocking is settled; what is missing is `emu.sv`, `hps_io`, and
-   writing the ROM into the SDRAM before the core leaves reset.
+1. The TX39 peripheral block, starting with UART A and the interrupt
+   controller. That is what turns the debug display into the machine's own
+   output: the framework already brings a UART out to the HPS, so the IDT
+   monitor banner would arrive over SSH.
+   Transmit-ready is a **level**, not an edge -- the reset path waits on it
+   without ever writing the holding register, and an edge there is why the
+   ROM would never get past reset.
 2. TX39 peripheral block, enough of it to reach the IDT monitor banner:
    BIU, interrupt controller, UART A, clock/power control.
 3. LCD controller to MiSTer video. 480x320 at 2 bpp, four pixels per byte,

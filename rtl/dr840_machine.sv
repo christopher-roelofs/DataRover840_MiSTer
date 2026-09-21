@@ -1,0 +1,170 @@
+//
+// dr840_machine.sv - the DataRover, as much of it as exists.
+//
+// One clock. The SDRAM and its controller run at it; the core and its
+// caches advance on every second edge, which is the 47.5 MHz they close at.
+// See the Clocking section of the README, and the multicycle constraints in
+// the .sdc -- without those the fitter has to close the core at the
+// memory's rate and cannot.
+//
+// While the HPS is writing the ROM into the SDRAM the loader owns the
+// memory port and the core is held in reset. It writes whole words, because
+// the controller has no byte enables and a byte at a time would be a
+// read-modify-write for every byte of a four megabyte image.
+//
+`default_nettype none
+
+module dr840_machine (
+    input  wire        clk,          // 95 MHz: SDRAM, and the core halved
+    input  wire        rst_n,
+
+    // ---- ROM load, from the HPS. Whole words, big-endian.
+    input  wire        load_en,      // the loader owns the memory
+    input  wire [24:0] load_addr,
+    input  wire [31:0] load_data,
+    input  wire        load_req,
+    output wire        load_ack,
+
+    // ---- SDRAM
+    output wire [12:0] SDRAM_A,
+    output wire [1:0]  SDRAM_BA,
+    output wire [15:0] SDRAM_DQ_O,
+    output wire        SDRAM_DQ_OE,
+    input  wire [15:0] SDRAM_DQ_I,
+    output wire        SDRAM_DQML,
+    output wire        SDRAM_DQMH,
+    output wire        SDRAM_nCS,
+    output wire        SDRAM_nWE,
+    output wire        SDRAM_nRAS,
+    output wire        SDRAM_nCAS,
+    output wire        SDRAM_CKE,
+    output wire        SDRAM_CLK,
+
+    // ---- what a debug display can show
+    output wire [31:0] obs_pc,
+    output wire [31:0] obs_insn,
+    output reg  [31:0] obs_retired,
+    output wire [31:0] obs_ihit,
+    output wire [31:0] obs_imiss,
+    output wire [31:0] obs_dhit,
+    output wire [31:0] obs_dmiss,
+    output wire [31:0] obs_io
+);
+
+    // The core's clock enable: every second edge of the memory's clock.
+    reg cdiv;
+    always @(posedge clk or negedge rst_n)
+        if (!rst_n) cdiv <= 1'b0; else cdiv <= ~cdiv;
+    wire cen = cdiv;
+
+    // The core is held in reset until the ROM is in place.
+    wire core_rst_n = rst_n & ~load_en;
+
+    wire [31:0] ia, ird, da, dwd, drd;
+    wire        ireq, ibur, iack, ierr, dreq, dbur, dwe, dack, derr;
+    wire [3:0]  dbe;
+    wire        retire_valid;
+
+    r3900_cached cpu (
+        .clk(clk), .cen(cen), .rst_n(core_rst_n),
+        .imem_addr(ia), .imem_req(ireq), .imem_burst(ibur),
+        .imem_ack(iack), .imem_rdata(ird), .imem_err(ierr),
+        .dmem_addr(da), .dmem_req(dreq), .dmem_burst(dbur), .dmem_we(dwe),
+        .dmem_be(dbe), .dmem_wdata(dwd), .dmem_ack(dack), .dmem_rdata(drd),
+        .dmem_err(derr),
+        .irq_in(6'd0),
+        .retire_valid(retire_valid), .retire_pc(obs_pc),
+        .retire_insn(obs_insn), .retire_next_pc(),
+        .ihit_count(obs_ihit), .imiss_count(obs_imiss),
+        .dhit_count(obs_dhit), .dmiss_count(obs_dmiss)
+    );
+
+    // Retired instructions, counted on the core's own edges: the retire
+    // pulse stands for a whole core period, so counting it per memory clock
+    // would count everything twice.
+    always @(posedge clk or negedge core_rst_n)
+        if (!core_rst_n)                obs_retired <= 32'd0;
+        else if (cen && retire_valid)   obs_retired <= obs_retired + 32'd1;
+
+    wire [24:0] bram_addr;
+    wire        bram_req, bram_burst, bram_we, bram_ack, bram_busy;
+    wire [3:0]  bram_be;
+    wire [31:0] bram_wdata, ram_rdata;
+
+    wire [31:0] io_addr, io_wdata, io_rdata;
+    wire        io_req, io_we, io_ack, io_err;
+    wire [3:0]  io_be;
+
+    dr840_mem board (
+        .clk(clk), .rst_n(core_rst_n),
+        .imem_addr(ia), .imem_req(ireq), .imem_burst(ibur),
+        .imem_ack(iack), .imem_rdata(ird), .imem_err(ierr),
+        .dmem_addr(da), .dmem_req(dreq), .dmem_burst(dbur), .dmem_we(dwe),
+        .dmem_be(dbe), .dmem_wdata(dwd), .dmem_ack(dack), .dmem_rdata(drd),
+        .dmem_err(derr),
+        .ram_addr(bram_addr), .ram_req(bram_req), .ram_burst(bram_burst),
+        .ram_we(bram_we), .ram_be(bram_be), .ram_wdata(bram_wdata),
+        .ram_ack(bram_ack), .ram_rdata(ram_rdata), .ram_busy(bram_busy),
+        .io_addr(io_addr), .io_req(io_req), .io_we(io_we), .io_be(io_be),
+        .io_wdata(io_wdata), .io_ack(io_ack), .io_rdata(io_rdata),
+        .io_err(io_err)
+    );
+
+    dr840_io_stub io (
+        .clk(clk), .rst_n(core_rst_n),
+        .io_addr(io_addr), .io_req(io_req), .io_we(io_we), .io_be(io_be),
+        .io_wdata(io_wdata), .io_ack(io_ack), .io_rdata(io_rdata),
+        .io_err(io_err), .io_count(obs_io)
+    );
+
+    // The loader takes the memory while it is running; the board has it
+    // otherwise. The core is in reset during a load, so the board is not
+    // asking for anything.
+    wire [24:0] ram_addr  = load_en ? load_addr  : bram_addr;
+    wire        ram_req   = load_en ? load_req   : bram_req;
+    wire        ram_burst = load_en ? 1'b0       : bram_burst;
+    wire        ram_we    = load_en ? 1'b1       : bram_we;
+    wire [3:0]  ram_be    = load_en ? 4'b1111    : bram_be;
+    wire [31:0] ram_wdata = load_en ? load_data  : bram_wdata;
+    wire        ram_ack, ram_busy;
+
+    assign bram_ack  = load_en ? 1'b0 : ram_ack;
+    assign bram_busy = ram_busy;
+    assign load_ack  = load_en ? ram_ack : 1'b0;
+
+    wire [26:1] ch1_addr, ch2_addr;
+    wire [63:0] ch1_dout;
+    wire [31:0] ch2_dout, ch2_din;
+    wire        ch1_req, ch1_ready, ch2_req, ch2_rnw, ch2_ready;
+
+    dr840_sdram adapter (
+        .clk(clk), .cen(load_en ? 1'b1 : cen), .rst_n(rst_n),
+        .ram_addr(ram_addr), .ram_req(ram_req), .ram_burst(ram_burst),
+        .ram_we(ram_we), .ram_be(ram_be), .ram_wdata(ram_wdata),
+        .ram_ack(ram_ack), .ram_rdata(ram_rdata), .ram_busy(ram_busy),
+        .dbg_start(), .dbg_start_addr(), .dbg_start_kind(), .dbg_state(),
+        .ch1_addr(ch1_addr), .ch1_dout(ch1_dout), .ch1_req(ch1_req),
+        .ch1_ready(ch1_ready),
+        .ch2_addr(ch2_addr), .ch2_dout(ch2_dout), .ch2_din(ch2_din),
+        .ch2_req(ch2_req), .ch2_rnw(ch2_rnw), .ch2_ready(ch2_ready)
+    );
+
+    sdram #(.CLK_MHZ(95)) ctl (
+        .init(~rst_n), .clk(clk),
+        .SDRAM_DQ_O(SDRAM_DQ_O), .SDRAM_DQ_OE(SDRAM_DQ_OE),
+        .SDRAM_DQ_I(SDRAM_DQ_I), .SDRAM_A(SDRAM_A),
+        .SDRAM_DQML(SDRAM_DQML), .SDRAM_DQMH(SDRAM_DQMH),
+        .SDRAM_BA(SDRAM_BA), .SDRAM_nCS(SDRAM_nCS), .SDRAM_nWE(SDRAM_nWE),
+        .SDRAM_nRAS(SDRAM_nRAS), .SDRAM_nCAS(SDRAM_nCAS),
+        .SDRAM_CKE(SDRAM_CKE), .SDRAM_CLK(SDRAM_CLK),
+        .ch1_addr(ch1_addr), .ch1_dout(ch1_dout), .ch1_din(16'd0),
+        .ch1_req(ch1_req), .ch1_rnw(1'b1), .ch1_ready(ch1_ready),
+        .ch2_addr(ch2_addr), .ch2_dout(ch2_dout), .ch2_din(ch2_din),
+        .ch2_req(ch2_req), .ch2_rnw(ch2_rnw), .ch2_ready(ch2_ready),
+        .ch3_addr(24'd0), .ch3_dout(), .ch3_din(16'd0),
+        .ch3_req(1'b0), .ch3_rnw(1'b1), .ch3_ready()
+    );
+
+endmodule
+
+`default_nettype wire

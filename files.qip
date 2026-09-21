@@ -1,0 +1,17 @@
+# The core. Order does not matter to Quartus; it is grouped the way the
+# README describes the machine.
+set_global_assignment -name SYSTEMVERILOG_FILE rtl/cpu/r3900.sv
+set_global_assignment -name SYSTEMVERILOG_FILE rtl/cpu/r3900_cache.sv
+
+set_global_assignment -name SYSTEMVERILOG_FILE rtl/board/dr840_mem.sv
+set_global_assignment -name SYSTEMVERILOG_FILE rtl/board/dr840_sdram.sv
+set_global_assignment -name SYSTEMVERILOG_FILE rtl/board/sdram.sv
+
+set_global_assignment -name SYSTEMVERILOG_FILE rtl/dr840_io_stub.sv
+set_global_assignment -name SYSTEMVERILOG_FILE rtl/dr840_hud.sv
+set_global_assignment -name SYSTEMVERILOG_FILE rtl/dr840_machine.sv
+set_global_assignment -name SYSTEMVERILOG_FILE rtl/emu.sv
+
+set_global_assignment -name QIP_FILE rtl/pll.qip
+
+set_global_assignment -name SDC_FILE DataRover840.sdc
