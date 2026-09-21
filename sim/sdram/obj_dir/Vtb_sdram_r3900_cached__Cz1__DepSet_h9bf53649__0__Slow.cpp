@@ -58,13 +58,6 @@ VL_ATTR_COLD void Vtb_sdram_r3900_cached__Cz1___stl_sequent__TOP__tb_sdram__cpu_
                                  ? ((0xfffffff0U & vlSelf->__PVT__cache__DOT__iline) 
                                     | ((IData)(vlSelf->__PVT__cache__DOT__icnt) 
                                        << 2U)) : vlSymsp->TOP__tb_sdram__cpu__cpu.__PVT__ibus_addr);
-    __PVT__cache__DOT__d_tag_match = ((IData)(vlSelf->__PVT__cache__DOT__d_idle) 
-                                      & ((vlSelf->__PVT__cache__DOT__dtagv_q 
-                                          >> 0x16U) 
-                                         & ((0x3fffffU 
-                                             & vlSelf->__PVT__cache__DOT__dtagv_q) 
-                                            == (vlSymsp->TOP__tb_sdram__cpu__cpu.__PVT__dbus_addr 
-                                                >> 0xaU))));
     vlSelf->__PVT__dmem_we = ((1U != (IData)(vlSelf->__PVT__cache__DOT__dstate)) 
                               & (IData)(vlSymsp->TOP__tb_sdram__cpu__cpu.__PVT__dbus_we));
     vlSelf->cache__DOT____VdfgTmp_ha01f3fd2__0 = ((IData)(vlSymsp->TOP__tb_sdram__cpu__cpu.__PVT__me_needs_mem) 
@@ -74,12 +67,29 @@ VL_ATTR_COLD void Vtb_sdram_r3900_cached__Cz1___stl_sequent__TOP__tb_sdram__cpu_
                                          & ((IData)(vlSelf->__PVT__cache__DOT__d_idle) 
                                             & ((~ (IData)(vlSymsp->TOP__tb_sdram__cpu__cpu.__PVT__dbus_cached)) 
                                                | (IData)(vlSymsp->TOP__tb_sdram__cpu__cpu.__PVT__dbus_we))));
+    __PVT__cache__DOT__d_tag_match = ((IData)(vlSelf->__PVT__cache__DOT__d_idle) 
+                                      & ((vlSelf->__PVT__cache__DOT__dtagv_q 
+                                          >> 0x16U) 
+                                         & ((0x3fffffU 
+                                             & vlSelf->__PVT__cache__DOT__dtagv_q) 
+                                            == (vlSymsp->TOP__tb_sdram__cpu__cpu.__PVT__dbus_addr 
+                                                >> 0xaU))));
+    vlSelf->__PVT__dmem_req = ((1U == (IData)(vlSelf->__PVT__cache__DOT__dstate)) 
+                               | (IData)(vlSelf->__PVT__cache__DOT__d_thru));
     vlSelf->__PVT__cache__DOT__d_store_hit = ((IData)(vlSymsp->TOP__tb_sdram__cpu__cpu.__PVT__me_needs_mem) 
                                               & ((IData)(vlSymsp->TOP__tb_sdram__cpu__cpu.__PVT__dbus_we) 
                                                  & ((IData)(vlSymsp->TOP__tb_sdram__cpu__cpu.__PVT__dbus_cached) 
                                                     & (IData)(__PVT__cache__DOT__d_tag_match))));
     vlSelf->__PVT__cache__DOT__d_read_hit = ((IData)(vlSelf->cache__DOT____VdfgTmp_ha01f3fd2__0) 
                                              & (IData)(__PVT__cache__DOT__d_tag_match));
-    vlSelf->__PVT__dmem_req = ((1U == (IData)(vlSelf->__PVT__cache__DOT__dstate)) 
-                               | (IData)(vlSelf->__PVT__cache__DOT__d_thru));
+}
+
+VL_ATTR_COLD void Vtb_sdram_r3900_cached__Cz1___stl_sequent__TOP__tb_sdram__cpu__2(Vtb_sdram_r3900_cached__Cz1* vlSelf) {
+    if (false && vlSelf) {}  // Prevent unused
+    Vtb_sdram__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
+    VL_DEBUG_IF(VL_DBG_MSGF("+        Vtb_sdram_r3900_cached__Cz1___stl_sequent__TOP__tb_sdram__cpu__2\n"); );
+    // Body
+    vlSelf->__PVT__drd = ((IData)(vlSelf->__PVT__cache__DOT__d_read_hit)
+                           ? vlSelf->__PVT__cache__DOT__dram_eff
+                           : vlSymsp->TOP__tb_sdram.__PVT__drd);
 }

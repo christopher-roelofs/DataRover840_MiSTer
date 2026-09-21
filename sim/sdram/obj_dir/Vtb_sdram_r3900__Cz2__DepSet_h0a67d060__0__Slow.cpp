@@ -164,6 +164,7 @@ VL_ATTR_COLD void Vtb_sdram_r3900__Cz2___ctor_var_reset(Vtb_sdram_r3900__Cz2* vl
     vlSelf->__PVT__me_be = VL_RAND_RESET_I(4);
     vlSelf->__PVT__store_word = VL_RAND_RESET_I(32);
     vlSelf->__PVT__load_value = VL_RAND_RESET_I(32);
+    vlSelf->__PVT__me_dbe = VL_RAND_RESET_I(1);
     vlSelf->__PVT__me_exc_out_v = VL_RAND_RESET_I(1);
     vlSelf->__PVT__me_exc_out_code = VL_RAND_RESET_I(5);
     vlSelf->__PVT__me_exc_out_bad = VL_RAND_RESET_I(32);

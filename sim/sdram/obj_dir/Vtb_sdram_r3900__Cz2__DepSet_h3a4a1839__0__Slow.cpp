@@ -220,6 +220,16 @@ VL_ATTR_COLD void Vtb_sdram_r3900__Cz2___stl_sequent__TOP__tb_sdram__cpu__cpu__0
         vlSelf->__PVT__store_word = vlSelf->__PVT__me_rt;
         vlSelf->__PVT__me_be = 0xfU;
     }
+    vlSelf->__PVT__me_last_beat = (1U & ((~ ([&]() {
+                        vlSelf->__Vfunc_is_rmw__75__i 
+                            = vlSelf->__PVT__me_insn;
+                        vlSelf->__Vfunc_is_rmw__75__Vfuncout 
+                            = ((0x2aU == (vlSelf->__Vfunc_is_rmw__75__i 
+                                          >> 0x1aU)) 
+                               | (0x2eU == (vlSelf->__Vfunc_is_rmw__75__i 
+                                            >> 0x1aU)));
+                    }(), (IData)(vlSelf->__Vfunc_is_rmw__75__Vfuncout))) 
+                                         | (IData)(vlSelf->__PVT__me_phase)));
     vlSelf->__VdfgExtracted_h84f92045__0 = ((8U == 
                                              (0x3fU 
                                               & vlSelf->__PVT__id_insn)) 
@@ -227,7 +237,40 @@ VL_ATTR_COLD void Vtb_sdram_r3900__Cz2___stl_sequent__TOP__tb_sdram__cpu__cpu__0
                                                (0x3fU 
                                                 & vlSelf->__PVT__id_insn)));
     vlSelf->__PVT__cause_live = ((0xffff03ffU & vlSelf->__PVT__cp0
-                                  [0xdU]) | VL_SHIFTL_III(32,32,32, (IData)(vlSymsp->TOP.irq_in), 0xaU));
+                                  [0xdU]) | VL_SHIFTL_III(32,32,32, 
+                                                          ((IData)(vlSymsp->TOP.tx39_en)
+                                                            ? 
+                                                           (((IData)(
+                                                                     (0U 
+                                                                      != 
+                                                                      (vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__icu_status
+                                                                       [5U] 
+                                                                       & vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__icu_enable
+                                                                       [5U]))) 
+                                                             << 2U) 
+                                                            | (0U 
+                                                               != 
+                                                               ((vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__icu_status
+                                                                 [0U] 
+                                                                 & vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__icu_enable
+                                                                 [0U]) 
+                                                                | ((vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__icu_status
+                                                                    [1U] 
+                                                                    & vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__icu_enable
+                                                                    [1U]) 
+                                                                   | ((vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__icu_status
+                                                                       [2U] 
+                                                                       & vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__icu_enable
+                                                                       [2U]) 
+                                                                      | ((vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__icu_status
+                                                                          [3U] 
+                                                                          & vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__icu_enable
+                                                                          [3U]) 
+                                                                         | (vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__icu_status
+                                                                            [4U] 
+                                                                            & vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__icu_enable
+                                                                            [4U])))))))
+                                                            : (IData)(vlSymsp->TOP.irq_in)), 0xaU));
     __PVT__ex_writes = ((IData)(vlSelf->__PVT__ex_v) 
                         & ([&]() {
                 vlSelf->__Vfunc_writes_gpr__5__i = vlSelf->__PVT__ex_insn;
@@ -591,19 +634,13 @@ VL_ATTR_COLD void Vtb_sdram_r3900__Cz2___stl_sequent__TOP__tb_sdram__cpu__cpu__0
                                                                      || (1U 
                                                                          & vlSelf->__Vfunc_writes_gpr__5__i))))))))))))))));
             }(), (IData)(vlSelf->__Vfunc_writes_gpr__5__Vfuncout)));
-    __Vfunc_phys__0__va = vlSelf->__PVT__fpc;
-    __Vfunc_phys__0__Vfuncout = (((0x80000000U <= __Vfunc_phys__0__va) 
-                                  & (0xc0000000U > __Vfunc_phys__0__va))
-                                  ? (0x1fffffffU & __Vfunc_phys__0__va)
-                                  : __Vfunc_phys__0__va);
-    vlSelf->__PVT__ibus_addr = __Vfunc_phys__0__Vfuncout;
-    __Vfunc_cacheable__1__va = vlSelf->__PVT__fpc;
-    __Vfunc_cacheable__1__Vfuncout = (0xa0000000U > __Vfunc_cacheable__1__va);
-    vlSelf->__PVT__ibus_cached = __Vfunc_cacheable__1__Vfuncout;
     vlSelf->__PVT__ex_simm = (((- (IData)((1U & (vlSelf->__PVT__ex_insn 
                                                  >> 0xfU)))) 
                                << 0x10U) | (0xffffU 
                                             & vlSelf->__PVT__ex_insn));
+    __Vfunc_cacheable__1__va = vlSelf->__PVT__fpc;
+    __Vfunc_cacheable__1__Vfuncout = (0xa0000000U > __Vfunc_cacheable__1__va);
+    vlSelf->__PVT__ibus_cached = __Vfunc_cacheable__1__Vfuncout;
     vlSelf->__PVT__cp0_write_inflight = (((((IData)(vlSelf->__PVT__ex_v) 
                                             & ([&]() {
                             vlSelf->__Vfunc_touches_cp0__70__i 
@@ -815,16 +852,6 @@ VL_ATTR_COLD void Vtb_sdram_r3900__Cz2___stl_sequent__TOP__tb_sdram__cpu__cpu__0
                                                         (__Vfunc_dest_reg__27__i 
                                                          >> 0xbU)))))))));
     vlSelf->__PVT__ex_wa = __Vfunc_dest_reg__27__Vfuncout;
-    vlSelf->__PVT__me_last_beat = (1U & ((~ ([&]() {
-                        vlSelf->__Vfunc_is_rmw__75__i 
-                            = vlSelf->__PVT__me_insn;
-                        vlSelf->__Vfunc_is_rmw__75__Vfuncout 
-                            = ((0x2aU == (vlSelf->__Vfunc_is_rmw__75__i 
-                                          >> 0x1aU)) 
-                               | (0x2eU == (vlSelf->__Vfunc_is_rmw__75__i 
-                                            >> 0x1aU)));
-                    }(), (IData)(vlSelf->__Vfunc_is_rmw__75__Vfuncout))) 
-                                         | (IData)(vlSelf->__PVT__me_phase)));
     __PVT__id_needs_rs = ((IData)(vlSelf->__PVT__id_v) 
                           & ([&]() {
                 vlSelf->__Vfunc_reads_rs__31__i = vlSelf->__PVT__id_insn;
@@ -1509,14 +1536,12 @@ VL_ATTR_COLD void Vtb_sdram_r3900__Cz2___stl_sequent__TOP__tb_sdram__cpu__cpu__0
                                                         (__Vfunc_dest_reg__28__i 
                                                          >> 0xbU)))))))));
     vlSelf->__PVT__me_wa = __Vfunc_dest_reg__28__Vfuncout;
-    vlSelf->__PVT__dbus_addr = (0xfffffffcU & ([&]() {
-                vlSelf->__Vfunc_phys__78__va = vlSelf->__PVT__me_va;
-                vlSelf->__Vfunc_phys__78__Vfuncout 
-                    = (((0x80000000U <= vlSelf->__Vfunc_phys__78__va) 
-                        & (0xc0000000U > vlSelf->__Vfunc_phys__78__va))
-                        ? (0x1fffffffU & vlSelf->__Vfunc_phys__78__va)
-                        : vlSelf->__Vfunc_phys__78__va);
-            }(), vlSelf->__Vfunc_phys__78__Vfuncout));
+    __Vfunc_phys__0__va = vlSelf->__PVT__fpc;
+    __Vfunc_phys__0__Vfuncout = (((0x80000000U <= __Vfunc_phys__0__va) 
+                                  & (0xc0000000U > __Vfunc_phys__0__va))
+                                  ? (0x1fffffffU & __Vfunc_phys__0__va)
+                                  : __Vfunc_phys__0__va);
+    vlSelf->__PVT__ibus_addr = __Vfunc_phys__0__Vfuncout;
     __Vfunc_cacheable__79__va = vlSelf->__PVT__me_va;
     __Vfunc_cacheable__79__Vfuncout = (0xa0000000U 
                                        > __Vfunc_cacheable__79__va);
@@ -1599,6 +1624,14 @@ VL_ATTR_COLD void Vtb_sdram_r3900__Cz2___stl_sequent__TOP__tb_sdram__cpu__cpu__0
                             }(), (IData)(vlSelf->__Vfunc_is_store__74__Vfuncout)));
                 }(), (IData)(vlSelf->__Vfunc_is_mem__72__Vfuncout))) 
                                    & (~ (IData)(vlSelf->__PVT__me_exc_v)));
+    vlSelf->__PVT__dbus_addr = (0xfffffffcU & ([&]() {
+                vlSelf->__Vfunc_phys__78__va = vlSelf->__PVT__me_va;
+                vlSelf->__Vfunc_phys__78__Vfuncout 
+                    = (((0x80000000U <= vlSelf->__Vfunc_phys__78__va) 
+                        & (0xc0000000U > vlSelf->__Vfunc_phys__78__va))
+                        ? (0x1fffffffU & vlSelf->__Vfunc_phys__78__va)
+                        : vlSelf->__Vfunc_phys__78__va);
+            }(), vlSelf->__Vfunc_phys__78__Vfuncout));
     vlSelf->__PVT__id_take_irq = ((IData)(vlSelf->__PVT__id_v) 
                                   & ((~ (IData)(vlSelf->__PVT__id_exc_v)) 
                                      & (vlSelf->__PVT__cp0

@@ -15,6 +15,12 @@
 //   row 5  data cache hits
 //   row 6  data cache misses
 //   row 7  device reads attempted
+//   row 8  ROM words written into the SDRAM
+//   row 9  1 once a ROM has been loaded, 0 before
+//
+// Row 8 is the one to look at first. Zero there means no ROM arrived, and
+// the core is held in reset rather than running forward through blank
+// memory -- which it used to do, and which looked exactly like working.
 //
 // Row 2 climbing means the core is fetching from SDRAM and executing. Row 0
 // sitting still means it is in a loop, which is what to expect while the
@@ -37,7 +43,7 @@ module dr840_hud (
     output reg  [7:0]  g,
     output reg  [7:0]  b,
 
-    input  wire [31:0] v0, v1, v2, v3, v4, v5, v6, v7
+    input  wire [31:0] v0, v1, v2, v3, v4, v5, v6, v7, v8, v9
 );
     localparam H_ACT = 640, H_FP = 16, H_SY = 96, H_BP = 48;
     localparam V_ACT = 480, V_FP = 10, V_SY = 2,  V_BP = 33;
@@ -69,17 +75,18 @@ module dr840_hud (
 
     wire [9:0] rx = hc - X0;
     wire [9:0] ry = vc - Y0;
-    wire in_box = (hc >= X0) && (rx < CELL * 8) && (vc >= Y0) && (ry < CELL * 8);
+    wire in_box = (hc >= X0) && (rx < CELL * 8) && (vc >= Y0) && (ry < CELL * 10);
 
     wire [2:0] col  = rx[7:5];     // which digit, 0 leftmost
-    wire [2:0] row  = ry[7:5];     // which value
+    wire [3:0] row  = ry[8:5];     // which value
     wire [2:0] gx   = rx[4:2];     // pixel within the glyph
     wire [2:0] gy   = ry[4:2];
 
     reg [31:0] val;
     always @(*) case (row)
-        3'd0: val = v0;  3'd1: val = v1;  3'd2: val = v2;  3'd3: val = v3;
-        3'd4: val = v4;  3'd5: val = v5;  3'd6: val = v6;  default: val = v7;
+        4'd0: val = v0;  4'd1: val = v1;  4'd2: val = v2;  4'd3: val = v3;
+        4'd4: val = v4;  4'd5: val = v5;  4'd6: val = v6;  4'd7: val = v7;
+        4'd8: val = v8;  default: val = v9;
     endcase
 
     // Leftmost digit is the most significant.

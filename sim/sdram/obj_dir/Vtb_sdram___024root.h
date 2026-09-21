@@ -39,10 +39,21 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_sdram___024root final : public VerilatedM
     VL_OUT8(dbg_start_kind,1,0);
     VL_OUT8(dbg_state,3,0);
     VL_OUT8(dbg_cen,0,0);
+    VL_IN8(tx39_en,0,0);
+    VL_OUT8(dbg_tx_stb,0,0);
+    VL_OUT8(dbg_tx_data,7,0);
+    CData/*0:0*/ __Vtrigprevexpr___TOP__tb_sdram__cpu__cpu____PVT__adv_mem__0;
+    CData/*0:0*/ __Vtrigprevexpr___TOP__tb_sdram__cpu__cpu____PVT__me_dbe__0;
+    CData/*0:0*/ __VstlDidInit;
     CData/*0:0*/ __VstlFirstIteration;
+    CData/*0:0*/ __Vtrigprevexpr___TOP__tb_sdram__cpu__cpu____PVT__me_dbe__1;
+    CData/*0:0*/ __VicoDidInit;
     CData/*0:0*/ __VicoFirstIteration;
+    CData/*0:0*/ __Vtrigprevexpr___TOP__tb_sdram__cpu__cpu____PVT__adv_mem__1;
+    CData/*0:0*/ __Vtrigprevexpr___TOP__tb_sdram__cpu__cpu____PVT__me_dbe__2;
     CData/*0:0*/ __Vtrigprevexpr___TOP__clk__0;
     CData/*0:0*/ __Vtrigprevexpr___TOP__rst_n__0;
+    CData/*0:0*/ __VactDidInit;
     CData/*0:0*/ __VactContinue;
     VL_OUT16(dbg_max_refresh_gap,15,0);
     VL_OUT16(dbg_violations,15,0);
@@ -67,11 +78,12 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_sdram___024root final : public VerilatedM
     VL_OUT(dbg_last_index,31,0);
     VL_OUT(dbg_ch2_addr,26,1);
     VL_OUT(dbg_start_addr,24,0);
+    VL_OUT(dbg_tx_bytes,31,0);
     IData/*31:0*/ __VactIterCount;
-    VlTriggerVec<1> __VstlTriggered;
-    VlTriggerVec<1> __VicoTriggered;
-    VlTriggerVec<2> __VactTriggered;
-    VlTriggerVec<2> __VnbaTriggered;
+    VlTriggerVec<3> __VstlTriggered;
+    VlTriggerVec<2> __VicoTriggered;
+    VlTriggerVec<4> __VactTriggered;
+    VlTriggerVec<4> __VnbaTriggered;
 
     // INTERNAL VARIABLES
     Vtb_sdram__Syms* const vlSymsp;

@@ -25,8 +25,11 @@ sshpass -p "$PASS" scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/nu
     "$RBF" "root@$HOST:$DEST/$NAME"
 sshpass -p "$PASS" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
     "root@$HOST" "mkdir -p /media/fat/games/DataRover840"
+# Named .rom rather than .image: MiSTer parses the core's extension filter
+# in three-character chunks, so anything longer matches nothing and the file
+# browser comes up empty.
 sshpass -p "$PASS" scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-    "$ROM" "root@$HOST:/media/fat/games/DataRover840/"
+    "$ROM" "root@$HOST:/media/fat/games/DataRover840/$(basename "$ROM" .image).rom"
 
 echo "deploy: loading the core"
 sshpass -p "$PASS" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \

@@ -49,6 +49,9 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_sdram VL_NOT_FINAL : public VerilatedMode
     VL_OUT8(&dbg_start_kind,1,0);
     VL_OUT8(&dbg_state,3,0);
     VL_OUT8(&dbg_cen,0,0);
+    VL_IN8(&tx39_en,0,0);
+    VL_OUT8(&dbg_tx_stb,0,0);
+    VL_OUT8(&dbg_tx_data,7,0);
     VL_OUT16(&dbg_max_refresh_gap,15,0);
     VL_OUT16(&dbg_violations,15,0);
     VL_OUT16(&dbg_last_col,15,0);
@@ -72,6 +75,7 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_sdram VL_NOT_FINAL : public VerilatedMode
     VL_OUT(&dbg_last_index,31,0);
     VL_OUT(&dbg_ch2_addr,26,1);
     VL_OUT(&dbg_start_addr,24,0);
+    VL_OUT(&dbg_tx_bytes,31,0);
 
     // CELLS
     // Public to allow access to /* verilator public */ items.

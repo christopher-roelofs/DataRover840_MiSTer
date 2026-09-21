@@ -165,7 +165,11 @@ assign VIDEO_ARY = 3;
 localparam CONF_STR = {
     "DataRover840;;",
     "-;",
-    "F1,IMAGE,Load DataRover ROM;",
+    // MiSTer parses this extension field in three-character chunks, so a
+    // longer one silently becomes two filters that match nothing. The
+    // device's own images are named .image; .ima is what three characters
+    // of that actually is, and .rom is what anyone would reach for.
+    "F1,ROMIMABIN,Load DataRover ROM;",
     "-;",
     "T[0],Reset;",
     "R[0],Reset and close OSD;",
@@ -217,13 +221,26 @@ reg  [31:0] load_data;
 reg         load_req, load_busy, dl_d;
 wire        load_ack;
 
+// How much ROM has actually been written, and whether any has. Without
+// this the core starts on whatever the SDRAM powered up holding -- zeroes,
+// which decode as NOP, so it runs forward through blank memory for ever.
+// On the display that looks exactly like a working machine: the pc climbs
+// and the retired count climbs. It is worth being able to tell those apart.
+reg [31:0] rom_words;
+reg        rom_ok;
+
 always @(posedge clk_sys or negedge rst_n) begin
     if (!rst_n) begin
         load_req <= 0; load_busy <= 0; dl_d <= 0;
+        rom_words <= 0; rom_ok <= 0;
     end else begin
         dl_d <= ioctl_download;
         if (load_busy) begin
-            if (load_ack) begin load_req <= 0; load_busy <= 0; end
+            if (load_ack) begin
+                load_req  <= 0;
+                load_busy <= 0;
+                rom_words <= rom_words + 32'd1;
+            end
         end else if (ioctl_download && ioctl_wr) begin
             case (ioctl_addr[1:0])
             2'd0: word_buf[31:24] <= ioctl_dout;
@@ -244,6 +261,9 @@ always @(posedge clk_sys or negedge rst_n) begin
             load_req  <= 1'b1;
             load_busy <= 1'b1;
         end
+        // A download that wrote something is a ROM. Latched, so a later
+        // reset from the OSD does not throw it away.
+        if (dl_d && !ioctl_download && (rom_words != 0)) rom_ok <= 1'b1;
     end
 end
 
@@ -261,7 +281,9 @@ assign sdram_dq_i = SDRAM_DQ;
 
 dr840_machine machine (
     .clk(clk_sys), .rst_n(rst_n),
-    .load_en(ioctl_download | load_busy),
+    // Held in reset until there is a ROM to run. The loader owns the
+    // memory while it is arriving, and before that there is nothing to do.
+    .load_en(ioctl_download | load_busy | ~rom_ok),
     .load_addr(load_addr), .load_data(load_data),
     .load_req(load_req), .load_ack(load_ack),
     .SDRAM_A(SDRAM_A), .SDRAM_BA(SDRAM_BA),
@@ -283,7 +305,8 @@ dr840_hud hud (
     .ce_pix(CE_PIXEL), .hs(VGA_HS), .vs(VGA_VS), .de(VGA_DE),
     .r(VGA_R), .g(VGA_G), .b(VGA_B),
     .v0(obs_pc), .v1(obs_insn), .v2(obs_retired), .v3(obs_ihit),
-    .v4(obs_imiss), .v5(obs_dhit), .v6(obs_dmiss), .v7(obs_io)
+    .v4(obs_imiss), .v5(obs_dhit), .v6(obs_dmiss), .v7(obs_io),
+    .v8(rom_words), .v9({31'd0, rom_ok})
 );
 
 endmodule

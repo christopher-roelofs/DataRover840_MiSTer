@@ -23,20 +23,15 @@ bool Vtb_sdram___024root___eval_phase__ico(Vtb_sdram___024root* vlSelf) {
     return (__VicoExecute);
 }
 
-void Vtb_sdram___024root___eval_act(Vtb_sdram___024root* vlSelf) {
-    if (false && vlSelf) {}  // Prevent unused
-    Vtb_sdram__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
-    VL_DEBUG_IF(VL_DBG_MSGF("+    Vtb_sdram___024root___eval_act\n"); );
-}
-
 void Vtb_sdram___024root___eval_triggers__act(Vtb_sdram___024root* vlSelf);
+void Vtb_sdram___024root___eval_act(Vtb_sdram___024root* vlSelf);
 
 bool Vtb_sdram___024root___eval_phase__act(Vtb_sdram___024root* vlSelf) {
     if (false && vlSelf) {}  // Prevent unused
     Vtb_sdram__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
     VL_DEBUG_IF(VL_DBG_MSGF("+    Vtb_sdram___024root___eval_phase__act\n"); );
     // Init
-    VlTriggerVec<2> __VpreTriggered;
+    VlTriggerVec<4> __VpreTriggered;
     CData/*0:0*/ __VactExecute;
     // Body
     Vtb_sdram___024root___eval_triggers__act(vlSelf);
@@ -152,5 +147,7 @@ void Vtb_sdram___024root___eval_debug_assertions(Vtb_sdram___024root* vlSelf) {
         Verilated::overWidthError("io_err");}
     if (VL_UNLIKELY((vlSelf->irq_in & 0xc0U))) {
         Verilated::overWidthError("irq_in");}
+    if (VL_UNLIKELY((vlSelf->tx39_en & 0xfeU))) {
+        Verilated::overWidthError("tx39_en");}
 }
 #endif  // VL_DEBUG

@@ -64,7 +64,13 @@ module tb_sdram (
     output wire [24:0] dbg_start_addr,
     output wire [1:0]  dbg_start_kind,
     output wire [3:0]  dbg_state,
-    output wire        dbg_cen
+    output wire        dbg_cen,
+    // The TX39 block answers the peripheral bus when this is set, and the
+    // testbench does when it is not.
+    input  wire        tx39_en,
+    output wire        dbg_tx_stb,
+    output wire [7:0]  dbg_tx_data,
+    output wire [31:0] dbg_tx_bytes
 );
     // The core's clock enable, from the same clock the memory uses.
     reg [7:0] cdiv;
@@ -86,7 +92,7 @@ module tb_sdram (
         .imem_ack(iack), .imem_rdata(ird), .imem_err(ierr),
         .dmem_addr(da), .dmem_req(dreq), .dmem_burst(dbur), .dmem_we(dwe),
         .dmem_be(dbe), .dmem_wdata(dwd), .dmem_ack(dack), .dmem_rdata(drd),
-        .dmem_err(derr), .irq_in(irq_in),
+        .dmem_err(derr), .irq_in(tx39_en ? t_irq : irq_in),
         .retire_valid(retire_valid), .retire_pc(retire_pc),
         .retire_insn(retire_insn), .retire_next_pc(retire_next_pc),
         .ihit_count(ihit_count), .imiss_count(imiss_count),
@@ -110,9 +116,27 @@ module tb_sdram (
         .ram_we(ram_we), .ram_be(ram_be), .ram_wdata(ram_wdata),
         .ram_ack(ram_ack), .ram_rdata(ram_rdata), .ram_busy(ram_busy),
         .io_addr(io_addr), .io_req(io_req), .io_we(io_we), .io_be(io_be),
-        .io_wdata(io_wdata), .io_ack(io_ack), .io_rdata(io_rdata),
-        .io_err(io_err)
+        .io_wdata(io_wdata), .io_ack(io_ack_mux), .io_rdata(io_rdata_mux),
+        .io_err(io_err_mux)
     );
+
+    wire        t_ack, t_err;
+    wire [31:0] t_rdata;
+    wire [5:0]  t_irq;
+
+    dr840_tx39 #(.CLK_HZ(92_000_000)) tx39 (
+        .clk(clk), .cen(cen), .rst_n(rst_n),
+        .io_addr(io_addr), .io_req(io_req & tx39_en), .io_we(io_we),
+        .io_be(io_be), .io_wdata(io_wdata),
+        .io_ack(t_ack), .io_rdata(t_rdata), .io_err(t_err),
+        .uart_txd(), .uart_rxd(1'b1), .irq_out(t_irq),
+        .dbg_tx_bytes(dbg_tx_bytes), .dbg_io_reads(),
+        .dbg_tx_stb(dbg_tx_stb), .dbg_tx_data(dbg_tx_data)
+    );
+
+    wire        io_ack_mux   = tx39_en ? t_ack   : io_ack;
+    wire [31:0] io_rdata_mux = tx39_en ? t_rdata : io_rdata;
+    wire        io_err_mux   = tx39_en ? t_err   : io_err;
 
     wire [26:1] ch1_addr, ch2_addr;
     wire [63:0] ch1_dout;

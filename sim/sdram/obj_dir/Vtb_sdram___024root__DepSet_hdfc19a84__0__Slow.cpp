@@ -55,6 +55,12 @@ VL_ATTR_COLD void Vtb_sdram___024root___dump_triggers__stl(Vtb_sdram___024root* 
     if ((1ULL & vlSelf->__VstlTriggered.word(0U))) {
         VL_DBG_MSGF("         'stl' region trigger index 0 is active: Internal 'stl' trigger - first iteration\n");
     }
+    if ((2ULL & vlSelf->__VstlTriggered.word(0U))) {
+        VL_DBG_MSGF("         'stl' region trigger index 1 is active: @([hybrid] tb_sdram.cpu.cpu.adv_mem)\n");
+    }
+    if ((4ULL & vlSelf->__VstlTriggered.word(0U))) {
+        VL_DBG_MSGF("         'stl' region trigger index 2 is active: @([hybrid] tb_sdram.cpu.cpu.me_dbe)\n");
+    }
 }
 #endif  // VL_DEBUG
 
@@ -88,6 +94,9 @@ VL_ATTR_COLD void Vtb_sdram___024root___dump_triggers__ico(Vtb_sdram___024root* 
     if ((1ULL & vlSelf->__VicoTriggered.word(0U))) {
         VL_DBG_MSGF("         'ico' region trigger index 0 is active: Internal 'ico' trigger - first iteration\n");
     }
+    if ((2ULL & vlSelf->__VicoTriggered.word(0U))) {
+        VL_DBG_MSGF("         'ico' region trigger index 1 is active: @([hybrid] tb_sdram.cpu.cpu.me_dbe)\n");
+    }
 }
 #endif  // VL_DEBUG
 
@@ -101,10 +110,16 @@ VL_ATTR_COLD void Vtb_sdram___024root___dump_triggers__act(Vtb_sdram___024root* 
         VL_DBG_MSGF("         No triggers active\n");
     }
     if ((1ULL & vlSelf->__VactTriggered.word(0U))) {
-        VL_DBG_MSGF("         'act' region trigger index 0 is active: @(posedge clk or negedge rst_n)\n");
+        VL_DBG_MSGF("         'act' region trigger index 0 is active: @([hybrid] tb_sdram.cpu.cpu.adv_mem)\n");
     }
     if ((2ULL & vlSelf->__VactTriggered.word(0U))) {
-        VL_DBG_MSGF("         'act' region trigger index 1 is active: @(posedge clk)\n");
+        VL_DBG_MSGF("         'act' region trigger index 1 is active: @([hybrid] tb_sdram.cpu.cpu.me_dbe)\n");
+    }
+    if ((4ULL & vlSelf->__VactTriggered.word(0U))) {
+        VL_DBG_MSGF("         'act' region trigger index 2 is active: @(posedge clk or negedge rst_n)\n");
+    }
+    if ((8ULL & vlSelf->__VactTriggered.word(0U))) {
+        VL_DBG_MSGF("         'act' region trigger index 3 is active: @(posedge clk)\n");
     }
 }
 #endif  // VL_DEBUG
@@ -119,10 +134,16 @@ VL_ATTR_COLD void Vtb_sdram___024root___dump_triggers__nba(Vtb_sdram___024root* 
         VL_DBG_MSGF("         No triggers active\n");
     }
     if ((1ULL & vlSelf->__VnbaTriggered.word(0U))) {
-        VL_DBG_MSGF("         'nba' region trigger index 0 is active: @(posedge clk or negedge rst_n)\n");
+        VL_DBG_MSGF("         'nba' region trigger index 0 is active: @([hybrid] tb_sdram.cpu.cpu.adv_mem)\n");
     }
     if ((2ULL & vlSelf->__VnbaTriggered.word(0U))) {
-        VL_DBG_MSGF("         'nba' region trigger index 1 is active: @(posedge clk)\n");
+        VL_DBG_MSGF("         'nba' region trigger index 1 is active: @([hybrid] tb_sdram.cpu.cpu.me_dbe)\n");
+    }
+    if ((4ULL & vlSelf->__VnbaTriggered.word(0U))) {
+        VL_DBG_MSGF("         'nba' region trigger index 2 is active: @(posedge clk or negedge rst_n)\n");
+    }
+    if ((8ULL & vlSelf->__VnbaTriggered.word(0U))) {
+        VL_DBG_MSGF("         'nba' region trigger index 3 is active: @(posedge clk)\n");
     }
 }
 #endif  // VL_DEBUG
@@ -177,6 +198,18 @@ VL_ATTR_COLD void Vtb_sdram___024root___ctor_var_reset(Vtb_sdram___024root* vlSe
     vlSelf->dbg_start_kind = VL_RAND_RESET_I(2);
     vlSelf->dbg_state = VL_RAND_RESET_I(4);
     vlSelf->dbg_cen = VL_RAND_RESET_I(1);
+    vlSelf->tx39_en = VL_RAND_RESET_I(1);
+    vlSelf->dbg_tx_stb = VL_RAND_RESET_I(1);
+    vlSelf->dbg_tx_data = VL_RAND_RESET_I(8);
+    vlSelf->dbg_tx_bytes = VL_RAND_RESET_I(32);
+    vlSelf->__Vtrigprevexpr___TOP__tb_sdram__cpu__cpu____PVT__adv_mem__0 = VL_RAND_RESET_I(1);
+    vlSelf->__Vtrigprevexpr___TOP__tb_sdram__cpu__cpu____PVT__me_dbe__0 = VL_RAND_RESET_I(1);
+    vlSelf->__VstlDidInit = 0;
+    vlSelf->__Vtrigprevexpr___TOP__tb_sdram__cpu__cpu____PVT__me_dbe__1 = VL_RAND_RESET_I(1);
+    vlSelf->__VicoDidInit = 0;
+    vlSelf->__Vtrigprevexpr___TOP__tb_sdram__cpu__cpu____PVT__adv_mem__1 = VL_RAND_RESET_I(1);
+    vlSelf->__Vtrigprevexpr___TOP__tb_sdram__cpu__cpu____PVT__me_dbe__2 = VL_RAND_RESET_I(1);
     vlSelf->__Vtrigprevexpr___TOP__clk__0 = VL_RAND_RESET_I(1);
     vlSelf->__Vtrigprevexpr___TOP__rst_n__0 = VL_RAND_RESET_I(1);
+    vlSelf->__VactDidInit = 0;
 }

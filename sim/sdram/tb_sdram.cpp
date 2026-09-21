@@ -103,6 +103,10 @@ int main(int argc, char **argv) {
     uint64_t limit = 0;
     int clk_div = 1;
     bool stub = false;
+    bool tx39 = false;
+    bool io_req_d = false;
+    int  iolog = 0;
+    std::map<uint64_t,uint64_t> io_seen;
 
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "--state") && i + 1 < argc) state_path = argv[++i];
@@ -114,6 +118,11 @@ int main(int argc, char **argv) {
         // reference. The guest then goes wherever the hardware sends it,
         // which is the only way to predict what the board is doing.
         else if (!strcmp(argv[i], "--stub")) stub = true;
+        // Let the real TX39 block answer the peripheral bus, and print
+        // whatever the guest hands to the UART. This is the machine
+        // speaking for itself.
+        else if (!strcmp(argv[i], "--tx39")) tx39 = true;
+        else if (!strcmp(argv[i], "--free")) stub = true;
     }
     if (!state_path || !bus_path || !rom_path) {
         fprintf(stderr, "usage: Vtb_sdram --state F --bus F --rom F "
@@ -144,7 +153,8 @@ int main(int argc, char **argv) {
             IO.push_back(Ball[i]);
 
     uint64_t n_state = st.count;
-    if (limit && limit < n_state) n_state = limit;
+    if (stub) n_state = limit ? limit : n_state;      // free-running
+    else if (limit && limit < n_state) n_state = limit;
     printf("reference: %" PRIu64 " instructions, %zu device access(es) of "
            "%" PRIu64 " total\n", n_state, IO.size(), (uint64_t)bs.count);
 
@@ -161,6 +171,7 @@ int main(int argc, char **argv) {
     printf("sdram: %zu-byte ROM at %06X, DRAM at %06X\n",
            rom.size(), ROM_BASE, DRAM_BASE);
     dut->clk_div = clk_div;
+    dut->tx39_en = tx39;
     dut->rst_n = 0; dut->irq_in = 0;
     dut->io_ack = 0; dut->io_err = 0;
     for (int i = 0; i < 8; i++) { dut->clk = 0; dut->eval(); dut->clk = 1; dut->eval(); }
@@ -182,7 +193,9 @@ int main(int argc, char **argv) {
         // The peripheral bus is in the core's clock domain: it answers on
         // the core's edges, not the memory's. Answering between them would
         // be an acknowledgement the core never sees.
-        if (stub && dut->io_req && dut->dbg_cen) {
+        if (tx39) {
+            // The block answers for itself; nothing to do here.
+        } else if (stub && dut->io_req && dut->dbg_cen) {
             bool tx39 = (dut->io_addr >= 0x10C00000u) && (dut->io_addr < 0x10C00400u);
             dut->io_rdata = tx39 ? 0u : 0xFFFFFFFFu;
             dut->io_err   = 0;
@@ -247,6 +260,23 @@ int main(int argc, char **argv) {
         if (io_fire)  ioidx++;
         dut->clk = 0; dut->eval();
         cycles++;
+        // What the guest is touching on the peripheral bus, and in what
+        // order. Guessing which register a poll loop is reading wastes more
+        // time than printing it.
+        if (tx39 && dut->io_req && !io_req_d && iolog < 40) {
+            printf("[io] %s %08X%s\n", dut->io_we ? "write" : "read ",
+                   dut->io_addr,
+                   dut->io_we ? "" : "");
+            iolog++;
+        }
+        if (tx39 && dut->io_req && !io_req_d)
+            io_seen[(uint64_t)dut->io_addr | (dut->io_we ? (1ull<<32) : 0)]++;
+        io_req_d = dut->io_req;
+        if (dut->dbg_tx_stb) {
+            int c = dut->dbg_tx_data;
+            fputc(c, stdout);
+            fflush(stdout);
+        }
         if (getenv("DBG") && idx > 81280 && dut->dbg_start && dbgn < 30) {
             static const char *k[] = {"read ", "write", "rmw  ", "BURST"};
             printf("[start] cycle %6" PRIu64 " %s addr %07X\n",
@@ -323,6 +353,19 @@ int main(int argc, char **argv) {
            " core clocks (%.3f IPC at core rate, divider %d)\n",
            idx, n_state, ioidx, cycles, core_cycles,
            core_cycles ? (double)idx / (double)core_cycles : 0.0, clk_div);
+    if (tx39) {
+        printf("\n%u byte(s) written to UART A\n", dut->dbg_tx_bytes);
+        printf("peripheral registers, most used first:\n");
+        std::vector<std::pair<uint64_t,uint64_t> > iv;
+        for (std::map<uint64_t,uint64_t>::iterator it = io_seen.begin();
+             it != io_seen.end(); ++it)
+            iv.push_back(std::make_pair(it->second, it->first));
+        std::sort(iv.rbegin(), iv.rend());
+        for (size_t i = 0; i < iv.size() && i < 10; i++)
+            printf("   %s %08X  %" PRIu64 " times\n",
+                   (iv[i].second >> 32) ? "write" : "read ",
+                   (uint32_t)iv[i].second, iv[i].first);
+    }
     if (stub) {
         printf("\n%zu distinct addresses executed; the ones it spends its "
                "time on:\n", pc_seen.size());

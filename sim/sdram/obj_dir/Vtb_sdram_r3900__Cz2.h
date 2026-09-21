@@ -91,6 +91,7 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_sdram_r3900__Cz2 final : public Verilated
         CData/*0:0*/ __PVT__me_needs_mem;
         CData/*0:0*/ __PVT__me_last_beat;
         CData/*3:0*/ __PVT__me_be;
+        CData/*0:0*/ __PVT__me_dbe;
         CData/*0:0*/ __PVT__me_exc_out_v;
         CData/*4:0*/ __PVT__me_exc_out_code;
         CData/*0:0*/ __PVT__me_exc_out_badv;
@@ -145,9 +146,9 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_sdram_r3900__Cz2 final : public Verilated
         CData/*0:0*/ __Vfunc_is_store__48__Vfuncout;
         CData/*0:0*/ __Vfunc_is_store__49__Vfuncout;
         CData/*0:0*/ __Vfunc_is_store__50__Vfuncout;
-        CData/*0:0*/ __Vfunc_is_store__51__Vfuncout;
     };
     struct {
+        CData/*0:0*/ __Vfunc_is_store__51__Vfuncout;
         CData/*0:0*/ __Vfunc_is_store__52__Vfuncout;
         CData/*0:0*/ __Vfunc_is_load__53__Vfuncout;
         CData/*0:0*/ __Vfunc_is_branch__54__Vfuncout;
@@ -211,9 +212,9 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_sdram_r3900__Cz2 final : public Verilated
         IData/*31:0*/ __PVT__wb_next_pc;
         IData/*31:0*/ __PVT__wb_value;
         IData/*31:0*/ __PVT__wb_hi;
-        IData/*31:0*/ __PVT__wb_lo;
     };
     struct {
+        IData/*31:0*/ __PVT__wb_lo;
         IData/*31:0*/ __PVT__wb_cp0_d;
         IData/*31:0*/ __PVT__cause_live;
         IData/*31:0*/ __PVT__fpc;
@@ -277,9 +278,9 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_sdram_r3900__Cz2 final : public Verilated
         IData/*31:0*/ __Vfunc_is_store__25__i;
         IData/*31:0*/ __Vfunc_is_store__26__i;
         IData/*31:0*/ __Vfunc_is_load__29__i;
-        IData/*31:0*/ __Vfunc_is_load__30__i;
     };
     struct {
+        IData/*31:0*/ __Vfunc_is_load__30__i;
         IData/*31:0*/ __Vfunc_reads_rs__31__i;
         IData/*31:0*/ __Vfunc_reads_rt__32__i;
         IData/*31:0*/ __Vfunc_is_store__33__i;
@@ -343,9 +344,9 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_sdram_r3900__Cz2 final : public Verilated
         QData/*63:0*/ __PVT__md_rq;
         QData/*63:0*/ __PVT__md_shifted;
         QData/*32:0*/ __PVT__md_diff;
-        VlUnpacked<IData/*31:0*/, 32> regs;
     };
     struct {
+        VlUnpacked<IData/*31:0*/, 32> regs;
         VlUnpacked<IData/*31:0*/, 32> __PVT__cp0;
     };
 

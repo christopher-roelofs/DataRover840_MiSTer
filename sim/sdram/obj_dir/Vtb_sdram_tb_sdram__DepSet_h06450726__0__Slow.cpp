@@ -14,6 +14,24 @@ VL_ATTR_COLD void Vtb_sdram_tb_sdram___eval_static__TOP__tb_sdram(Vtb_sdram_tb_s
     vlSelf->__PVT__ctl__DOT__refresh_count = 0x1483U;
 }
 
+VL_ATTR_COLD void Vtb_sdram_tb_sdram___eval_initial__TOP__tb_sdram(Vtb_sdram_tb_sdram* vlSelf) {
+    if (false && vlSelf) {}  // Prevent unused
+    Vtb_sdram__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
+    VL_DEBUG_IF(VL_DBG_MSGF("+      Vtb_sdram_tb_sdram___eval_initial__TOP__tb_sdram\n"); );
+    // Init
+    IData/*31:0*/ __PVT__tx39__DOT__rf_init__DOT__i;
+    __PVT__tx39__DOT__rf_init__DOT__i = 0;
+    // Body
+    __PVT__tx39__DOT__rf_init__DOT__i = 0U;
+    while (VL_GTS_III(32, 0x100U, __PVT__tx39__DOT__rf_init__DOT__i)) {
+        vlSelf->__PVT__tx39__DOT__rf[(0xffU & __PVT__tx39__DOT__rf_init__DOT__i)] = 0U;
+        __PVT__tx39__DOT__rf_init__DOT__i = ((IData)(1U) 
+                                             + __PVT__tx39__DOT__rf_init__DOT__i);
+    }
+    vlSelf->__PVT__tx39__DOT__rf[0x71U] = 0x20000000U;
+    vlSelf->__PVT__tx39__DOT__rf[0x32U] = 0x40000000U;
+}
+
 VL_ATTR_COLD void Vtb_sdram_tb_sdram___ctor_var_reset(Vtb_sdram_tb_sdram* vlSelf) {
     if (false && vlSelf) {}  // Prevent unused
     Vtb_sdram__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
@@ -64,6 +82,10 @@ VL_ATTR_COLD void Vtb_sdram_tb_sdram___ctor_var_reset(Vtb_sdram_tb_sdram* vlSelf
     vlSelf->dbg_start_kind = VL_RAND_RESET_I(2);
     vlSelf->dbg_state = VL_RAND_RESET_I(4);
     vlSelf->dbg_cen = VL_RAND_RESET_I(1);
+    vlSelf->tx39_en = VL_RAND_RESET_I(1);
+    vlSelf->dbg_tx_stb = VL_RAND_RESET_I(1);
+    vlSelf->dbg_tx_data = VL_RAND_RESET_I(8);
+    vlSelf->dbg_tx_bytes = VL_RAND_RESET_I(32);
     vlSelf->__PVT__cdiv = VL_RAND_RESET_I(8);
     vlSelf->__PVT__ird = VL_RAND_RESET_I(32);
     vlSelf->__PVT__drd = VL_RAND_RESET_I(32);
@@ -73,6 +95,10 @@ VL_ATTR_COLD void Vtb_sdram_tb_sdram___ctor_var_reset(Vtb_sdram_tb_sdram* vlSelf
     vlSelf->__PVT__ram_ack = VL_RAND_RESET_I(1);
     vlSelf->__PVT__ram_be = VL_RAND_RESET_I(4);
     vlSelf->__PVT__ram_rdata = VL_RAND_RESET_I(32);
+    vlSelf->__PVT__t_rdata = VL_RAND_RESET_I(32);
+    vlSelf->__Vcellinp__tx39__io_req = VL_RAND_RESET_I(1);
+    vlSelf->__PVT__io_rdata_mux = VL_RAND_RESET_I(32);
+    vlSelf->__PVT__io_err_mux = VL_RAND_RESET_I(1);
     vlSelf->__PVT__ch1_addr = VL_RAND_RESET_I(26);
     vlSelf->__PVT__ch2_addr = VL_RAND_RESET_I(26);
     vlSelf->__PVT__ch1_dout = VL_RAND_RESET_Q(64);
@@ -93,9 +119,38 @@ VL_ATTR_COLD void Vtb_sdram_tb_sdram___ctor_var_reset(Vtb_sdram_tb_sdram* vlSelf
     vlSelf->__PVT__board__DOT__d_wants_ram = VL_RAND_RESET_I(1);
     vlSelf->__PVT__board__DOT__i_wants_ram = VL_RAND_RESET_I(1);
     vlSelf->__PVT__board__DOT__d_wants_io = VL_RAND_RESET_I(1);
-    vlSelf->__PVT__board__DOT__i_wants_io = VL_RAND_RESET_I(1);
+    vlSelf->board__DOT____VdfgTmp_h22b91ed1__0 = 0;
+    vlSelf->board__DOT____VdfgTmp_h288a1ef5__0 = 0;
+    vlSelf->board__DOT____VdfgTmp_h8306d34d__0 = 0;
     vlSelf->board__DOT____VdfgTmp_hdb4dbddb__0 = 0;
     vlSelf->board__DOT____VdfgTmp_h223955ac__0 = 0;
+    vlSelf->__PVT__tx39__DOT__is_tx39 = VL_RAND_RESET_I(1);
+    vlSelf->__PVT__tx39__DOT__served = VL_RAND_RESET_I(1);
+    vlSelf->__PVT__tx39__DOT__io_start = VL_RAND_RESET_I(1);
+    for (int __Vi0 = 0; __Vi0 < 256; ++__Vi0) {
+        vlSelf->__PVT__tx39__DOT__rf[__Vi0] = VL_RAND_RESET_I(32);
+    }
+    for (int __Vi0 = 0; __Vi0 < 6; ++__Vi0) {
+        vlSelf->__PVT__tx39__DOT__icu_status[__Vi0] = VL_RAND_RESET_I(32);
+    }
+    for (int __Vi0 = 0; __Vi0 < 6; ++__Vi0) {
+        vlSelf->__PVT__tx39__DOT__icu_enable[__Vi0] = VL_RAND_RESET_I(32);
+    }
+    vlSelf->__PVT__tx39__DOT__ua_ctrl1 = VL_RAND_RESET_I(32);
+    vlSelf->__PVT__tx39__DOT__ua_ctrl2 = VL_RAND_RESET_I(32);
+    vlSelf->__PVT__tx39__DOT__ua_rx = VL_RAND_RESET_I(8);
+    vlSelf->__PVT__tx39__DOT__ua_rx_full = VL_RAND_RESET_I(1);
+    vlSelf->__PVT__tx39__DOT__tx_bit = VL_RAND_RESET_I(4);
+    vlSelf->__PVT__tx39__DOT__tx_cnt = VL_RAND_RESET_I(20);
+    vlSelf->__PVT__tx39__DOT__tx_busy = VL_RAND_RESET_I(1);
+    vlSelf->__PVT__tx39__DOT__tx_hold_full = VL_RAND_RESET_I(1);
+    vlSelf->__PVT__tx39__DOT__rx_shift = VL_RAND_RESET_I(8);
+    vlSelf->__PVT__tx39__DOT__rx_bit = VL_RAND_RESET_I(4);
+    vlSelf->__PVT__tx39__DOT__rx_cnt = VL_RAND_RESET_I(20);
+    vlSelf->__PVT__tx39__DOT__rx_busy = VL_RAND_RESET_I(1);
+    vlSelf->__PVT__tx39__DOT__rxd_sync = VL_RAND_RESET_I(3);
+    vlSelf->tx39__DOT____Vlvbound_h2237671c__0 = VL_RAND_RESET_I(32);
+    vlSelf->tx39__DOT____Vlvbound_hadcbb189__0 = VL_RAND_RESET_I(32);
     vlSelf->__PVT__adapter__DOT__state = VL_RAND_RESET_I(4);
     vlSelf->__PVT__adapter__DOT__hold = VL_RAND_RESET_I(32);
     vlSelf->__PVT__adapter__DOT__line = VL_RAND_RESET_I(25);
