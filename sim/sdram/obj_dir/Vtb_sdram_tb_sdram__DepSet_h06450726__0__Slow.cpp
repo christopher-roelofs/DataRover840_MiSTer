@@ -54,11 +54,13 @@ VL_ATTR_COLD void Vtb_sdram_tb_sdram___ctor_var_reset(Vtb_sdram_tb_sdram* vlSelf
     vlSelf->dbg_last_a = VL_RAND_RESET_I(16);
     vlSelf->dbg_ch2_addr = VL_RAND_RESET_I(26);
     vlSelf->dbg_ch2_req = VL_RAND_RESET_I(1);
+    vlSelf->dbg_dack = VL_RAND_RESET_I(1);
+    vlSelf->dbg_iack = VL_RAND_RESET_I(1);
+    vlSelf->dbg_dreq = VL_RAND_RESET_I(1);
+    vlSelf->dbg_ireq = VL_RAND_RESET_I(1);
     vlSelf->__PVT__ird = VL_RAND_RESET_I(32);
     vlSelf->__PVT__drd = VL_RAND_RESET_I(32);
-    vlSelf->__PVT__iack = VL_RAND_RESET_I(1);
     vlSelf->__PVT__ierr = VL_RAND_RESET_I(1);
-    vlSelf->__PVT__dack = VL_RAND_RESET_I(1);
     vlSelf->__PVT__derr = VL_RAND_RESET_I(1);
     vlSelf->__PVT__ram_we = VL_RAND_RESET_I(1);
     vlSelf->__PVT__ram_ack = VL_RAND_RESET_I(1);

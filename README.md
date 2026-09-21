@@ -272,6 +272,24 @@ for burst reads, since answering only the first word of a four-word burst
 would make a controller look correct while three quarters of every cache
 line came back as whatever was on the bus.
 
+### Known broken: the first line refill through real SDRAM
+
+Twenty thousand instructions match, with no protocol violation reported by
+the chip. The first *cache line refill* does not, and the run stops at
+instruction 81,302.
+
+What is known: all four beats are flagged as a burst and carry the right
+addresses, and the words the chip returns are right. The adapter issues
+**three** SDRAM transactions for the line where it should issue two --
+acknowledging once, then twice, then once -- so the first burst loses an
+acknowledge and every word after it lands one slot late. The line ends up
+holding `0,0,0,1` where the ROM has `0,0,1,0`.
+
+Everything above this level still passes: the same ten million instructions
+match through `sim/cosim` with the caches and the board, against modelled
+memory at every latency tried. This is the adapter's burst sequencing and
+nothing further up.
+
 ## Caches
 
 `rtl/cpu/r3900_cache.sv`. 4 KB of instruction cache and 1 KB of data cache,

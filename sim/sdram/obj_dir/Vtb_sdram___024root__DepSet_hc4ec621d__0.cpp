@@ -28,9 +28,26 @@ VL_INLINE_OPT void Vtb_sdram___024root___ico_sequent__TOP__0(Vtb_sdram___024root
     Vtb_sdram__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
     VL_DEBUG_IF(VL_DBG_MSGF("+    Vtb_sdram___024root___ico_sequent__TOP__0\n"); );
     // Body
+    vlSelf->dbg_dack = vlSymsp->TOP__tb_sdram.dbg_dack;
+}
+
+VL_INLINE_OPT void Vtb_sdram___024root___ico_sequent__TOP__1(Vtb_sdram___024root* vlSelf) {
+    if (false && vlSelf) {}  // Prevent unused
+    Vtb_sdram__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
+    VL_DEBUG_IF(VL_DBG_MSGF("+    Vtb_sdram___024root___ico_sequent__TOP__1\n"); );
+    // Body
+    vlSelf->dbg_ireq = vlSymsp->TOP__tb_sdram__cpu.__PVT__imem_req;
+}
+
+VL_INLINE_OPT void Vtb_sdram___024root___ico_sequent__TOP__2(Vtb_sdram___024root* vlSelf) {
+    if (false && vlSelf) {}  // Prevent unused
+    Vtb_sdram__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
+    VL_DEBUG_IF(VL_DBG_MSGF("+    Vtb_sdram___024root___ico_sequent__TOP__2\n"); );
+    // Body
     vlSelf->io_req = ((IData)(vlSymsp->TOP__tb_sdram.__PVT__board__DOT__d_wants_io) 
                       | (IData)(vlSymsp->TOP__tb_sdram.__PVT__board__DOT__i_wants_io));
     vlSelf->dbg_ram_req = vlSymsp->TOP__tb_sdram.dbg_ram_req;
+    vlSelf->dbg_iack = vlSymsp->TOP__tb_sdram.dbg_iack;
 }
 
 void Vtb_sdram_r3900__Cz2___ico_sequent__TOP__tb_sdram__cpu__cpu__0(Vtb_sdram_r3900__Cz2* vlSelf);
@@ -51,10 +68,12 @@ void Vtb_sdram___024root___eval_ico(Vtb_sdram___024root* vlSelf) {
         Vtb_sdram_r3900__Cz2___ico_sequent__TOP__tb_sdram__cpu__cpu__0((&vlSymsp->TOP__tb_sdram__cpu__cpu));
         Vtb_sdram_tb_sdram___ico_sequent__TOP__tb_sdram__0((&vlSymsp->TOP__tb_sdram));
         Vtb_sdram_r3900_cached__Cz1___ico_sequent__TOP__tb_sdram__cpu__0((&vlSymsp->TOP__tb_sdram__cpu));
+        Vtb_sdram___024root___ico_sequent__TOP__0(vlSelf);
         Vtb_sdram_r3900__Cz2___ico_sequent__TOP__tb_sdram__cpu__cpu__1((&vlSymsp->TOP__tb_sdram__cpu__cpu));
         Vtb_sdram_r3900_cached__Cz1___ico_sequent__TOP__tb_sdram__cpu__1((&vlSymsp->TOP__tb_sdram__cpu));
+        Vtb_sdram___024root___ico_sequent__TOP__1(vlSelf);
         Vtb_sdram_tb_sdram___ico_sequent__TOP__tb_sdram__1((&vlSymsp->TOP__tb_sdram));
-        Vtb_sdram___024root___ico_sequent__TOP__0(vlSelf);
+        Vtb_sdram___024root___ico_sequent__TOP__2(vlSelf);
         Vtb_sdram_r3900_cached__Cz1___ico_sequent__TOP__tb_sdram__cpu__2((&vlSymsp->TOP__tb_sdram__cpu));
         Vtb_sdram_r3900__Cz2___ico_sequent__TOP__tb_sdram__cpu__cpu__2((&vlSymsp->TOP__tb_sdram__cpu__cpu));
     }
@@ -125,6 +144,7 @@ VL_INLINE_OPT void Vtb_sdram___024root___nba_sequent__TOP__2(Vtb_sdram___024root
     Vtb_sdram__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
     VL_DEBUG_IF(VL_DBG_MSGF("+    Vtb_sdram___024root___nba_sequent__TOP__2\n"); );
     // Body
+    vlSelf->dbg_dreq = vlSymsp->TOP__tb_sdram__cpu.__PVT__dmem_req;
     if (vlSymsp->TOP__tb_sdram.__PVT__board__DOT__d_wants_io) {
         vlSelf->io_be = vlSymsp->TOP__tb_sdram__cpu.__PVT__dmem_be;
         vlSelf->io_addr = vlSymsp->TOP__tb_sdram__cpu.__PVT__dmem_addr;
@@ -136,6 +156,7 @@ VL_INLINE_OPT void Vtb_sdram___024root___nba_sequent__TOP__2(Vtb_sdram___024root
     }
     vlSelf->dbg_ram_addr = vlSymsp->TOP__tb_sdram.dbg_ram_addr;
     vlSelf->dbg_ram_burst = vlSymsp->TOP__tb_sdram.dbg_ram_burst;
+    vlSelf->dbg_dack = vlSymsp->TOP__tb_sdram.dbg_dack;
 }
 
 void Vtb_sdram_r3900_cached__Cz1___nba_sequent__TOP__tb_sdram__cpu__0(Vtb_sdram_r3900_cached__Cz1* vlSelf);
@@ -184,8 +205,9 @@ void Vtb_sdram___024root___eval_nba(Vtb_sdram___024root* vlSelf) {
         Vtb_sdram_r3900_cached__Cz1___nba_comb__TOP__tb_sdram__cpu__0((&vlSymsp->TOP__tb_sdram__cpu));
         Vtb_sdram_r3900__Cz2___ico_sequent__TOP__tb_sdram__cpu__cpu__1((&vlSymsp->TOP__tb_sdram__cpu__cpu));
         Vtb_sdram_r3900_cached__Cz1___ico_sequent__TOP__tb_sdram__cpu__1((&vlSymsp->TOP__tb_sdram__cpu));
+        Vtb_sdram___024root___ico_sequent__TOP__1(vlSelf);
         Vtb_sdram_tb_sdram___ico_sequent__TOP__tb_sdram__1((&vlSymsp->TOP__tb_sdram));
-        Vtb_sdram___024root___ico_sequent__TOP__0(vlSelf);
+        Vtb_sdram___024root___ico_sequent__TOP__2(vlSelf);
         Vtb_sdram_r3900_cached__Cz1___ico_sequent__TOP__tb_sdram__cpu__2((&vlSymsp->TOP__tb_sdram__cpu));
         Vtb_sdram_r3900__Cz2___ico_sequent__TOP__tb_sdram__cpu__cpu__2((&vlSymsp->TOP__tb_sdram__cpu__cpu));
     }

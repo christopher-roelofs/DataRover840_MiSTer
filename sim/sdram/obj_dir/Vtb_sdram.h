@@ -40,6 +40,10 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_sdram VL_NOT_FINAL : public VerilatedMode
     VL_OUT8(&dbg_ram_req,0,0);
     VL_OUT8(&dbg_ram_burst,0,0);
     VL_OUT8(&dbg_ch2_req,0,0);
+    VL_OUT8(&dbg_dack,0,0);
+    VL_OUT8(&dbg_iack,0,0);
+    VL_OUT8(&dbg_dreq,0,0);
+    VL_OUT8(&dbg_ireq,0,0);
     VL_OUT16(&dbg_max_refresh_gap,15,0);
     VL_OUT16(&dbg_violations,15,0);
     VL_OUT16(&dbg_last_col,15,0);

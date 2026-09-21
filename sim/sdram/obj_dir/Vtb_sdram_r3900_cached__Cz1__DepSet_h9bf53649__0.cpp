@@ -18,9 +18,9 @@ VL_INLINE_OPT void Vtb_sdram_r3900_cached__Cz1___ico_sequent__TOP__tb_sdram__cpu
                            ? vlSelf->__PVT__cache__DOT__dram_eff
                            : vlSymsp->TOP__tb_sdram.__PVT__drd);
     vlSelf->cache__DOT____VdfgTmp_h619d70f7__0 = ((IData)(vlSelf->__PVT__cache__DOT__d_thru) 
-                                                  & (IData)(vlSymsp->TOP__tb_sdram.__PVT__dack));
+                                                  & (IData)(vlSymsp->TOP__tb_sdram.dbg_dack));
     cache__DOT____VdfgTmp_he0beb801__0 = ((1U == (IData)(vlSelf->__PVT__cache__DOT__dstate)) 
-                                          & (IData)(vlSymsp->TOP__tb_sdram.__PVT__dack));
+                                          & (IData)(vlSymsp->TOP__tb_sdram.dbg_dack));
     vlSelf->__PVT__cache__DOT__d_fill_beat = ((~ (IData)(vlSymsp->TOP__tb_sdram.__PVT__derr)) 
                                               & (IData)(cache__DOT____VdfgTmp_he0beb801__0));
     vlSelf->__PVT__cache__DOT__d_fill_fail = ((IData)(cache__DOT____VdfgTmp_he0beb801__0) 
@@ -99,9 +99,9 @@ VL_INLINE_OPT void Vtb_sdram_r3900_cached__Cz1___ico_sequent__TOP__tb_sdram__cpu
     cache__DOT____VdfgTmp_h7d063475__0 = 0;
     // Body
     vlSelf->cache__DOT____VdfgTmp_h6d079f16__0 = ((IData)(vlSelf->__PVT__cache__DOT__i_thru) 
-                                                  & (IData)(vlSymsp->TOP__tb_sdram.__PVT__iack));
+                                                  & (IData)(vlSymsp->TOP__tb_sdram.dbg_iack));
     cache__DOT____VdfgTmp_h7d063475__0 = ((1U == (IData)(vlSelf->__PVT__cache__DOT__istate)) 
-                                          & (IData)(vlSymsp->TOP__tb_sdram.__PVT__iack));
+                                          & (IData)(vlSymsp->TOP__tb_sdram.dbg_iack));
     vlSelf->__PVT__cache__DOT__i_fill_beat = ((~ (IData)(vlSymsp->TOP__tb_sdram.__PVT__ierr)) 
                                               & (IData)(cache__DOT____VdfgTmp_h7d063475__0));
     vlSelf->__PVT__cache__DOT__i_fill_fail = ((IData)(cache__DOT____VdfgTmp_h7d063475__0) 
@@ -256,7 +256,7 @@ VL_INLINE_OPT void Vtb_sdram_r3900_cached__Cz1___nba_sequent__TOP__tb_sdram__cpu
                         = (0xfffffff0U & vlSymsp->TOP__tb_sdram__cpu__cpu.__PVT__ibus_addr);
                 }
             } else if ((1U == (IData)(vlSelf->__PVT__cache__DOT__istate))) {
-                if (vlSymsp->TOP__tb_sdram.__PVT__iack) {
+                if (vlSymsp->TOP__tb_sdram.dbg_iack) {
                     if (vlSymsp->TOP__tb_sdram.__PVT__ierr) {
                         __Vdly__cache__DOT__istate = 0U;
                     } else {
@@ -290,7 +290,7 @@ VL_INLINE_OPT void Vtb_sdram_r3900_cached__Cz1___nba_sequent__TOP__tb_sdram__cpu
                     }
                 }
             } else if ((1U == (IData)(vlSelf->__PVT__cache__DOT__dstate))) {
-                if (vlSymsp->TOP__tb_sdram.__PVT__dack) {
+                if (vlSymsp->TOP__tb_sdram.dbg_dack) {
                     if (vlSymsp->TOP__tb_sdram.__PVT__derr) {
                         __Vdly__cache__DOT__dstate = 0U;
                     } else {
@@ -373,9 +373,9 @@ VL_INLINE_OPT void Vtb_sdram_r3900_cached__Cz1___nba_sequent__TOP__tb_sdram__cpu
     cache__DOT____VdfgTmp_he0beb801__0 = 0;
     // Body
     vlSelf->cache__DOT____VdfgTmp_h619d70f7__0 = ((IData)(vlSelf->__PVT__cache__DOT__d_thru) 
-                                                  & (IData)(vlSymsp->TOP__tb_sdram.__PVT__dack));
+                                                  & (IData)(vlSymsp->TOP__tb_sdram.dbg_dack));
     cache__DOT____VdfgTmp_he0beb801__0 = ((1U == (IData)(vlSelf->__PVT__cache__DOT__dstate)) 
-                                          & (IData)(vlSymsp->TOP__tb_sdram.__PVT__dack));
+                                          & (IData)(vlSymsp->TOP__tb_sdram.dbg_dack));
     vlSelf->__PVT__cache__DOT__d_fill_beat = ((~ (IData)(vlSymsp->TOP__tb_sdram.__PVT__derr)) 
                                               & (IData)(cache__DOT____VdfgTmp_he0beb801__0));
     vlSelf->__PVT__cache__DOT__d_fill_fail = ((IData)(cache__DOT____VdfgTmp_he0beb801__0) 

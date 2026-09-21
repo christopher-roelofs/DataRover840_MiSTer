@@ -167,6 +167,10 @@ VL_ATTR_COLD void Vtb_sdram___024root___ctor_var_reset(Vtb_sdram___024root* vlSe
     vlSelf->dbg_last_a = VL_RAND_RESET_I(16);
     vlSelf->dbg_ch2_addr = VL_RAND_RESET_I(26);
     vlSelf->dbg_ch2_req = VL_RAND_RESET_I(1);
+    vlSelf->dbg_dack = VL_RAND_RESET_I(1);
+    vlSelf->dbg_iack = VL_RAND_RESET_I(1);
+    vlSelf->dbg_dreq = VL_RAND_RESET_I(1);
+    vlSelf->dbg_ireq = VL_RAND_RESET_I(1);
     vlSelf->__Vtrigprevexpr___TOP__clk__0 = VL_RAND_RESET_I(1);
     vlSelf->__Vtrigprevexpr___TOP__rst_n__0 = VL_RAND_RESET_I(1);
 }

@@ -924,9 +924,6 @@ VL_INLINE_OPT void Vtb_sdram_r3900__Cz2___nba_sequent__TOP__tb_sdram__cpu__cpu__
     __Vdly__lo = vlSelf->lo;
     __Vdly__hi = vlSelf->hi;
     __Vdly__cycle_count = vlSelf->cycle_count;
-    __Vdly__md_skip = vlSelf->__PVT__md_skip;
-    __Vdly__md_count = vlSelf->__PVT__md_count;
-    __Vdly__md_run = vlSelf->__PVT__md_run;
     __Vdlyvset__cp0__v0 = 0U;
     __Vdlyvset__cp0__v1 = 0U;
     __Vdlyvset__cp0__v2 = 0U;
@@ -944,6 +941,9 @@ VL_INLINE_OPT void Vtb_sdram_r3900__Cz2___nba_sequent__TOP__tb_sdram__cpu__cpu__
     __Vdlyvset__cp0__v14 = 0U;
     __Vdlyvset__cp0__v15 = 0U;
     __Vdlyvset__cp0__v16 = 0U;
+    __Vdly__md_skip = vlSelf->__PVT__md_skip;
+    __Vdly__md_count = vlSelf->__PVT__md_count;
+    __Vdly__md_run = vlSelf->__PVT__md_run;
     __Vdlyvset__regs__v1 = 0U;
     __Vdlyvset__regs__v2 = 0U;
     __Vdly__id_v = vlSelf->__PVT__id_v;

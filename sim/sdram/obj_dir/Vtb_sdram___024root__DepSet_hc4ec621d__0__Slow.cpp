@@ -91,8 +91,9 @@ void Vtb_sdram___024root___nba_sequent__TOP__2(Vtb_sdram___024root* vlSelf);
 void Vtb_sdram_r3900_cached__Cz1___ico_sequent__TOP__tb_sdram__cpu__0(Vtb_sdram_r3900_cached__Cz1* vlSelf);
 void Vtb_sdram_r3900__Cz2___ico_sequent__TOP__tb_sdram__cpu__cpu__1(Vtb_sdram_r3900__Cz2* vlSelf);
 void Vtb_sdram_r3900_cached__Cz1___ico_sequent__TOP__tb_sdram__cpu__1(Vtb_sdram_r3900_cached__Cz1* vlSelf);
+void Vtb_sdram___024root___ico_sequent__TOP__1(Vtb_sdram___024root* vlSelf);
 void Vtb_sdram_tb_sdram___ico_sequent__TOP__tb_sdram__1(Vtb_sdram_tb_sdram* vlSelf);
-void Vtb_sdram___024root___ico_sequent__TOP__0(Vtb_sdram___024root* vlSelf);
+void Vtb_sdram___024root___ico_sequent__TOP__2(Vtb_sdram___024root* vlSelf);
 void Vtb_sdram_r3900_cached__Cz1___ico_sequent__TOP__tb_sdram__cpu__2(Vtb_sdram_r3900_cached__Cz1* vlSelf);
 void Vtb_sdram_r3900__Cz2___ico_sequent__TOP__tb_sdram__cpu__cpu__2(Vtb_sdram_r3900__Cz2* vlSelf);
 
@@ -114,8 +115,9 @@ VL_ATTR_COLD void Vtb_sdram___024root___eval_stl(Vtb_sdram___024root* vlSelf) {
         Vtb_sdram_r3900_cached__Cz1___ico_sequent__TOP__tb_sdram__cpu__0((&vlSymsp->TOP__tb_sdram__cpu));
         Vtb_sdram_r3900__Cz2___ico_sequent__TOP__tb_sdram__cpu__cpu__1((&vlSymsp->TOP__tb_sdram__cpu__cpu));
         Vtb_sdram_r3900_cached__Cz1___ico_sequent__TOP__tb_sdram__cpu__1((&vlSymsp->TOP__tb_sdram__cpu));
+        Vtb_sdram___024root___ico_sequent__TOP__1(vlSelf);
         Vtb_sdram_tb_sdram___ico_sequent__TOP__tb_sdram__1((&vlSymsp->TOP__tb_sdram));
-        Vtb_sdram___024root___ico_sequent__TOP__0(vlSelf);
+        Vtb_sdram___024root___ico_sequent__TOP__2(vlSelf);
         Vtb_sdram_r3900_cached__Cz1___ico_sequent__TOP__tb_sdram__cpu__2((&vlSymsp->TOP__tb_sdram__cpu));
         Vtb_sdram_r3900__Cz2___ico_sequent__TOP__tb_sdram__cpu__cpu__2((&vlSymsp->TOP__tb_sdram__cpu__cpu));
     }

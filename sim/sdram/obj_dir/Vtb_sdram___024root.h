@@ -30,6 +30,10 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_sdram___024root final : public VerilatedM
     VL_OUT8(dbg_ram_req,0,0);
     VL_OUT8(dbg_ram_burst,0,0);
     VL_OUT8(dbg_ch2_req,0,0);
+    VL_OUT8(dbg_dack,0,0);
+    VL_OUT8(dbg_iack,0,0);
+    VL_OUT8(dbg_dreq,0,0);
+    VL_OUT8(dbg_ireq,0,0);
     CData/*0:0*/ __VstlFirstIteration;
     CData/*0:0*/ __VicoFirstIteration;
     CData/*0:0*/ __Vtrigprevexpr___TOP__clk__0;

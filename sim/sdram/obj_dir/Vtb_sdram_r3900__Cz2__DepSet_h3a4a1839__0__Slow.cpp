@@ -600,6 +600,10 @@ VL_ATTR_COLD void Vtb_sdram_r3900__Cz2___stl_sequent__TOP__tb_sdram__cpu__cpu__0
     __Vfunc_cacheable__1__va = vlSelf->__PVT__fpc;
     __Vfunc_cacheable__1__Vfuncout = (0xa0000000U > __Vfunc_cacheable__1__va);
     vlSelf->__PVT__ibus_cached = __Vfunc_cacheable__1__Vfuncout;
+    vlSelf->__PVT__ex_simm = (((- (IData)((1U & (vlSelf->__PVT__ex_insn 
+                                                 >> 0xfU)))) 
+                               << 0x10U) | (0xffffU 
+                                            & vlSelf->__PVT__ex_insn));
     vlSelf->__PVT__cp0_write_inflight = (((((IData)(vlSelf->__PVT__ex_v) 
                                             & ([&]() {
                             vlSelf->__Vfunc_touches_cp0__70__i 
@@ -637,10 +641,6 @@ VL_ATTR_COLD void Vtb_sdram_r3900__Cz2___stl_sequent__TOP__tb_sdram__cpu__cpu__0
                                                        >> 0x15U)))))) 
                                          | ((IData)(vlSelf->__PVT__wb_v) 
                                             & (IData)(vlSelf->__PVT__wb_cp0_we)));
-    vlSelf->__PVT__ex_simm = (((- (IData)((1U & (vlSelf->__PVT__ex_insn 
-                                                 >> 0xfU)))) 
-                               << 0x10U) | (0xffffU 
-                                            & vlSelf->__PVT__ex_insn));
     vlSelf->__PVT__special_inflight = ((((IData)(vlSelf->__PVT__ex_v) 
                                          & ([&]() {
                         vlSelf->__Vfunc_writes_cp0_or_hilo__66__i 

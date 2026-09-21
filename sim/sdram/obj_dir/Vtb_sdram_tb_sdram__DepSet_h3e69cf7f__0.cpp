@@ -24,10 +24,10 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___ico_sequent__TOP__tb_sdram__0(Vtb_sdram_
     vlSelf->__PVT__derr = ((IData)(vlSelf->board__DOT____VdfgTmp_h223955ac__0) 
                            | ((IData)(board__DOT____VdfgTmp_hab3cb56a__0) 
                               & (IData)(vlSymsp->TOP.io_err)));
-    vlSelf->__PVT__dack = (((IData)(vlSelf->board__DOT____VdfgTmp_hdb4dbddb__0) 
-                            & (IData)(vlSelf->__PVT__ram_ack)) 
-                           | ((IData)(board__DOT____VdfgTmp_hab3cb56a__0) 
-                              | (IData)(vlSelf->board__DOT____VdfgTmp_h223955ac__0)));
+    vlSelf->dbg_dack = (((IData)(vlSelf->board__DOT____VdfgTmp_hdb4dbddb__0) 
+                         & (IData)(vlSelf->__PVT__ram_ack)) 
+                        | ((IData)(board__DOT____VdfgTmp_hab3cb56a__0) 
+                           | (IData)(vlSelf->board__DOT____VdfgTmp_h223955ac__0)));
 }
 
 VL_INLINE_OPT void Vtb_sdram_tb_sdram___ico_sequent__TOP__tb_sdram__1(Vtb_sdram_tb_sdram* vlSelf) {
@@ -77,10 +77,10 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___ico_sequent__TOP__tb_sdram__1(Vtb_sdram_
     vlSelf->__PVT__ierr = ((IData)(board__DOT____VdfgTmp_h288a1ef5__0) 
                            | ((IData)(board__DOT____VdfgTmp_h56676f03__0) 
                               & (IData)(vlSymsp->TOP.io_err)));
-    vlSelf->__PVT__iack = (((IData)(board__DOT____VdfgTmp_h22b91ed1__0) 
-                            & (IData)(vlSelf->__PVT__ram_ack)) 
-                           | ((IData)(board__DOT____VdfgTmp_h56676f03__0) 
-                              | (IData)(board__DOT____VdfgTmp_h288a1ef5__0)));
+    vlSelf->dbg_iack = (((IData)(board__DOT____VdfgTmp_h22b91ed1__0) 
+                         & (IData)(vlSelf->__PVT__ram_ack)) 
+                        | ((IData)(board__DOT____VdfgTmp_h56676f03__0) 
+                           | (IData)(board__DOT____VdfgTmp_h288a1ef5__0)));
 }
 
 VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__1(Vtb_sdram_tb_sdram* vlSelf) {
@@ -773,8 +773,8 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__3(Vtb_sdram_
     vlSelf->__PVT__derr = ((IData)(vlSelf->board__DOT____VdfgTmp_h223955ac__0) 
                            | ((IData)(board__DOT____VdfgTmp_hab3cb56a__0) 
                               & (IData)(vlSymsp->TOP.io_err)));
-    vlSelf->__PVT__dack = (((IData)(vlSelf->board__DOT____VdfgTmp_hdb4dbddb__0) 
-                            & (IData)(vlSelf->__PVT__ram_ack)) 
-                           | ((IData)(board__DOT____VdfgTmp_hab3cb56a__0) 
-                              | (IData)(vlSelf->board__DOT____VdfgTmp_h223955ac__0)));
+    vlSelf->dbg_dack = (((IData)(vlSelf->board__DOT____VdfgTmp_hdb4dbddb__0) 
+                         & (IData)(vlSelf->__PVT__ram_ack)) 
+                        | ((IData)(board__DOT____VdfgTmp_hab3cb56a__0) 
+                           | (IData)(vlSelf->board__DOT____VdfgTmp_h223955ac__0)));
 }

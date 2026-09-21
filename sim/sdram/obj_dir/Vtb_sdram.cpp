@@ -22,6 +22,10 @@ Vtb_sdram::Vtb_sdram(VerilatedContext* _vcontextp__, const char* _vcname__)
     , dbg_ram_req{vlSymsp->TOP.dbg_ram_req}
     , dbg_ram_burst{vlSymsp->TOP.dbg_ram_burst}
     , dbg_ch2_req{vlSymsp->TOP.dbg_ch2_req}
+    , dbg_dack{vlSymsp->TOP.dbg_dack}
+    , dbg_iack{vlSymsp->TOP.dbg_iack}
+    , dbg_dreq{vlSymsp->TOP.dbg_dreq}
+    , dbg_ireq{vlSymsp->TOP.dbg_ireq}
     , dbg_max_refresh_gap{vlSymsp->TOP.dbg_max_refresh_gap}
     , dbg_violations{vlSymsp->TOP.dbg_violations}
     , dbg_last_col{vlSymsp->TOP.dbg_last_col}

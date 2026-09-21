@@ -50,7 +50,11 @@ module tb_sdram (
     output wire [15:0] dbg_last_row,
     output wire [15:0] dbg_last_a,
     output wire [26:1] dbg_ch2_addr,
-    output wire        dbg_ch2_req
+    output wire        dbg_ch2_req,
+    output wire        dbg_dack,
+    output wire        dbg_iack,
+    output wire        dbg_dreq,
+    output wire        dbg_ireq
 );
     wire [31:0] ia, ird, da, dwd, drd;
     wire        ireq, ibur, iack, ierr, dreq, dbur, dwe, dack, derr;
@@ -94,6 +98,10 @@ module tb_sdram (
     wire [31:0] ch2_dout, ch2_din;
     wire        ch1_req, ch1_ready, ch2_req, ch2_rnw, ch2_ready;
 
+    assign dbg_dack = dack;
+    assign dbg_iack = iack;
+    assign dbg_dreq = dreq;
+    assign dbg_ireq = ireq;
     assign dbg_ch2_addr = ch2_addr;
     assign dbg_ch2_req  = ch2_req;
     assign dbg_ram_addr  = ram_addr;

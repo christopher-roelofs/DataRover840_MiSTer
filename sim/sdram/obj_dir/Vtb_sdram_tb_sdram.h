@@ -34,9 +34,11 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_sdram_tb_sdram final : public VerilatedMo
         VL_OUT8(dbg_ram_req,0,0);
         VL_OUT8(dbg_ram_burst,0,0);
         VL_OUT8(dbg_ch2_req,0,0);
-        CData/*0:0*/ __PVT__iack;
+        VL_OUT8(dbg_dack,0,0);
+        VL_OUT8(dbg_iack,0,0);
+        VL_OUT8(dbg_dreq,0,0);
+        VL_OUT8(dbg_ireq,0,0);
         CData/*0:0*/ __PVT__ierr;
-        CData/*0:0*/ __PVT__dack;
         CData/*0:0*/ __PVT__derr;
         CData/*0:0*/ __PVT__ram_we;
         CData/*0:0*/ __PVT__ram_ack;
@@ -83,10 +85,10 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_sdram_tb_sdram final : public VerilatedMo
         SData/*13:0*/ __PVT__ctl__DOT__refresh_count;
         SData/*12:0*/ __PVT__ctl__DOT__unnamedblk1__DOT__cas_addr;
         SData/*15:0*/ __PVT__ctl__DOT__unnamedblk1__DOT__dq_reg;
-        SData/*12:0*/ __Vdly__ctl__DOT__unnamedblk1__DOT__cas_addr;
-        VL_OUT(io_addr,31,0);
     };
     struct {
+        SData/*12:0*/ __Vdly__ctl__DOT__unnamedblk1__DOT__cas_addr;
+        VL_OUT(io_addr,31,0);
         VL_OUT(io_wdata,31,0);
         VL_IN(io_rdata,31,0);
         VL_OUT(retire_pc,31,0);

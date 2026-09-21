@@ -223,7 +223,14 @@ int main(int argc, char **argv) {
         if (io_fire)  ioidx++;
         dut->clk = 0; dut->eval();
         cycles++;
-        if (getenv("DBG") && dut->dbg_ram_ack && dbgn < 24) {
+        if (getenv("DBG") && idx > 81280 && (dut->dbg_dack || dut->dbg_iack)
+            && dbgn < 30) {
+            printf("[ack] cycle %6" PRIu64 " %s%s ireq=%d dreq=%d burst=%d addr %07X data %08X\n",
+                   cycles, dut->dbg_dack ? "D" : " ", dut->dbg_iack ? "I" : " ",
+                   dut->dbg_ireq, dut->dbg_dreq, dut->dbg_ram_burst, dut->dbg_ram_addr, dut->dbg_ram_rdata);
+            dbgn++;
+        }
+        if (0) {
             printf("[ram] cycle %6" PRIu64 " addr %07X %s -> %08X\n",
                    cycles, dut->dbg_ram_addr,
                    dut->dbg_ram_burst ? "burst" : "single", dut->dbg_ram_rdata);
