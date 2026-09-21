@@ -25,6 +25,7 @@ if [ ! -x tools/gentrace ]; then
         "$MRC/build/libmrc_cpu_mips.a" "$MRC/build/libmrc_common.a"
 fi
 [ -x sim/cosim/obj_dir/Vr3900 ] || make -C sim/cosim >/dev/null
+[ -x sim/cosim/obj_cached/Vtb_top ] || make -C sim/cosim cached >/dev/null
 
 mkdir -p "$OUT"
 pass=0; fail=0
@@ -44,14 +45,26 @@ for src in tests/*.s; do
         fail=$((fail+1)); continue
     fi
 
-    if out=$(./sim/cosim/obj_dir/Vr3900 --state "$OUT/$name.trc" \
-                                        --bus "$OUT/$name.bus" 2>&1); then
-        ipc=$(echo "$out" | grep -oE '[0-9.]+ IPC' || true)
+    # Both cores: bare, and the same pipeline behind its caches. A cache
+    # that needed a different answer would not be transparent.
+    ok=1
+    for core in obj_dir/Vr3900 obj_cached/Vtb_top; do
+        [ -x "sim/cosim/$core" ] || continue
+        if out=$(./sim/cosim/$core --state "$OUT/$name.trc" \
+                                   --bus "$OUT/$name.bus" \
+                                   --flat "$OUT/$name.bin" 2>&1); then
+            [ "$core" = obj_dir/Vr3900 ] &&
+                ipc=$(echo "$out" | grep -oE '[0-9.]+ IPC' || true)
+        else
+            ok=0
+            printf '%-14s FAIL (%s)\n' "$name" "$core"
+            echo "$out" | grep -E '^\*\*\*' -A4 | sed 's/^/                /'
+        fi
+    done
+    if [ "$ok" = 1 ]; then
         printf '%-14s ok    %s exception(s), %s\n' "$name" "$want" "$ipc"
         pass=$((pass+1))
     else
-        printf '%-14s FAIL\n' "$name"
-        echo "$out" | grep -E '^\*\*\*' -A4 | sed 's/^/                /'
         fail=$((fail+1))
     fi
 done

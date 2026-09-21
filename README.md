@@ -20,19 +20,46 @@ PASS
 Eleven directed tests cover what the ROM does not reach, including every
 exception the core can raise. `tests/run`.
 
+The same ten million also pass **with the caches in place** and **under
+memory latency**, fixed or random. A cache is supposed to be invisible, so
+the test for one is that nothing above had to change.
+
 On the DE10-Nano part, the core alone:
 
 | | |
 |---|---|
-| ALMs | 2,781 / 41,910 (7%) |
-| Registers | 3,229 |
-| DSP | 6 / 112 |
-| Block RAM | none yet |
-| Fmax | 57.17 MHz (slow 85C) |
+| | core | with caches |
+|---|---|---|
+| ALMs | 2,781 (7%) | 3,203 (8%) |
+| Registers | 3,229 | 3,516 |
+| Block RAM | none | 7 M10K, 47,808 bits |
+| DSP | 6 / 112 | 6 / 112 |
+| Fmax | 57.17 MHz | 47.49 MHz |
 
-**57.17 MHz at 0.848 IPC is 48.5 MIPS**, against the 36.864 the part manages
-at one instruction per cycle. That is 1.3x the target, which is the margin
-the caches and SDRAM controller have to fit inside.
+### What that is worth
+
+Memory that answers immediately is the one thing this core will never meet,
+so IPC at zero latency is not a number to plan with. Against the same
+modelled latency, over the ten-million-instruction window:
+
+| memory latency | no cache | cached |
+|---|---|---|
+| 0 | 0.858 | 0.923 |
+| 2 cycles | 0.245 | **0.497** |
+| 5 cycles | 0.120 | **0.367** |
+| random 0-11 | 0.117 | **0.351** |
+
+At two cycles that is 14.0 MIPS against 23.6: the caches are worth about
+1.7x after paying for the lower Fmax they cost.
+
+**On the target this gets measured against.** Earlier notes here called
+36.864 MIPS the goal, taking the reference's one-instruction-per-cycle
+model at face value. That model is a placeholder -- magicrecomp's own source
+says so -- and the real TMPR3902U has these same two caches with real DRAM
+behind them, so it stalls too. What the part actually retires per second is
+not known and nothing here has measured it. The honest claim is that the
+cached core is about 1.7x the uncached one at a plausible latency, not that
+it meets a verified number.
 
 ## How it is validated
 
@@ -159,10 +186,37 @@ The retire port names the instruction whose writes have already landed,
 which is one edge behind WB. That is deliberate: naming it while it is still
 in WB would point at state it has not written yet.
 
+## Caches
+
+`rtl/cpu/r3900_cache.sv`. 4 KB of instruction cache and 1 KB of data cache,
+direct-mapped, 16-byte lines. Not guesses: the IDT monitor prints both
+sizes, and the ROM's invalidation loops at `0x83C008AC` and `0x83C008D4`
+walk exactly those sizes in 16-byte lines.
+
+- **Write-through, no write allocate**, which is what the TX39 family
+  documents. It also keeps the thing testable: every store still reaches
+  memory in program order, so stores go on being checked against the
+  reference one for one, and only reads are filtered.
+- **A hit costs no cycles.** The core publishes a lookahead address so the
+  tag and data RAMs have already been read by the time an access is asked
+  for. Addressing them with the current address would make every hit take
+  two cycles and halve the IPC the pipeline exists for.
+- **Refills are bursts.** Four separate reads pay the access latency four
+  times, which throws away most of the benefit.
+- **kuseg and kseg0 are cached; kseg1 and kseg2/3 are not.** kseg1 is where
+  this board's registers are reached. This is the one thing lockstep cannot
+  check: a cache is architecturally invisible in a machine with one master,
+  so the reference agrees with any policy. The tests show the caches break
+  nothing, not that the policy is the part's own.
+- **No snooping.** MIPS hardware does not snoop; software that writes
+  instructions invalidates them itself, and this ROM does. The CACHE
+  instruction is passed out of the core and drops the addressed line.
+
 ## Layout
 
 ```
 rtl/cpu/r3900.sv     the core
+rtl/cpu/r3900_cache.sv  the caches, and the core wrapped in them
 sim/cosim/           Verilator lockstep harness against magicrecomp
 sim/golden/          reference traces (regenerated, not committed)
 scripts/mktrace      regenerates them
@@ -175,8 +229,9 @@ sys/                 MiSTer framework
 
 ## Next
 
-1. I-cache and D-cache (4 KB / 1 KB, what the monitor reports), SDRAM
-   controller, ROM load over the HPS.
+1. SDRAM controller, and ROM load over the HPS. The memory-side interface
+   is already the shape it has to answer: two ports, word writes, and
+   four-word bursts for refills.
 2. TX39 peripheral block, enough of it to reach the IDT monitor banner:
    BIU, interrupt controller, UART A, clock/power control.
 3. LCD controller to MiSTer video. 480x320 at 2 bpp, four pixels per byte,

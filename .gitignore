@@ -5,6 +5,7 @@ sim/golden/*.bus
 
 # Verilator and Quartus build output
 sim/cosim/obj_dir/
+sim/cosim/obj_cached/
 syn/**/db/
 syn/**/incremental_db/
 syn/**/output_files/

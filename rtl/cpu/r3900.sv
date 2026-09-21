@@ -48,6 +48,13 @@ module r3900 #(
 
     output wire [31:0] ibus_addr,
     output wire        ibus_req,
+    // The address this port will present on the next cycle, and whether the
+    // segment it lands in is cacheable. A cache needs both an address
+    // early, so a synchronous RAM read can be under way before the access
+    // is asked for, and it needs them for the address it is about to see,
+    // not the one it is seeing.
+    output wire [31:0] ibus_addr_la,
+    output wire        ibus_cached,
     input  wire        ibus_ack,
     input  wire [31:0] ibus_rdata,
     input  wire        ibus_err,
@@ -56,6 +63,8 @@ module r3900 #(
     // address itself.
     output wire [31:0] dbus_addr,
     output wire        dbus_req,
+    output wire [31:0] dbus_addr_la,
+    output wire        dbus_cached,
     output wire        dbus_we,
     output wire [3:0]  dbus_be,
     output wire [31:0] dbus_wdata,
@@ -64,6 +73,14 @@ module r3900 #(
     input  wire        dbus_err,
 
     input  wire [5:0]  irq_in,          // IP2..IP7 into Cause.IP[7:2]
+
+    // The CACHE instruction, passed out rather than acted on here. MIPS
+    // hardware does not snoop: software that writes instructions is
+    // required to invalidate them itself, and this ROM does -- its
+    // invalidation loops at 0x83C008AC and 0x83C008D4 walk 4 KB and 1 KB in
+    // 16-byte lines, which is how the cache sizes were established.
+    output wire        cache_op,
+    output wire [31:0] cache_op_addr,
 
     // Retire observation: one cycle per instruction as it commits, with the
     // architectural state it produced already visible. The comparison point
@@ -101,6 +118,18 @@ module r3900 #(
     function [31:0] phys(input [31:0] va);
         phys = (va >= 32'h8000_0000 && va < 32'hC000_0000)
              ? (va & 32'h1FFF_FFFF) : va;
+    endfunction
+
+    // kuseg and kseg0 are cached; kseg1 and kseg2/3 are not. kseg1 is where
+    // this board's device registers are reached, which is what makes the
+    // distinction matter rather than merely exist.
+    //
+    // This is the one thing here lockstep cannot check. A cache is
+    // architecturally invisible in a machine with a single master, so the
+    // reference -- which models no cache at all -- agrees with any policy.
+    // It says the caches break nothing, not that the policy is right.
+    function cacheable(input [31:0] va);
+        cacheable = (va < 32'hA000_0000);
     endfunction
 
     // ============================================== pipeline registers
@@ -327,7 +356,17 @@ module r3900 #(
     wire        id_redirect;
     wire [31:0] id_target;
 
-    assign ibus_addr = phys(fpc);
+    // Where the fetch pointer goes after a fetch completes.
+    wire [31:0] fpc_nxt = redir_v ? redir_pc
+                        : (id_redirect ? id_target : (fpc + 32'd4));
+
+    assign ibus_addr   = phys(fpc);
+    assign ibus_cached = cacheable(fpc);
+    // What the port will be showing next cycle: the vector on a flush, the
+    // following instruction if this fetch lands, otherwise this one again.
+    assign ibus_addr_la = exc_flush ? phys(exc_vector)
+                        : fetch_ok  ? phys(fpc_nxt)
+                                    : phys(fpc);
     // Fetch whenever ID can take the result. Nothing is fetched speculatively
     // past a branch, so there is no wrong path to squash.
     assign ibus_req  = adv_id && !exc_flush;
@@ -376,13 +415,26 @@ module r3900 #(
     wire id_me_hit_rt = me_writes && (me_wa != 5'd0) && (me_wa == id_rt);
     wire id_wb_hit_rt = wb_v && wb_we && (wb_wa != 5'd0) && (wb_wa == id_rt);
 
+    // What the MEM stage is actually producing. For a load that is the
+    // value coming back from memory, not me_result -- which for a load
+    // holds the effective address. Forwarding the address instead is wrong
+    // whenever the answer is not corrected further down, and the correction
+    // is not guaranteed: if MEM stalls while the consumer sits in EX, WB
+    // drains and the EX-stage forward that had been covering for it
+    // disappears, leaving the address latched as the operand.
+    //
+    // load_value is only meaningful once the access has been acknowledged,
+    // which is also the only time ID is allowed to advance, so an in-flight
+    // load can never be sampled through here.
+    wire [31:0] me_fwd = is_load(me_insn) ? load_value : me_result;
+
     wire [31:0] id_s = (id_rs == 5'd0) ? 32'd0 :
                        id_ex_hit_rs    ? ex_alu_out :
-                       id_me_hit_rs    ? me_result  :
+                       id_me_hit_rs    ? me_fwd     :
                        id_wb_hit_rs    ? wb_value   : rf_rs;
     wire [31:0] id_t = (id_rt == 5'd0) ? 32'd0 :
                        id_ex_hit_rt    ? ex_alu_out :
-                       id_me_hit_rt    ? me_result  :
+                       id_me_hit_rt    ? me_fwd     :
                        id_wb_hit_rt    ? wb_value   : rf_rt;
 
     // Branch resolution.
@@ -491,11 +543,11 @@ module r3900 #(
     wire ex_wb_hit_rt = wb_v && wb_we && (wb_wa != 5'd0) && (wb_wa == ex_rt);
 
     wire [31:0] s = (ex_rs == 5'd0) ? 32'd0 :
-                    ex_me_hit_rs    ? me_result :
-                    ex_wb_hit_rs    ? wb_value  : ex_rs_raw;
+                    ex_me_hit_rs    ? me_fwd   :
+                    ex_wb_hit_rs    ? wb_value : ex_rs_raw;
     wire [31:0] t = (ex_rt == 5'd0) ? 32'd0 :
-                    ex_me_hit_rt    ? me_result :
-                    ex_wb_hit_rt    ? wb_value  : ex_rt_raw;
+                    ex_me_hit_rt    ? me_fwd   :
+                    ex_wb_hit_rt    ? wb_value : ex_rt_raw;
 
     wire [31:0] add_r  = s + t;
     wire [31:0] sub_r  = s - t;
@@ -629,6 +681,13 @@ module r3900 #(
     assign dbus_req  = me_needs_mem;
     assign dbus_we   = is_rmw(i_me) ? me_phase : is_store(i_me);
     assign dbus_addr = phys(me_va) & 32'hFFFF_FFFC;
+    assign dbus_cached = cacheable(me_va);
+    assign cache_op      = me_v && (`OP(i_me) == 6'h2F) && !me_exc_v && adv_mem;
+    assign cache_op_addr = phys(me_va);
+    // The address arriving in MEM next cycle is the one EX is computing
+    // now, unless MEM is holding, in which case it is the one it already
+    // has.
+    assign dbus_addr_la = (adv_mem ? phys(ex_va) : phys(me_va)) & 32'hFFFF_FFFC;
 
     reg [3:0] me_be;
     always @(*) begin
@@ -946,8 +1005,7 @@ module r3900 #(
 
             // ------------------------------------------------ IF
             if (fetch_ok && !exc_flush) begin
-                fpc <= redir_v ? redir_pc
-                     : (id_redirect ? id_target : (fpc + 32'd4));
+                fpc <= fpc_nxt;
                 if (redir_v) redir_v <= 1'b0;
             end else if (id_redirect && !exc_flush) begin
                 // The delay slot has not been fetched yet; remember where to
