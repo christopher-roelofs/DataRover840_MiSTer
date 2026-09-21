@@ -140,15 +140,15 @@ VL_INLINE_OPT void Vtb_sdram___024root___nba_sequent__TOP__2(Vtb_sdram___024root
     vlSelf->imiss_count = vlSymsp->TOP__tb_sdram__cpu.__PVT__imiss_count;
     vlSelf->dhit_count = vlSymsp->TOP__tb_sdram__cpu.__PVT__dhit_count;
     vlSelf->dmiss_count = vlSymsp->TOP__tb_sdram__cpu.__PVT__dmiss_count;
-    vlSelf->dbg_cen = vlSymsp->TOP__tb_sdram.dbg_cen;
     vlSelf->dbg_ch2_req = vlSymsp->TOP__tb_sdram.__PVT__ch2_req;
     vlSelf->dbg_start = vlSymsp->TOP__tb_sdram.dbg_start;
     vlSelf->dbg_start_addr = vlSymsp->TOP__tb_sdram.dbg_start_addr;
     vlSelf->dbg_start_kind = vlSymsp->TOP__tb_sdram.dbg_start_kind;
-    vlSelf->dbg_state = vlSymsp->TOP__tb_sdram.__PVT__adapter__DOT__state;
     vlSelf->dbg_ch2_addr = vlSymsp->TOP__tb_sdram.__PVT__ch2_addr;
     vlSelf->dbg_ram_rdata = vlSymsp->TOP__tb_sdram.__PVT__ram_rdata;
     vlSelf->dbg_ram_ack = vlSymsp->TOP__tb_sdram.__PVT__ram_ack;
+    vlSelf->dbg_state = vlSymsp->TOP__tb_sdram.__PVT__adapter__DOT__state;
+    vlSelf->dbg_cen = vlSymsp->TOP__tb_sdram.dbg_cen;
     vlSelf->io_wdata = vlSymsp->TOP__tb_sdram__cpu__cpu.__PVT__store_word;
 }
 

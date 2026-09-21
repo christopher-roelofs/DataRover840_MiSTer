@@ -56,7 +56,7 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__5(Vtb_sdram_
     VL_DEBUG_IF(VL_DBG_MSGF("+      Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__5\n"); );
     // Body
     vlSelf->__PVT__ch1_dout = vlSelf->__Vdly__ch1_dout;
-    vlSelf->__PVT__ch1_ready = vlSelf->__Vdly__ch1_ready;
-    vlSelf->__PVT__ch2_ready = vlSelf->__Vdly__ch2_ready;
     vlSelf->__PVT__ch2_dout = vlSelf->__Vdly__ch2_dout;
+    vlSelf->__PVT__ch2_ready = vlSelf->__Vdly__ch2_ready;
+    vlSelf->__PVT__ch1_ready = vlSelf->__Vdly__ch1_ready;
 }

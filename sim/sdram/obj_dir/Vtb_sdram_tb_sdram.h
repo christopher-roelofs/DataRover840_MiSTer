@@ -65,6 +65,8 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_sdram_tb_sdram final : public VerilatedMo
         CData/*0:0*/ board__DOT____VdfgTmp_h223955ac__0;
         CData/*3:0*/ __PVT__adapter__DOT__state;
         CData/*0:0*/ __PVT__adapter__DOT__ack_taken;
+        CData/*0:0*/ __PVT__adapter__DOT__ch1_done;
+        CData/*0:0*/ __PVT__adapter__DOT__ch2_done;
         CData/*3:0*/ __PVT__ctl__DOT__state;
         CData/*2:0*/ __PVT__ctl__DOT__command;
         CData/*0:0*/ __PVT__ctl__DOT__chip;
@@ -83,10 +85,10 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_sdram_tb_sdram final : public VerilatedMo
         CData/*3:0*/ __Vdly__ctl__DOT__state;
         CData/*0:0*/ __Vdly__ctl__DOT__unnamedblk1__DOT__saved_wr;
         CData/*1:0*/ __Vdly__ctl__DOT__unnamedblk1__DOT__ch;
-        VL_OUT16(dbg_max_refresh_gap,15,0);
-        VL_OUT16(dbg_violations,15,0);
     };
     struct {
+        VL_OUT16(dbg_max_refresh_gap,15,0);
+        VL_OUT16(dbg_violations,15,0);
         VL_OUT16(dbg_last_col,15,0);
         VL_OUT16(dbg_last_row,15,0);
         VL_OUT16(dbg_last_a,15,0);

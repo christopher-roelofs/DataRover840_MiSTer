@@ -101,6 +101,8 @@ VL_ATTR_COLD void Vtb_sdram_tb_sdram___ctor_var_reset(Vtb_sdram_tb_sdram* vlSelf
     vlSelf->__PVT__adapter__DOT__line = VL_RAND_RESET_I(25);
     vlSelf->__PVT__adapter__DOT__merged = VL_RAND_RESET_I(32);
     vlSelf->__PVT__adapter__DOT__ack_taken = VL_RAND_RESET_I(1);
+    vlSelf->__PVT__adapter__DOT__ch1_done = VL_RAND_RESET_I(1);
+    vlSelf->__PVT__adapter__DOT__ch2_done = VL_RAND_RESET_I(1);
     vlSelf->__PVT__ctl__DOT__state = VL_RAND_RESET_I(4);
     vlSelf->__PVT__ctl__DOT__refresh_count = VL_RAND_RESET_I(14);
     vlSelf->__PVT__ctl__DOT__command = VL_RAND_RESET_I(3);

@@ -305,6 +305,20 @@ and so the worst case the machine ever has.) Over the first million it is
 would be worth more still if the SDRAM could be clocked that high, which at
 95 MHz it already nearly cannot.
 
+**Crossing between the two rates is where this got interesting.** The core's
+registers move on enabled edges and the adapter's move on every edge, so a
+path between them has one memory clock unless something makes it otherwise.
+The decode in front of the adapter and the route from its data into the
+cache RAMs both need more than one; the first build missed by 5 ns.
+
+The fix is in the adapter, not the constraints: it **raises a reply, and
+starts a transaction, only on an enabled edge**. Then the far side captures
+on the next one and everything crossing has a whole core period. The
+controller's ready pulses are one cycle wide and do not wait, so they are
+caught and held until that edge comes round. It costs a little -- IPC at a
+divider of two went 0.149 to 0.145 over the first million -- and it lets the
+`.sdc` say something true instead of something convenient.
+
 **A clock enable does not relax timing by itself.** Without saying so, the
 fitter has to close the whole core at the memory's rate. The constraint that
 makes it true is in `syn/cached/r3900_cached_syn.sdc`:

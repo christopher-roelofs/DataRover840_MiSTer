@@ -104,6 +104,31 @@ module dr840_sdram (
     // A reply has been taken once an enabled edge has seen it asserted.
     wire ack_taken = ram_ack && cen;
 
+    // A reply is only ever *raised* on an enabled edge either, which is a
+    // timing property rather than a functional one. The requester captures
+    // on the next enabled edge, so raising it on an arbitrary edge leaves
+    // the data one clock to cross into the core -- and at 95 MHz it does
+    // not fit. Raised on an enabled edge, it has a whole core period, and
+    // the .sdc says so.
+    //
+    // The controller's ready pulses are one cycle wide and do not wait, so
+    // they are caught here and held until that edge comes round.
+    reg ch1_done, ch2_done;
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            ch1_done <= 1'b0;
+            ch2_done <= 1'b0;
+        end else begin
+            if (ch1_ready)           ch1_done <= 1'b1;
+            else if (ch1_take & cen) ch1_done <= 1'b0;
+            if (ch2_ready)           ch2_done <= 1'b1;
+            else if (ch2_take & cen) ch2_done <= 1'b0;
+        end
+    end
+    // Which of them the current state is waiting on.
+    wire ch1_take = (state == S_B_LO) || (state == S_B_HI);
+    wire ch2_take = (state == S_RD) || (state == S_WR) || (state == S_RMW_R);
+
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             state   <= S_IDLE;
@@ -126,11 +151,17 @@ module dr840_sdram (
             end
 
             case (state)
-            // Not while acknowledging: ram_ack is registered, so the
+            // Only on an enabled edge, for the same reason replies are
+            // only raised on one: the request and its address come from
+            // registers in the core, which move on those edges. Sampling
+            // between them leaves the address one memory clock to cross,
+            // and the decode in front of it does not fit in one.
+            //
+            // Not while acknowledging either: ram_ack is registered, so the
             // requester still has its old request up on the cycle it sees
             // the reply. Starting on that would run the same access twice
             // and leave the next one holding the previous one's data.
-            S_IDLE: if (ram_req && !ram_ack) begin
+            S_IDLE: if (ram_req && !ram_ack && cen) begin
                 if (ram_burst) begin
                     line     <= {ram_addr[24:4], 4'd0};
                     ch1_addr <= {2'b00, ram_addr[24:4], 3'd0};
@@ -155,20 +186,20 @@ module dr840_sdram (
                 end
             end
 
-            S_RD: if (ch2_ready) begin
+            S_RD: if (ch2_done && cen) begin
                 ram_rdata <= swap(ch2_dout);
                 ram_ack   <= 1'b1;
                 state     <= S_TAKE;
             end
 
-            S_WR: if (ch2_ready) begin
+            S_WR: if (ch2_done && cen) begin
                 ram_ack <= 1'b1;
                 state   <= S_TAKE;
             end
 
             S_TAKE: if (ack_taken) state <= S_IDLE;
 
-            S_RMW_R: if (ch2_ready) begin
+            S_RMW_R: if (ch2_done && cen) begin
                 hold    <= swap(ch2_dout);
                 ch2_rnw <= 1'b0;
                 state   <= S_RMW_W;
@@ -188,7 +219,7 @@ module dr840_sdram (
             // is asserted, so it is not readable until the cycle after.
             // Sampling all 64 bits when ready first goes high gets the last
             // word of every burst from the previous one.
-            S_B_LO: if (ch1_ready) begin
+            S_B_LO: if (ch1_done && cen) begin
                 ram_rdata <= swap(ch1_dout[31:0]);
                 ram_ack   <= 1'b1;
                 state     <= S_B_T0;
@@ -203,7 +234,7 @@ module dr840_sdram (
                 ch1_req  <= 1'b1;
                 state    <= S_B_HI;            // the default drops the ack
             end
-            S_B_HI: if (ch1_ready) begin
+            S_B_HI: if (ch1_done && cen) begin
                 ram_rdata <= swap(ch1_dout[31:0]);
                 ram_ack   <= 1'b1;
                 state     <= S_B_T2;
