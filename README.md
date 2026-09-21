@@ -205,6 +205,14 @@ asking for, so making the younger access wait is free where making the older
 one wait is not. A burst holds the grant, which needs no counter: the cache
 keeps its request asserted for all four beats.
 
+The board is tested at memory latencies from zero upward, fixed and random,
+because one SDRAM serving two ports is where a stall bug hides. Over the
+first million instructions -- mostly uncached monitor code, so pessimistic:
+
+| SDRAM latency | 0 | 1 | 2 | 4 | random 0-7 |
+|---|---|---|---|---|---|
+| IPC | 0.901 | 0.524 | 0.366 | 0.230 | 0.254 |
+
 `sim/cosim/tb_board.cpp` runs the same lockstep one level further out, and
 the split it uses is the board's rather than a guess. Whatever the decode
 calls memory is served from a model of the SDRAM with the ROM loaded at its

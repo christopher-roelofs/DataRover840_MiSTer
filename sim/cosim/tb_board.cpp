@@ -193,9 +193,11 @@ int main(int argc, char **argv) {
             }
             dut->ram_ack = 1;
             ram_fire = true;
-        } else {
-            busy = false; burst_run = false;
         }
+        // Only an idle port resets the latency state. Clearing it while the
+        // port is still waiting restarts the countdown every cycle, and
+        // nothing ever completes.
+        if (!dut->ram_req) { busy = false; burst_run = false; }
 
         // ---- peripherals, replayed in order
         dut->io_ack = 0; dut->io_err = 0;
