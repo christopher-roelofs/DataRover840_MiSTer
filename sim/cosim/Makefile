@@ -10,7 +10,7 @@ TOP       := r3900
 OBJ       := obj_dir
 
 VFLAGS := --cc --exe --build -j 0 \
-          -Wall -Wno-fatal \
+          -Wall -Wno-fatal +define+SIMULATION \
           --top-module $(TOP) \
           -GCOUNT_PER_INSN=1 \
           -CFLAGS "-O2 -I$(CURDIR)" \

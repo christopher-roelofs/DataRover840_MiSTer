@@ -11,8 +11,9 @@ reset**, including every one of the 2,146,801 data-bus accesses in that
 window. Nothing else exists yet: no SoC, no video, no MiSTer wiring.
 
 ```
-matched 10000000 of 10000000 instructions, 2146801 bus accesses,
-22147759 cycles (2.21 cycles/insn)
+matched 10000000 of 10000000 instructions, 2146802 bus accesses,
+11656940 cycles (1.17 cycles/insn, 0.858 IPC)
+fetches 10000004 for 10000000 retires (1.000 per instruction)
 PASS
 ```
 
@@ -20,11 +21,15 @@ On the DE10-Nano part, the core alone:
 
 | | |
 |---|---|
-| ALMs | 3,345 / 41,910 (8%) |
-| Registers | 2,815 |
+| ALMs | 2,759 / 41,910 (7%) |
+| Registers | 3,249 |
 | DSP | 6 / 112 |
 | Block RAM | none yet |
-| Fmax | 66.7 MHz (slow 85C) |
+| Fmax | 56.07 MHz (slow 85C) |
+
+**56.07 MHz at 0.858 IPC is 48.1 MIPS**, against the 36.864 the part manages
+at one instruction per cycle. That is 1.3x the target, which is the margin
+the caches and SDRAM controller have to fit inside.
 
 ## How it is validated
 
@@ -90,16 +95,35 @@ by that window, and so not yet validated: `add`, `sub`, `multu`, `div`,
 `bltzal`, `bgezal`, `syscall`, `break`, and every exception path -- the ROM
 takes none in the first ten million instructions.
 
-## Sequencing, and why it is going to change
+## Sequencing
 
-This is the correctness-first version: one instruction at a time through an
-explicit state machine, 2.21 cycles per instruction. At 66.7 MHz that is
-about 30 MIPS, against the roughly 36.9 the part manages at 36.864 MHz and
-one instruction per cycle. Close, but short.
+Five stages: IF, ID, EX, MEM, WB.
 
-Pipelining is the next step. The retire port exists so that it can happen
-without changing how the core is validated: the harness compares
-architectural state at retire and does not care how many stages produced it.
+**Branches resolve in ID**, which is what makes the delay slot architectural
+rather than something to squash around. When a branch is in ID the delay
+slot is already the address IF is fetching, so the redirect lands on the
+fetch after it and the core never runs down a wrong path at all. The harness
+checks this directly and reports 1.000 fetches per retired instruction.
+
+Costing the 0.142 IPC that is not there, in rough order:
+
+- **Load-use.** The part has no architectural load delay slot -- it
+  scoreboards -- so the pipeline interlocks for one cycle and then forwards
+  from MEM/WB. A branch needs its operands a stage earlier than everyone
+  else, so a load two ahead of a branch costs a second cycle.
+- **CP0 and HI/LO are interlocked, not forwarded.** Both commit in WB, and a
+  reader behind a writer stalls until it drains. They are 1.3% of this ROM's
+  instructions, and an interlock cannot be subtly wrong the way a forwarding
+  path can. If IPC ever needs to go higher this is the first thing to
+  convert.
+- **Divide** is 33 cycles, restoring, on magnitudes. 29 of them in ten
+  million instructions.
+
+Multiply is one cycle in the DSP blocks.
+
+The retire port names the instruction whose writes have already landed,
+which is one edge behind WB. That is deliberate: naming it while it is still
+in WB would point at state it has not written yet.
 
 ## Layout
 

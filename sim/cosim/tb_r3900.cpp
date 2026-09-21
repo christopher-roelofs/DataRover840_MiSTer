@@ -17,6 +17,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <cinttypes>
+#include <unordered_map>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/mman.h>
@@ -98,6 +99,27 @@ int main(int argc, char **argv) {
     printf("reference: %" PRIu64 " instructions, %" PRIu64 " bus accesses\n",
            n_state, n_bus);
 
+    // A pipelined core fetches ahead of what it retires, so fetches cannot be
+    // served from a retire-ordered index. Build a read-only instruction image
+    // from the trace instead: every address the reference executed, with what
+    // was there. An address that ever held two different words would mean the
+    // ROM was written under us, which this window does not do -- say so
+    // rather than silently serving one of them.
+    std::unordered_map<uint32_t, uint32_t> imem;
+    imem.reserve(n_state);
+    for (uint64_t i = 0; i < n_state; i++) {
+        uint32_t a = phys(S[i].pc);
+        auto it = imem.find(a);
+        if (it == imem.end()) imem.emplace(a, S[i].insn);
+        else if (it->second != S[i].insn) {
+            fprintf(stderr, "instruction at %08X changed (%08X -> %08X) at %"
+                    PRIu64 "; this harness assumes read-only code\n",
+                    a, it->second, S[i].insn, i);
+            return 2;
+        }
+    }
+    printf("instruction image: %zu distinct addresses\n", imem.size());
+
     Vr3900 *dut = new Vr3900;
     dut->rst_n = 0;
     dut->irq_in = 0;
@@ -110,6 +132,11 @@ int main(int argc, char **argv) {
 
     uint64_t idx = 0;        // next instruction expected to retire
     uint64_t bidx = 0;       // next bus access expected
+    uint64_t fetches = 0;    // instruction fetches served
+    uint64_t drains  = 0;    // accesses from instructions past the trace end
+    // Deeper than any pipeline this core will have; only used at the very
+    // end of a run.
+    const uint64_t DRAIN_SLACK = 16;
     uint64_t cycles = 0;
     int      failures = 0;
     const uint64_t CYCLE_BUDGET = n_state * 64 + 1000;
@@ -129,23 +156,35 @@ int main(int argc, char **argv) {
         // three instructions later.
         dut->ibus_ack = 0;
         if (dut->ibus_req) {
-            uint32_t want = phys(S[idx].pc);
-            if (dut->ibus_addr != want) {
-                fprintf(stderr, "\n*** fetch address diverged at instruction %" PRIu64 "\n"
-                        "    reference pc %08X (phys %08X)\n"
-                        "    RTL       fetch %08X\n",
-                        idx, S[idx].pc, want, dut->ibus_addr);
+            auto it = imem.find(dut->ibus_addr);
+            if (it == imem.end()) {
+                fprintf(stderr, "\n*** fetched %08X, an address the reference "
+                        "never executed (next to retire is %" PRIu64
+                        ", pc %08X)\n", dut->ibus_addr, idx, S[idx].pc);
                 failures++;
                 break;
             }
-            dut->ibus_rdata = S[idx].insn;
+            dut->ibus_rdata = it->second;
             dut->ibus_ack   = 1;
+            fetches++;
         }
 
         // Data access, replayed from the reference.
         dut->dbus_ack = 0;
         if (dut->dbus_req) {
             if (bidx >= n_bus) {
+                // A pipelined core has instructions in flight past the one
+                // it is retiring, and near the end of the trace those are
+                // instructions the reference never recorded. Let them
+                // complete so the pipeline can drain, but only that close to
+                // the end -- anywhere earlier this means the core went
+                // somewhere the reference did not.
+                if (idx + DRAIN_SLACK >= n_state) {
+                    dut->dbus_rdata = 0;
+                    dut->dbus_ack   = 1;
+                    drains++;
+                    goto clocked;
+                }
                 fail("bus access past the end of the reference bus trace");
                 break;
             }
@@ -198,6 +237,7 @@ int main(int argc, char **argv) {
             dut->dbus_ack = 1;
         }
 
+    clocked:
         // ---- clock ----
         // Whether the access was accepted has to be latched before the
         // edge: dbus_req is a registered output and has already dropped by
@@ -265,8 +305,16 @@ int main(int argc, char **argv) {
     if (cycles >= CYCLE_BUDGET)
         printf("stalled: %" PRIu64 " cycles without finishing\n", cycles);
     printf("matched %" PRIu64 " of %" PRIu64 " instructions, %" PRIu64
-           " bus accesses, %" PRIu64 " cycles (%.2f cycles/insn)\n",
-           idx, n_state, bidx, cycles, idx ? (double)cycles / (double)idx : 0.0);
+           " bus accesses, %" PRIu64 " cycles (%.2f cycles/insn, %.3f IPC)\n",
+           idx, n_state, bidx, cycles, idx ? (double)cycles / (double)idx : 0.0,
+           cycles ? (double)idx / (double)cycles : 0.0);
+    // A core that fetches much more than it retires is speculating and
+    // throwing the work away; this one should not be.
+    printf("fetches %" PRIu64 " for %" PRIu64 " retires (%.3f per instruction)\n",
+           fetches, idx, idx ? (double)fetches / (double)idx : 0.0);
+    if (drains)
+        printf("%" PRIu64 " access(es) from instructions still in flight past "
+               "the end of the trace\n", drains);
 
     delete dut;
     if (failures || idx != n_state) {
