@@ -237,6 +237,41 @@ image at all (the furthest access is its very last byte), and the ROM does
 not use mirroring to find its size -- it does not find it at all, it is a
 constant. A real modulo would put a 32-bit divide on the path to memory.
 
+## SDRAM
+
+`rtl/board/sdram.sv` is Sorgelig's MiSTer controller, taken from GBA_MiSTer
+rather than written here: it is the one already proven against the 128 MB
+module this core targets, two chips selected by nCS from the top address
+bit, burst length 4, CAS 2. A controller is a bad place to be original.
+
+One change, and it is not behavioural: the bidirectional data bus comes out
+as separate `_O`, `_OE` and `_I` instead of a registered `inout`, and the
+pin is driven in one place at the top. A registered inout cannot be
+simulated -- Verilator refuses it outright -- and a memory controller is
+precisely the thing that most needs simulating.
+
+`rtl/board/dr840_sdram.sv` adapts it to the port the caches present, and
+each part of it exists for one mismatch:
+
+- **A refill is 16 bytes, a burst read returns 8**, so a line is two
+  transactions and the four words go back one per acknowledge.
+- **Halfword order.** The controller returns the lowest-addressed halfword
+  in the low bits and this machine is big-endian, so a word is the two
+  halves the other way round. The ROM the HPS loads goes through the same
+  swap, which is what keeps it readable.
+- **No byte enables.** The controller drives both byte masks from the same
+  bits, so a store narrower than a word reads, merges and writes back --
+  two transactions, for the 43,126 SB and SH in the first ten million
+  instructions. Adding masking to an otherwise proven controller is the
+  worse trade.
+
+`sim/sdram/` runs the whole path against a model of the chip that **checks
+the controller as it goes**: bank state, tRCD, reads from an unopened row,
+refresh interval. The model came from TI83Plus_MiSTer and was extended here
+for burst reads, since answering only the first word of a four-word burst
+would make a controller look correct while three quarters of every cache
+line came back as whatever was on the bus.
+
 ## Caches
 
 `rtl/cpu/r3900_cache.sv`. 4 KB of instruction cache and 1 KB of data cache,
@@ -269,6 +304,9 @@ walk exactly those sizes in 16-byte lines.
 rtl/cpu/r3900.sv     the core
 rtl/cpu/r3900_cache.sv  the caches, and the core wrapped in them
 rtl/board/dr840_mem.sv  address decode and the memory arbiter
+rtl/board/dr840_sdram.sv  the memory port onto the controller's channels
+rtl/board/sdram.sv      Sorgelig's MiSTer SDRAM controller
+sim/sdram/           the whole memory path against a model of the chip
 sim/cosim/           Verilator lockstep harness against magicrecomp
 sim/golden/          reference traces (regenerated, not committed)
 scripts/mktrace      regenerates them
@@ -281,9 +319,9 @@ sys/                 MiSTer framework
 
 ## Next
 
-1. SDRAM controller, and ROM load over the HPS. The memory-side interface
-   is already the shape it has to answer: two ports, word writes, and
-   four-word bursts for refills.
+1. Clocking, and ROM load over the HPS. The controller wants to run faster
+   than the CPU; one PLL with the core on a clock enable avoids any domain
+   crossing, and is what decides the real throughput.
 2. TX39 peripheral block, enough of it to reach the IDT monitor banner:
    BIU, interrupt controller, UART A, clock/power control.
 3. LCD controller to MiSTer video. 480x320 at 2 bpp, four pixels per byte,
