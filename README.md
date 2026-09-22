@@ -6,12 +6,18 @@ the device's own 4.3 MB ROM, as the hardware would.
 
 ## Status
 
-**It boots on the hardware.** Load the core on a MiSTer and the IDT
-monitor's banner comes out of the serial port, all 377 bytes of it,
-byte-identical to what the reference emulator prints, through the `<IDT>`
-prompt (`scripts/serial`). Underneath that: **the CPU matches the reference
-core over ten million instructions from reset**, including every one of the
-2,146,801 data-bus accesses in that window.
+**Magic Cap boots.** Load the core on a MiSTer with the DataRover ROM and
+the panel shows the rabbit coming out of the hat, then the splash: "Magic
+Cap -- Touch the screen to begin". Hold the option (OSD: Boot) and it takes
+the ROM's other path instead, the IDT monitor, whose banner comes out of
+the serial port byte-identical to the reference emulator's, through the
+`<IDT>` prompt (`scripts/serial`). Underneath that: **the CPU matches the
+reference core over ten million instructions from reset**, including every
+one of the 2,146,801 data-bus accesses in that window, and the peripheral
+traffic of the whole Magic Cap boot -- every register, every value, in
+order -- matches the reference's through the splash.
+
+Nothing touches the screen yet: no pen, no keyboard. That is next.
 
 ```
 matched 10000000 of 10000000 instructions, 2146802 bus accesses,
@@ -280,9 +286,16 @@ that looks exactly like a CPU bug.
 
 ### What you see
 
-There is no LCD controller yet, so the guest cannot draw. The video is a
-debug display instead of the machine's own: ten 32-bit values in hex
-(`rtl/dr840_hud.sv`).
+The panel: 480x320 at 2 bits per pixel, centred on a 640x480 raster with a
+dark bezel round it (`rtl/soc/dr840_lcd.sv`). The LCD controller is a
+scanout of the framebuffer VIDEOCTRL3 names, a line at a time into a line
+buffer, fetched through the board's arbiter as its third and last
+requester. A set bit is ink; INVVID flips it. Until the ROM enables the
+controller the panel is a flat grey, which is what an unpowered LCD looks
+like too.
+
+The OSD's Display option swaps in a debug display instead: ten 32-bit
+values in hex (`rtl/dr840_hud.sv`).
 
 | row | |
 |---|---|
@@ -487,7 +500,10 @@ rtl/cpu/r3900_cache.sv  the caches, and the core wrapped in them
 rtl/board/dr840_mem.sv  address decode and the memory arbiter
 rtl/board/dr840_sdram.sv  the memory port onto the controller's channels
 rtl/board/sdram.sv      Sorgelig's MiSTer SDRAM controller
-rtl/soc/dr840_tx39.sv   the TX39 peripheral block: interrupts, UART A, RTC, MBUS
+rtl/soc/dr840_tx39.sv   the TX39 peripheral block: interrupts, UART A, RTC,
+                        timers, power, MBUS, and the two Glacier card controllers
+rtl/soc/dr840_sib.sv    the serial interface bus and the UCB1100 codec on it
+rtl/soc/dr840_lcd.sv    the LCD controller, onto a 640x480 raster
 rtl/dr840_machine.sv    the machine: clock enable, loader mux, core, board, SoC
 rtl/emu.sv              the MiSTer top: ROM loader, UART pins, debug display
 scripts/deploy          builds a boot on the MiSTer; scripts/serial reads it
@@ -502,16 +518,53 @@ syn/cpu/             Quartus project for the core alone: area and Fmax
 sys/                 MiSTer framework
 ```
 
+## The peripherals, and how they were found
+
+Everything in `rtl/soc/` was written from the reference emulator's models
+and then argued with until the two machines' peripheral traffic agreed.
+The tool for that is the SDRAM harness's `--iolog`, which prints every
+device access in the reference's own `--log-mmio` format with polls
+collapsed to one line and a count, so the two boots diff directly; with
+`--watch-write`, `--trace-after` (added to the reference too) and
+`--dump-fb`, each divergence took about an hour to name. Some of them:
+
+- **IOCTRL's option pin.** Bits 6..0 are inputs and read from the pins
+  whatever was written. Pin 3 is the option button, and the ROM's
+  boot-select reads it 742,000 instructions in to choose Magic Cap or the
+  monitor. Reading back the written zero chose the monitor every time.
+- **POWERCTRL reads PWROK set** whatever was written. Reading it clear after
+  the ROM's own write, the ROM concluded the supply was failing and ran its
+  shutdown routine -- the countdown loops at 13C3B1E4 were its settling
+  delays.
+- **The interrupt lines.** ICU banks 1..5 drive IP4 and bank 6 drives IP6.
+  NetBSD's tx39icu.c switches on MIPS_INT_MASK_2 and MIPS_INT_MASK_4, and
+  those count hardware lines from zero; read as IP2 and IP4, the ROM never
+  enabled either, no interrupt was ever taken, and Magic Cap sat forever
+  in its idle loop waiting on a flag that only an interrupt handler sets.
+- **The SIB is a clocked frame bus.** SIBSF0INT is periodic, not raised by
+  the write that starts a transfer -- the ROM clears it after starting one
+  and waits, so raising it in the write loses it. The frame rate here is
+  the sound sample rate, 36.864 MHz / (128 * (SNDFSDIV + 1)); the reference
+  completes a frame every machine tick, about three times faster, so
+  anything the ROM paces by frames takes about three times as long here
+  as there. This is the one place the two are known to differ in time,
+  and the hardware rate is the honest one.
+- **INTRSTATUS6 is a summary** carrying IRQLOW whenever any bank has an
+  enabled source pending; the OS idle routine polls it. It is read-only.
+- **The Glacier card-detect pins are active low.** An empty slot reads them
+  high, and returning zero leaves the ROM's debounce polling forever.
+
 ## Next
 
-1. Recover the IPC lost to the handshakes on the core's edges: 0.719 at
+1. The pen. The UCB1100's touch ADC has the plates and the cross-driven
+   pressure readings modelled for a resting panel; a MiSTer mouse or touch
+   input drives `pen_down`, `pen_x`, `pen_y` into it and the splash
+   answers. The codec's IRQ pin and SIBIRQPOSINT are already there.
+2. The Magic Bus keyboard, on MBUS.
+3. Sound: the ring is consumed at the right rate with the half and wrap
+   interrupts, but the samples go nowhere. The MiSTer's audio out is
+   waiting for them.
+4. Recover the IPC lost to the handshakes on the core's edges: 0.72 at
    the core's rate over the banner path, against 0.75 before them.
-2. LCD controller to MiSTer video. 480x320 at 2 bpp, four pixels per byte,
-   most significant bits first -- the same panel format every Magic Cap
-   machine uses. That is what turns the debug display into the machine's
-   own screen.
-3. SIB and the UCB1100: touchscreen ADC, the AD2/AD3 battery rails, the
-   periodic sound-in interrupt the boot path waits on.
-4. Empty PC Card slots with card-detect high, MBUS idle.
 5. An external interrupt test: the ICU is exercised by the ROM's own timer
    path but nothing yet drives an IP line from outside the block.
