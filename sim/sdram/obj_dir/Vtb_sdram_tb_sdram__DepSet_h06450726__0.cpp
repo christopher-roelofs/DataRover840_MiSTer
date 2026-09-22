@@ -5,10 +5,10 @@
 #include "Vtb_sdram__pch.h"
 #include "Vtb_sdram_tb_sdram.h"
 
-VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__1(Vtb_sdram_tb_sdram* vlSelf) {
+VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__0(Vtb_sdram_tb_sdram* vlSelf) {
     if (false && vlSelf) {}  // Prevent unused
     Vtb_sdram__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
-    VL_DEBUG_IF(VL_DBG_MSGF("+      Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__1\n"); );
+    VL_DEBUG_IF(VL_DBG_MSGF("+      Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__0\n"); );
     // Init
     CData/*0:0*/ __Vdly__ctl__DOT__unnamedblk1__DOT__ch1_rq;
     __Vdly__ctl__DOT__unnamedblk1__DOT__ch1_rq = 0;
@@ -52,10 +52,10 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__1(Vtb_sdram_
         [(0xffU & (vlSelf->io_addr >> 2U))];
 }
 
-VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__5(Vtb_sdram_tb_sdram* vlSelf) {
+VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__4(Vtb_sdram_tb_sdram* vlSelf) {
     if (false && vlSelf) {}  // Prevent unused
     Vtb_sdram__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
-    VL_DEBUG_IF(VL_DBG_MSGF("+      Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__5\n"); );
+    VL_DEBUG_IF(VL_DBG_MSGF("+      Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__4\n"); );
     // Body
     vlSelf->__PVT__ch1_dout = vlSelf->__Vdly__ch1_dout;
     vlSelf->__PVT__ch2_dout = vlSelf->__Vdly__ch2_dout;

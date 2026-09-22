@@ -239,37 +239,7 @@ VL_ATTR_COLD void Vtb_sdram_r3900__Cz2___stl_sequent__TOP__tb_sdram__cpu__cpu__0
     vlSelf->__PVT__cause_live = ((0xffff03ffU & vlSelf->__PVT__cp0
                                   [0xdU]) | VL_SHIFTL_III(32,32,32, 
                                                           ((IData)(vlSymsp->TOP.tx39_en)
-                                                            ? 
-                                                           (((IData)(
-                                                                     (0U 
-                                                                      != 
-                                                                      (vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__icu_status
-                                                                       [5U] 
-                                                                       & vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__icu_enable
-                                                                       [5U]))) 
-                                                             << 2U) 
-                                                            | (0U 
-                                                               != 
-                                                               ((vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__icu_status
-                                                                 [0U] 
-                                                                 & vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__icu_enable
-                                                                 [0U]) 
-                                                                | ((vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__icu_status
-                                                                    [1U] 
-                                                                    & vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__icu_enable
-                                                                    [1U]) 
-                                                                   | ((vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__icu_status
-                                                                       [2U] 
-                                                                       & vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__icu_enable
-                                                                       [2U]) 
-                                                                      | ((vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__icu_status
-                                                                          [3U] 
-                                                                          & vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__icu_enable
-                                                                          [3U]) 
-                                                                         | (vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__icu_status
-                                                                            [4U] 
-                                                                            & vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__icu_enable
-                                                                            [4U])))))))
+                                                            ? (IData)(vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__irq_r)
                                                             : (IData)(vlSymsp->TOP.irq_in)), 0xaU));
     __PVT__ex_writes = ((IData)(vlSelf->__PVT__ex_v) 
                         & ([&]() {

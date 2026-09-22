@@ -81,7 +81,11 @@ module dr840_tx39 #(
     reg  served;
     assign io_ack = io_req & served;
     assign io_err = 1'b0;
-    wire  io_start = io_req & ~served;
+    // The transaction happens on the edge that sets `served`, not on every
+    // cycle until it does. Without `cen` here the write is carried out once
+    // per full-rate cycle while waiting for the core's edge, which for the
+    // UART means every character comes out two or three times over.
+    wire  io_start = io_req & ~served & cen;
 
     // ------------------------------------------------- the rest of the block
     //
@@ -148,7 +152,18 @@ module dr840_tx39 #(
                  (icu_status[2] & icu_enable[2]) | (icu_status[3] & icu_enable[3]) |
                  (icu_status[4] & icu_enable[4]));
     wire ip4 = |(icu_status[5] & icu_enable[5]);
-    assign irq_out = {3'b000, ip4, 1'b0, ip2};     // IP7..IP2, so [0]=IP2 [2]=IP4
+
+    // Registered, and on an enabled edge. Combinationally this is a
+    // hundred and sixty bits of and-or feeding straight into the core's
+    // fetch redirect, which is already its longest path: the two together
+    // missed by 8.6 ns. An interrupt line is a level and nobody minds it
+    // arriving a cycle later, and moving it on the core's own edges is what
+    // lets the .sdc give it two periods.
+    reg [5:0] irq_r;
+    always @(posedge clk or negedge rst_n)
+        if (!rst_n)   irq_r <= 6'd0;
+        else if (cen) irq_r <= {3'b000, ip4, 1'b0, ip2};  // [0]=IP2 [2]=IP4
+    assign irq_out = irq_r;
 
     // ------------------------------------------------------- RTC and timers
     //
@@ -230,9 +245,12 @@ module dr840_tx39 #(
         end else begin
             rxd_sync <= {rxd_sync[1:0], uart_rxd};
             dbg_tx_stb <= 1'b0;
-            if (!io_req)        served <= 1'b0;   // idle
-            else if (!served)   served <= 1'b1;   // carried out this cycle
-            else if (cen)       served <= 1'b0;   // taken; next one may start
+            // Carried out on an enabled edge and taken on the next one, so
+            // the reply and everything derived from it is stable for a
+            // whole core period on the way back.
+            if (!io_req)              served <= 1'b0;
+            else if (!served && cen)  served <= 1'b1;
+            else if (served && cen)   served <= 1'b0;
 
             // ---------------------------------------------- RTC
             if (!t_ctrl[6]) begin

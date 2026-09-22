@@ -63,12 +63,9 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_sdram_r3900_cached__Cz1 final : public Ve
         CData/*0:0*/ cache__DOT____VdfgTmp_h53db0a74__0;
         CData/*0:0*/ cache__DOT____VdfgTmp_h6b597d1c__0;
         CData/*0:0*/ cache__DOT____VdfgTmp_ha01f3fd2__0;
-        CData/*1:0*/ __Vdly__cache__DOT__dstate;
-        CData/*1:0*/ __Vdly__cache__DOT__dcnt;
-        CData/*1:0*/ __Vdly__cache__DOT__istate;
-        CData/*1:0*/ __Vdly__cache__DOT__icnt;
+        CData/*0:0*/ __Vdlyvset__cache__DOT__idata__v0;
         SData/*8:0*/ __PVT__cache__DOT__init_cnt;
-        SData/*8:0*/ __Vdly__cache__DOT__init_cnt;
+        SData/*9:0*/ __Vdlyvdim0__cache__DOT__idata__v0;
         VL_OUT(__PVT__imem_addr,31,0);
         VL_IN(__PVT__imem_rdata,31,0);
         VL_OUT(__PVT__dmem_addr,31,0);
@@ -83,11 +80,11 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_sdram_r3900_cached__Cz1 final : public Ve
         VL_OUT(__PVT__dmiss_count,31,0);
         IData/*31:0*/ __PVT__drd;
         IData/*31:0*/ __PVT__cache__DOT__iline;
-    };
-    struct {
         IData/*20:0*/ __PVT__cache__DOT__itag_wd;
         IData/*31:0*/ __PVT__cache__DOT__iram_q;
         IData/*20:0*/ __PVT__cache__DOT__itagv_q;
+    };
+    struct {
         IData/*31:0*/ __PVT__cache__DOT__dline;
         IData/*22:0*/ __PVT__cache__DOT__dtag_wd;
         IData/*31:0*/ __PVT__cache__DOT__dram_q;
@@ -95,6 +92,7 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_sdram_r3900_cached__Cz1 final : public Ve
         IData/*31:0*/ __PVT__cache__DOT__stf_d;
         IData/*31:0*/ __PVT__cache__DOT__dram_eff;
         IData/*31:0*/ __PVT__cache__DOT__d_merged;
+        IData/*31:0*/ __Vdlyvval__cache__DOT__idata__v0;
         VlUnpacked<IData/*31:0*/, 1024> __PVT__cache__DOT__idata;
         VlUnpacked<IData/*20:0*/, 256> __PVT__cache__DOT__itagv;
         VlUnpacked<IData/*31:0*/, 256> __PVT__cache__DOT__ddata;

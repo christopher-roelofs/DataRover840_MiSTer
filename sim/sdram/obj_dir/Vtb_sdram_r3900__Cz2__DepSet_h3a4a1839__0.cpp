@@ -14,37 +14,7 @@ VL_INLINE_OPT void Vtb_sdram_r3900__Cz2___ico_sequent__TOP__tb_sdram__cpu__cpu__
     vlSelf->__PVT__cause_live = ((0xffff03ffU & vlSelf->__PVT__cp0
                                   [0xdU]) | VL_SHIFTL_III(32,32,32, 
                                                           ((IData)(vlSymsp->TOP.tx39_en)
-                                                            ? 
-                                                           (((IData)(
-                                                                     (0U 
-                                                                      != 
-                                                                      (vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__icu_status
-                                                                       [5U] 
-                                                                       & vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__icu_enable
-                                                                       [5U]))) 
-                                                             << 2U) 
-                                                            | (0U 
-                                                               != 
-                                                               ((vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__icu_status
-                                                                 [0U] 
-                                                                 & vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__icu_enable
-                                                                 [0U]) 
-                                                                | ((vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__icu_status
-                                                                    [1U] 
-                                                                    & vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__icu_enable
-                                                                    [1U]) 
-                                                                   | ((vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__icu_status
-                                                                       [2U] 
-                                                                       & vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__icu_enable
-                                                                       [2U]) 
-                                                                      | ((vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__icu_status
-                                                                          [3U] 
-                                                                          & vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__icu_enable
-                                                                          [3U]) 
-                                                                         | (vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__icu_status
-                                                                            [4U] 
-                                                                            & vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__icu_enable
-                                                                            [4U])))))))
+                                                            ? (IData)(vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__irq_r)
                                                             : (IData)(vlSymsp->TOP.irq_in)), 0xaU));
     vlSelf->__PVT__id_take_irq = ((IData)(vlSelf->__PVT__id_v) 
                                   & ((~ (IData)(vlSelf->__PVT__id_exc_v)) 
@@ -799,6 +769,10 @@ VL_INLINE_OPT void Vtb_sdram_r3900__Cz2___nba_sequent__TOP__tb_sdram__cpu__cpu__
     __PVT__me_is_load = 0;
     CData/*0:0*/ __VdfgTmp_hc3cd8cde__0;
     __VdfgTmp_hc3cd8cde__0 = 0;
+    IData/*31:0*/ __Vfunc_phys__0__Vfuncout;
+    __Vfunc_phys__0__Vfuncout = 0;
+    IData/*31:0*/ __Vfunc_phys__0__va;
+    __Vfunc_phys__0__va = 0;
     CData/*0:0*/ __Vfunc_cacheable__1__Vfuncout;
     __Vfunc_cacheable__1__Vfuncout = 0;
     IData/*31:0*/ __Vfunc_cacheable__1__va;
@@ -2291,37 +2265,7 @@ VL_INLINE_OPT void Vtb_sdram_r3900__Cz2___nba_sequent__TOP__tb_sdram__cpu__cpu__
     vlSelf->__PVT__cause_live = ((0xffff03ffU & vlSelf->__PVT__cp0
                                   [0xdU]) | VL_SHIFTL_III(32,32,32, 
                                                           ((IData)(vlSymsp->TOP.tx39_en)
-                                                            ? 
-                                                           (((IData)(
-                                                                     (0U 
-                                                                      != 
-                                                                      (vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__icu_status
-                                                                       [5U] 
-                                                                       & vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__icu_enable
-                                                                       [5U]))) 
-                                                             << 2U) 
-                                                            | (0U 
-                                                               != 
-                                                               ((vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__icu_status
-                                                                 [0U] 
-                                                                 & vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__icu_enable
-                                                                 [0U]) 
-                                                                | ((vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__icu_status
-                                                                    [1U] 
-                                                                    & vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__icu_enable
-                                                                    [1U]) 
-                                                                   | ((vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__icu_status
-                                                                       [2U] 
-                                                                       & vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__icu_enable
-                                                                       [2U]) 
-                                                                      | ((vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__icu_status
-                                                                          [3U] 
-                                                                          & vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__icu_enable
-                                                                          [3U]) 
-                                                                         | (vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__icu_status
-                                                                            [4U] 
-                                                                            & vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__icu_enable
-                                                                            [4U])))))))
+                                                            ? (IData)(vlSymsp->TOP__tb_sdram.__PVT__tx39__DOT__irq_r)
                                                             : (IData)(vlSymsp->TOP.irq_in)), 0xaU));
     vlSelf->__VdfgTmp_h42ed6c05__0 = ((IData)(vlSelf->__PVT__wb_v) 
                                       & ((IData)(vlSelf->__PVT__wb_we) 
@@ -3062,6 +3006,12 @@ VL_INLINE_OPT void Vtb_sdram_r3900__Cz2___nba_sequent__TOP__tb_sdram__cpu__cpu__
     __Vfunc_cacheable__1__va = vlSelf->__PVT__fpc;
     __Vfunc_cacheable__1__Vfuncout = (0xa0000000U > __Vfunc_cacheable__1__va);
     vlSelf->__PVT__ibus_cached = __Vfunc_cacheable__1__Vfuncout;
+    __Vfunc_phys__0__va = vlSelf->__PVT__fpc;
+    __Vfunc_phys__0__Vfuncout = (((0x80000000U <= __Vfunc_phys__0__va) 
+                                  & (0xc0000000U > __Vfunc_phys__0__va))
+                                  ? (0x1fffffffU & __Vfunc_phys__0__va)
+                                  : __Vfunc_phys__0__va);
+    vlSelf->__PVT__ibus_addr = __Vfunc_phys__0__Vfuncout;
     vlSelf->__PVT__me_exc_out_ret = (1U & ((~ (IData)(vlSelf->__PVT__me_exc_v)) 
                                            | (IData)(vlSelf->__PVT__me_exc_ret)));
     vlSelf->__PVT__me_exc_out_badv = (1U & ((~ (IData)(vlSelf->__PVT__me_exc_v)) 
@@ -3551,9 +3501,6 @@ VL_INLINE_OPT void Vtb_sdram_r3900__Cz2___nba_sequent__TOP__tb_sdram__cpu__cpu__
                                                                      || (1U 
                                                                          & vlSelf->__Vfunc_writes_gpr__16__i))))))))))))))));
             }(), (IData)(vlSelf->__Vfunc_writes_gpr__16__Vfuncout)));
-    vlSelf->__PVT__me_exc_out_bad = ((IData)(vlSelf->__PVT__me_exc_v)
-                                      ? vlSelf->__PVT__me_exc_bad
-                                      : vlSelf->__PVT__me_va);
     __Vfunc_dest_reg__28__i = vlSelf->__PVT__me_insn;
     __Vfunc_dest_reg__28__Vfuncout = (0x1fU & ((__Vfunc_dest_reg__28__i 
                                                 >> 0x1fU)
@@ -3634,12 +3581,97 @@ VL_INLINE_OPT void Vtb_sdram_r3900__Cz2___nba_sequent__TOP__tb_sdram__cpu__cpu__
                                                         (__Vfunc_dest_reg__28__i 
                                                          >> 0xbU)))))))));
     vlSelf->__PVT__me_wa = __Vfunc_dest_reg__28__Vfuncout;
+    vlSelf->__PVT__dbus_we = (([&]() {
+                vlSelf->__Vfunc_is_rmw__76__i = vlSelf->__PVT__me_insn;
+                vlSelf->__Vfunc_is_rmw__76__Vfuncout 
+                    = ((0x2aU == (vlSelf->__Vfunc_is_rmw__76__i 
+                                  >> 0x1aU)) | (0x2eU 
+                                                == 
+                                                (vlSelf->__Vfunc_is_rmw__76__i 
+                                                 >> 0x1aU)));
+            }(), (IData)(vlSelf->__Vfunc_is_rmw__76__Vfuncout))
+                               ? (IData)(vlSelf->__PVT__me_phase)
+                               : ([&]() {
+                vlSelf->__Vfunc_is_store__77__i = vlSelf->__PVT__me_insn;
+                vlSelf->__Vfunc_is_store__77__Vfuncout 
+                    = (((((0x28U == (vlSelf->__Vfunc_is_store__77__i 
+                                     >> 0x1aU)) | (0x29U 
+                                                   == 
+                                                   (vlSelf->__Vfunc_is_store__77__i 
+                                                    >> 0x1aU))) 
+                         | (0x2bU == (vlSelf->__Vfunc_is_store__77__i 
+                                      >> 0x1aU))) | 
+                        (0x2aU == (vlSelf->__Vfunc_is_store__77__i 
+                                   >> 0x1aU))) | (0x2eU 
+                                                  == 
+                                                  (vlSelf->__Vfunc_is_store__77__i 
+                                                   >> 0x1aU)));
+            }(), (IData)(vlSelf->__Vfunc_is_store__77__Vfuncout)));
+    vlSelf->__PVT__me_needs_mem = (((IData)(vlSelf->__PVT__me_v) 
+                                    & ([&]() {
+                    vlSelf->__Vfunc_is_mem__72__i = vlSelf->__PVT__me_insn;
+                    vlSelf->__Vfunc_is_mem__72__Vfuncout 
+                        = (([&]() {
+                                vlSelf->__Vfunc_is_load__73__i 
+                                    = vlSelf->__Vfunc_is_mem__72__i;
+                                vlSelf->__Vfunc_is_load__73__Vfuncout 
+                                    = (((((((0x20U 
+                                             == (vlSelf->__Vfunc_is_load__73__i 
+                                                 >> 0x1aU)) 
+                                            | (0x21U 
+                                               == (vlSelf->__Vfunc_is_load__73__i 
+                                                   >> 0x1aU))) 
+                                           | (0x23U 
+                                              == (vlSelf->__Vfunc_is_load__73__i 
+                                                  >> 0x1aU))) 
+                                          | (0x24U 
+                                             == (vlSelf->__Vfunc_is_load__73__i 
+                                                 >> 0x1aU))) 
+                                         | (0x25U == 
+                                            (vlSelf->__Vfunc_is_load__73__i 
+                                             >> 0x1aU))) 
+                                        | (0x22U == 
+                                           (vlSelf->__Vfunc_is_load__73__i 
+                                            >> 0x1aU))) 
+                                       | (0x26U == 
+                                          (vlSelf->__Vfunc_is_load__73__i 
+                                           >> 0x1aU)));
+                            }(), (IData)(vlSelf->__Vfunc_is_load__73__Vfuncout)) 
+                           | ([&]() {
+                                vlSelf->__Vfunc_is_store__74__i 
+                                    = vlSelf->__Vfunc_is_mem__72__i;
+                                vlSelf->__Vfunc_is_store__74__Vfuncout 
+                                    = (((((0x28U == 
+                                           (vlSelf->__Vfunc_is_store__74__i 
+                                            >> 0x1aU)) 
+                                          | (0x29U 
+                                             == (vlSelf->__Vfunc_is_store__74__i 
+                                                 >> 0x1aU))) 
+                                         | (0x2bU == 
+                                            (vlSelf->__Vfunc_is_store__74__i 
+                                             >> 0x1aU))) 
+                                        | (0x2aU == 
+                                           (vlSelf->__Vfunc_is_store__74__i 
+                                            >> 0x1aU))) 
+                                       | (0x2eU == 
+                                          (vlSelf->__Vfunc_is_store__74__i 
+                                           >> 0x1aU)));
+                            }(), (IData)(vlSelf->__Vfunc_is_store__74__Vfuncout)));
+                }(), (IData)(vlSelf->__Vfunc_is_mem__72__Vfuncout))) 
+                                   & (~ (IData)(vlSelf->__PVT__me_exc_v)));
+    vlSelf->__PVT__me_exc_out_bad = ((IData)(vlSelf->__PVT__me_exc_v)
+                                      ? vlSelf->__PVT__me_exc_bad
+                                      : vlSelf->__PVT__me_va);
     __Vfunc_phys__80__va = vlSelf->__PVT__me_va;
     __Vfunc_phys__80__Vfuncout = (((0x80000000U <= __Vfunc_phys__80__va) 
                                    & (0xc0000000U > __Vfunc_phys__80__va))
                                    ? (0x1fffffffU & __Vfunc_phys__80__va)
                                    : __Vfunc_phys__80__va);
     vlSelf->__PVT__cache_op_addr = __Vfunc_phys__80__Vfuncout;
+    __Vfunc_cacheable__79__va = vlSelf->__PVT__me_va;
+    __Vfunc_cacheable__79__Vfuncout = (0xa0000000U 
+                                       > __Vfunc_cacheable__79__va);
+    vlSelf->__PVT__dbus_cached = __Vfunc_cacheable__79__Vfuncout;
     vlSelf->__PVT__me_be = ((vlSelf->__PVT__me_insn 
                              >> 0x1fU) ? ((0x40000000U 
                                            & vlSelf->__PVT__me_insn)
@@ -3686,10 +3718,110 @@ VL_INLINE_OPT void Vtb_sdram_r3900__Cz2___nba_sequent__TOP__tb_sdram__cpu__cpu__
                                                       (3U 
                                                        & vlSelf->__PVT__me_va)))))))
                              : 0xfU);
-    __Vfunc_cacheable__79__va = vlSelf->__PVT__me_va;
-    __Vfunc_cacheable__79__Vfuncout = (0xa0000000U 
-                                       > __Vfunc_cacheable__79__va);
-    vlSelf->__PVT__dbus_cached = __Vfunc_cacheable__79__Vfuncout;
+    vlSelf->__PVT__dbus_addr = (0xfffffffcU & ([&]() {
+                vlSelf->__Vfunc_phys__78__va = vlSelf->__PVT__me_va;
+                vlSelf->__Vfunc_phys__78__Vfuncout 
+                    = (((0x80000000U <= vlSelf->__Vfunc_phys__78__va) 
+                        & (0xc0000000U > vlSelf->__Vfunc_phys__78__va))
+                        ? (0x1fffffffU & vlSelf->__Vfunc_phys__78__va)
+                        : vlSelf->__Vfunc_phys__78__va);
+            }(), vlSelf->__Vfunc_phys__78__Vfuncout));
+    vlSelf->__PVT__store_word = ((vlSelf->__PVT__me_insn 
+                                  >> 0x1fU) ? ((0x40000000U 
+                                                & vlSelf->__PVT__me_insn)
+                                                ? vlSelf->__PVT__me_rt
+                                                : (
+                                                   (0x20000000U 
+                                                    & vlSelf->__PVT__me_insn)
+                                                    ? 
+                                                   ((0x10000000U 
+                                                     & vlSelf->__PVT__me_insn)
+                                                     ? 
+                                                    ((0x8000000U 
+                                                      & vlSelf->__PVT__me_insn)
+                                                      ? 
+                                                     ((0x4000000U 
+                                                       & vlSelf->__PVT__me_insn)
+                                                       ? vlSelf->__PVT__me_rt
+                                                       : 
+                                                      ((2U 
+                                                        & vlSelf->__PVT__me_va)
+                                                        ? 
+                                                       ((1U 
+                                                         & vlSelf->__PVT__me_va)
+                                                         ? vlSelf->__PVT__me_rt
+                                                         : 
+                                                        ((vlSelf->__PVT__me_rt 
+                                                          << 8U) 
+                                                         | (0xffU 
+                                                            & vlSelf->__PVT__me_rmw_word)))
+                                                        : 
+                                                       ((1U 
+                                                         & vlSelf->__PVT__me_va)
+                                                         ? 
+                                                        ((vlSelf->__PVT__me_rt 
+                                                          << 0x10U) 
+                                                         | (0xffffU 
+                                                            & vlSelf->__PVT__me_rmw_word))
+                                                         : 
+                                                        ((vlSelf->__PVT__me_rt 
+                                                          << 0x18U) 
+                                                         | (0xffffffU 
+                                                            & vlSelf->__PVT__me_rmw_word)))))
+                                                      : vlSelf->__PVT__me_rt)
+                                                     : 
+                                                    ((0x8000000U 
+                                                      & vlSelf->__PVT__me_insn)
+                                                      ? 
+                                                     ((0x4000000U 
+                                                       & vlSelf->__PVT__me_insn)
+                                                       ? vlSelf->__PVT__me_rt
+                                                       : 
+                                                      ((2U 
+                                                        & vlSelf->__PVT__me_va)
+                                                        ? 
+                                                       ((1U 
+                                                         & vlSelf->__PVT__me_va)
+                                                         ? 
+                                                        ((0xffffff00U 
+                                                          & vlSelf->__PVT__me_rmw_word) 
+                                                         | (vlSelf->__PVT__me_rt 
+                                                            >> 0x18U))
+                                                         : 
+                                                        ((0xffff0000U 
+                                                          & vlSelf->__PVT__me_rmw_word) 
+                                                         | (vlSelf->__PVT__me_rt 
+                                                            >> 0x10U)))
+                                                        : 
+                                                       ((1U 
+                                                         & vlSelf->__PVT__me_va)
+                                                         ? 
+                                                        ((0xff000000U 
+                                                          & vlSelf->__PVT__me_rmw_word) 
+                                                         | (vlSelf->__PVT__me_rt 
+                                                            >> 8U))
+                                                         : vlSelf->__PVT__me_rt)))
+                                                      : 
+                                                     ((0x4000000U 
+                                                       & vlSelf->__PVT__me_insn)
+                                                       ? 
+                                                      ((vlSelf->__PVT__me_rt 
+                                                        << 0x10U) 
+                                                       | (0xffffU 
+                                                          & vlSelf->__PVT__me_rt))
+                                                       : 
+                                                      ((vlSelf->__PVT__me_rt 
+                                                        << 0x18U) 
+                                                       | ((0xff0000U 
+                                                           & (vlSelf->__PVT__me_rt 
+                                                              << 0x10U)) 
+                                                          | ((0xff00U 
+                                                              & (vlSelf->__PVT__me_rt 
+                                                                 << 8U)) 
+                                                             | (0xffU 
+                                                                & vlSelf->__PVT__me_rt)))))))
+                                                    : vlSelf->__PVT__me_rt))
+                                  : vlSelf->__PVT__me_rt);
     vlSelf->__PVT__ex_sys = ((IData)(__VdfgTmp_hc3cd8cde__0) 
                              & (0xcU == (0x3fU & vlSelf->__PVT__ex_insn)));
     vlSelf->__PVT__ex_bp = ((IData)(__VdfgTmp_hc3cd8cde__0) 
@@ -4551,10 +4683,10 @@ VL_INLINE_OPT void Vtb_sdram_r3900__Cz2___nba_sequent__TOP__tb_sdram__cpu__cpu__
                                       & (0U != (IData)(vlSelf->__PVT__me_wa)));
 }
 
-VL_INLINE_OPT void Vtb_sdram_r3900__Cz2___nba_comb__TOP__tb_sdram__cpu__cpu__2(Vtb_sdram_r3900__Cz2* vlSelf) {
+VL_INLINE_OPT void Vtb_sdram_r3900__Cz2___nba_comb__TOP__tb_sdram__cpu__cpu__0(Vtb_sdram_r3900__Cz2* vlSelf) {
     if (false && vlSelf) {}  // Prevent unused
     Vtb_sdram__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
-    VL_DEBUG_IF(VL_DBG_MSGF("+          Vtb_sdram_r3900__Cz2___nba_comb__TOP__tb_sdram__cpu__cpu__2\n"); );
+    VL_DEBUG_IF(VL_DBG_MSGF("+          Vtb_sdram_r3900__Cz2___nba_comb__TOP__tb_sdram__cpu__cpu__0\n"); );
     // Init
     IData/*31:0*/ __PVT__me_fwd;
     __PVT__me_fwd = 0;

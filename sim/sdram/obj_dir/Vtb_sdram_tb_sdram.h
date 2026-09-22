@@ -73,6 +73,7 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_sdram_tb_sdram final : public VerilatedMo
         CData/*0:0*/ __PVT__tx39__DOT__is_tx39;
         CData/*0:0*/ __PVT__tx39__DOT__served;
         CData/*0:0*/ __PVT__tx39__DOT__io_start;
+        CData/*5:0*/ __PVT__tx39__DOT__irq_r;
         CData/*7:0*/ __PVT__tx39__DOT__ua_rx;
         CData/*0:0*/ __PVT__tx39__DOT__ua_rx_full;
         CData/*3:0*/ __PVT__tx39__DOT__tx_bit;
@@ -84,9 +85,9 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_sdram_tb_sdram final : public VerilatedMo
         CData/*2:0*/ __PVT__tx39__DOT__rxd_sync;
         CData/*3:0*/ __PVT__adapter__DOT__state;
         CData/*0:0*/ __PVT__adapter__DOT__ack_taken;
-        CData/*0:0*/ __PVT__adapter__DOT__ch1_done;
     };
     struct {
+        CData/*0:0*/ __PVT__adapter__DOT__ch1_done;
         CData/*0:0*/ __PVT__adapter__DOT__ch2_done;
         CData/*3:0*/ __PVT__ctl__DOT__state;
         CData/*2:0*/ __PVT__ctl__DOT__command;
@@ -99,10 +100,6 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_sdram_tb_sdram final : public VerilatedMo
         CData/*0:0*/ __PVT__ctl__DOT__unnamedblk1__DOT__ch2_rq;
         CData/*0:0*/ __PVT__ctl__DOT__unnamedblk1__DOT__ch3_rq;
         CData/*1:0*/ __PVT__ctl__DOT__unnamedblk1__DOT__ch;
-        CData/*7:0*/ __Vdlyvdim0__tx39__DOT__rf__v0;
-        CData/*0:0*/ __Vdlyvset__tx39__DOT__rf__v0;
-        CData/*0:0*/ __Vdly__ram_ack;
-        CData/*3:0*/ __Vdly__adapter__DOT__state;
         CData/*0:0*/ __Vdly__ch1_ready;
         CData/*0:0*/ __Vdly__ch2_ready;
         CData/*3:0*/ __Vdly__ctl__DOT__state;
@@ -151,11 +148,11 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_sdram_tb_sdram final : public VerilatedMo
         IData/*26:0*/ __PVT__board__DOT__i_dec;
         IData/*31:0*/ __PVT__tx39__DOT__rf_q;
         IData/*31:0*/ __PVT__tx39__DOT__rtc_acc;
-    };
-    struct {
         IData/*31:0*/ __PVT__tx39__DOT__t_ctrl;
         IData/*31:0*/ __PVT__tx39__DOT__t_per;
         IData/*31:0*/ __PVT__tx39__DOT__ua_ctrl1;
+    };
+    struct {
         IData/*31:0*/ __PVT__tx39__DOT__ua_ctrl2;
         IData/*19:0*/ __PVT__tx39__DOT__tx_cnt;
         IData/*19:0*/ __PVT__tx39__DOT__rx_cnt;
@@ -165,7 +162,6 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_sdram_tb_sdram final : public VerilatedMo
         IData/*24:0*/ __PVT__adapter__DOT__line;
         IData/*31:0*/ __PVT__adapter__DOT__merged;
         IData/*31:0*/ __PVT__ctl__DOT__unnamedblk1__DOT__saved_data;
-        IData/*31:0*/ __Vdlyvval__tx39__DOT__rf__v0;
         IData/*31:0*/ __Vdly__ch2_dout;
         IData/*31:0*/ __Vdly__ctl__DOT__unnamedblk1__DOT__saved_data;
         QData/*63:0*/ __PVT__ch1_dout;

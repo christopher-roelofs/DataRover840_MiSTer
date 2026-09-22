@@ -42,3 +42,20 @@ set_multicycle_path -setup -end 2 \
 set_multicycle_path -hold -end 1 \
     -from [get_registers {*r3900_cached:cpu|*}] \
     -to   [get_registers {*dr840_sdram:adapter|*}]
+
+# The peripheral block runs at the full rate but only moves on the core's
+# edges -- it carries a transaction out on one and has it taken on the next,
+# and its interrupt lines are registered on them too. So everything crossing
+# from it into the core has a whole core period.
+set_multicycle_path -setup -end 2 \
+    -from [get_registers {*dr840_tx39:soc|*}] \
+    -to   [get_registers {*r3900_cached:cpu|*}]
+set_multicycle_path -hold -end 1 \
+    -from [get_registers {*dr840_tx39:soc|*}] \
+    -to   [get_registers {*r3900_cached:cpu|*}]
+set_multicycle_path -setup -end 2 \
+    -from [get_registers {*r3900_cached:cpu|*}] \
+    -to   [get_registers {*dr840_tx39:soc|*}]
+set_multicycle_path -hold -end 1 \
+    -from [get_registers {*r3900_cached:cpu|*}] \
+    -to   [get_registers {*dr840_tx39:soc|*}]
