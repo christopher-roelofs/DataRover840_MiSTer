@@ -174,10 +174,25 @@ module dr840_mem #(
     wire grant_i = (owner == A_INSN) ||
                    ((owner == A_FREE) && !v_wants_ram && !d_wants_ram && i_wants_ram);
 
+    // On the core's edges, like everything it arbitrates between. Every
+    // input here changes only on one: the requests come from registers the
+    // core enables, and `ram_busy` is the adapter's state, which starts and
+    // ends transactions on enabled edges and nowhere else. So this is the
+    // same machine, evaluated at the same moments -- the edges in between
+    // only ever recomputed what it already held.
+    //
+    // What it buys is honesty in the .sdc. Clocked every cycle, this was
+    // the tightest path in the design by an order of magnitude: the core's
+    // MEM address, through the decode, into these three bits, ten
+    // nanoseconds against one period, with two tenths to spare while
+    // everything else had two whole nanoseconds. A grant is not a thing to
+    // latch wrong occasionally -- it hands one requester's memory to
+    // another, which is a cache line of somebody else's data and a pointer
+    // made of it.
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n)
             owner <= A_FREE;
-        else case (owner)
+        else if (cen) case (owner)
             A_FREE: if (v_wants_ram)      owner <= A_LCD;
                     else if (d_wants_ram) owner <= A_DATA;
                     else if (i_wants_ram) owner <= A_INSN;

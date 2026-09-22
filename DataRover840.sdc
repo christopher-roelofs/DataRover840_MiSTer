@@ -46,16 +46,28 @@ set_multicycle_path -hold -end 1 \
     -from [get_registers {*r3900_cached:cpu|*}] \
     -to   [get_registers {*dr840_sdram:adapter|*}]
 
-# The board's choice of which reply to hand back -- the peripheral's or the
-# memory's -- is a register that moves on the core's edges. It is the only
-# register in the board given two periods: the arbiter's grant is not, since
-# it can move on any edge.
+# Every register in the board moves on the core's edges: the choice of
+# which reply to hand back, and the arbiter's grant. So paths into them
+# from the core and from the adapter -- whose state also only moves on
+# those edges -- have a whole core period, and paths out of them likewise.
 set_multicycle_path -setup -end 2 \
-    -from [get_registers {*dr840_mem:board|d_from_io* *dr840_mem:board|i_from_io*}] \
+    -from [get_registers {*dr840_mem:board|*}] \
     -to   [get_registers {*r3900_cached:cpu|*}]
 set_multicycle_path -hold -end 1 \
-    -from [get_registers {*dr840_mem:board|d_from_io* *dr840_mem:board|i_from_io*}] \
+    -from [get_registers {*dr840_mem:board|*}] \
     -to   [get_registers {*r3900_cached:cpu|*}]
+set_multicycle_path -setup -end 2 \
+    -from [get_registers {*r3900_cached:cpu|* *dr840_sdram:adapter|* *dr840_lcd:lcd|*}] \
+    -to   [get_registers {*dr840_mem:board|*}]
+set_multicycle_path -hold -end 1 \
+    -from [get_registers {*r3900_cached:cpu|* *dr840_sdram:adapter|* *dr840_lcd:lcd|*}] \
+    -to   [get_registers {*dr840_mem:board|*}]
+set_multicycle_path -setup -end 2 \
+    -from [get_registers {*dr840_mem:board|*}] \
+    -to   [get_registers {*dr840_sdram:adapter|* *dr840_lcd:lcd|*}]
+set_multicycle_path -hold -end 1 \
+    -from [get_registers {*dr840_mem:board|*}] \
+    -to   [get_registers {*dr840_sdram:adapter|* *dr840_lcd:lcd|*}]
 
 # The LCD controller's fetch engine moves on the core's edges too, so its
 # requests into the adapter, and the adapter's replies back, have a whole

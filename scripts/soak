@@ -1,0 +1,32 @@
+#!/bin/sh
+#
+# Boot the core on the MiSTer over and over and keep what it says about
+# itself: the status line on the serial port, once a second, in Magic Cap
+# mode. Prints the last line of each boot, which is enough to tell a clean
+# boot from one that reset, took an exception storm, or loaded a bad ROM.
+#
+#   scripts/soak [boots] [seconds per boot] [host]
+set -e
+N=${1:-5}
+SECS=${2:-45}
+HOST=${3:-192.168.86.171}
+PASS=${MISTER_PASS:-1}
+OUT=${OUT:-soak.log}
+
+: > "$OUT"
+i=1
+while [ $i -le $N ]; do
+    sshpass -p "$PASS" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+        "root@$HOST" "
+stty -F /dev/ttyS1 38400 raw -echo cs8 -parenb -cstopb
+(timeout $SECS cat /dev/ttyS1 > /tmp/soak.cap &)
+sleep 1
+echo load_core /media/fat/_Console/DataRover840.mgl > /dev/MiSTer_cmd
+sleep $((SECS + 1))
+cat /tmp/soak.cap" 2>/dev/null | tr -d '\r' | grep '^ R=' > "$OUT.$i" || true
+    echo "boot $i: $(wc -l < "$OUT.$i") lines; last: $(tail -1 "$OUT.$i")"
+    # Every distinct (resets, checksum) pair seen, and the exception count's path.
+    awk '{print $1, $3}' "$OUT.$i" | sort -u | tr '\n' ';'; echo
+    cat "$OUT.$i" >> "$OUT"; rm -f "$OUT.$i"
+    i=$((i + 1))
+done

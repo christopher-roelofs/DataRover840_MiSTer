@@ -184,6 +184,40 @@ localparam CONF_STR = {
 
 wire [127:0] status;
 wire   [1:0] buttons;
+wire  [24:0] ps2_mouse;
+
+// The mouse is the pen. A mouse moves and a pen is somewhere, so the
+// movements are summed into a place on the panel, held inside it, and the
+// left button is the touch. The panel draws a pointer there, since a
+// touch screen shows nothing of its own.
+reg  [8:0] pen_px, pen_py;
+reg        mouse_tog;
+always @(posedge clk_sys or negedge rst_n) begin
+    if (!rst_n) begin
+        pen_px <= 9'd240; pen_py <= 9'd160; mouse_tog <= 1'b0;
+    end else if (ps2_mouse[24] != mouse_tog) begin
+        mouse_tog <= ps2_mouse[24];
+        // PS/2: byte 1 flags (bit 4, 5 the signs), byte 2 dx, byte 3 dy,
+        // y upward.
+        pen_px <= clamp_x(pen_px, {ps2_mouse[4], ps2_mouse[15:8]});
+        pen_py <= clamp_y(pen_py, {ps2_mouse[5], ps2_mouse[23:16]});
+    end
+end
+function [8:0] clamp_x(input [8:0] p, input [8:0] d);
+    reg signed [10:0] n;
+    begin
+        n = $signed({2'b00, p}) + $signed({{2{d[8]}}, d});
+        clamp_x = (n < 0) ? 9'd0 : (n > 479) ? 9'd479 : n[8:0];
+    end
+endfunction
+function [8:0] clamp_y(input [8:0] p, input [8:0] d);
+    reg signed [10:0] n;
+    begin
+        n = $signed({2'b00, p}) - $signed({{2{d[8]}}, d});
+        clamp_y = (n < 0) ? 9'd0 : (n > 319) ? 9'd319 : n[8:0];
+    end
+endfunction
+wire pen_down = ps2_mouse[0];
 wire         ioctl_download, ioctl_wr;
 wire  [24:0] ioctl_addr;
 wire   [7:0] ioctl_dout;
@@ -195,6 +229,7 @@ hps_io #(.CONF_STR(CONF_STR)) hps_io
     .HPS_BUS        (HPS_BUS),
     .buttons        (buttons),
     .status         (status),
+    .ps2_mouse      (ps2_mouse),
     .ioctl_download (ioctl_download),
     .ioctl_wr       (ioctl_wr),
     .ioctl_addr     (ioctl_addr),
@@ -227,7 +262,9 @@ reg  [31:0] word_buf;
 reg  [24:0] load_addr;
 reg  [31:0] load_data;
 reg         load_req, load_busy, dl_d;
+reg         load_we, load_burst;
 wire        load_ack;
+wire [31:0] load_rdata;
 
 // How much ROM has actually been written, and whether any has. Without
 // this the core starts on whatever the SDRAM powered up holding -- zeroes,
@@ -236,6 +273,13 @@ wire        load_ack;
 // and the retired count climbs. It is worth being able to tell those apart.
 reg [31:0] rom_words;
 reg        rom_present;
+// The sum of every word written, shown on the debug display. The HPS
+// streams the image with its own pacing and the loader answers with
+// back-pressure; a byte lost between them is a wrong word somewhere in
+// four and a half megabytes, which the guest finds by executing it, later,
+// and looks like anything at all. The sum says whether the load was good
+// before anything runs.
+reg [31:0] rom_sum;
 
 // And the memory is cleared before the core is let go.
 //
@@ -254,6 +298,27 @@ reg [24:0] clr_addr;
 reg        rst_d;
 wire       rom_ok = rom_present & ~clr_run;
 
+// Before the clear, a test. Every boot on the hardware that has gone
+// wrong went wrong by using a corrupt word as a pointer, and no
+// simulation of the same design has ever taken a fault, so the one thing
+// no simulation can vouch for -- the real chip giving back what it was
+// given -- is checked here: the four megabytes written with a pattern one
+// word at a time, read back with the same sixteen-byte bursts the caches
+// use, and every mismatch counted. The count and the first bad address
+// are on the status line. It costs half a second at boot.
+localparam [2:0] MT_WRITE = 3'd0, MT_READ = 3'd1, MT_ROM = 3'd2, MT_CLEAR = 3'd3;
+reg  [2:0]  mt_phase;
+// The ROM read back out of the memory and summed again. `rom_sum` is what
+// the loader was given; this is what the machine will actually execute,
+// and until now nothing had compared the two.
+reg  [31:0] rom_back;
+wire [24:0] rom_end = {rom_words[22:0], 2'b00};
+reg  [1:0]  mt_beat;
+reg  [31:0] mt_errors, mt_first;
+function [31:0] mt_pattern(input [24:0] a);
+    mt_pattern = {a[24:0], 7'd0} ^ ~{7'd0, a[24:0]} ^ 32'hA5A5_A5A5;
+endfunction
+
 // Deliberately not reset by the OSD's reset. What this block knows -- that
 // a ROM has been loaded -- is not something a reset may forget: forgetting
 // it holds the core in reset for ever, with no download coming to let go.
@@ -262,24 +327,59 @@ wire hard_rst_n = pll_locked & ~RESET;
 always @(posedge clk_sys or negedge hard_rst_n) begin
     if (!hard_rst_n) begin
         load_req <= 0; load_busy <= 0; dl_d <= 0; rst_d <= 0;
-        rom_words <= 0; rom_present <= 0; clr_run <= 0; clr_addr <= 0;
+        rom_words <= 0; rom_present <= 0; clr_run <= 0; clr_addr <= 0; rom_sum <= 0;
+        load_we <= 1; load_burst <= 0; mt_phase <= MT_WRITE; mt_beat <= 0; rom_back <= 0;
+        mt_errors <= 0; mt_first <= 32'hFFFF_FFFF;
     end else begin
         dl_d  <= ioctl_download;
         rst_d <= reset;
         if (load_busy) begin
             if (load_ack) begin
-                load_req  <= 0;
-                load_busy <= 0;
-                if (!clr_run) rom_words <= rom_words + 32'd1;
+                if (!clr_run) begin
+                    load_req  <= 0;
+                    load_busy <= 0;
+                    rom_words <= rom_words + 32'd1;
+                    rom_sum   <= rom_sum + load_data;
+                end else if (mt_phase == MT_READ || mt_phase == MT_ROM) begin
+                    // Four beats to a burst; the request holds through them.
+                    if (mt_phase == MT_ROM) begin
+                        if (clr_addr + {mt_beat, 2'b00} < rom_end)
+                            rom_back <= rom_back + load_rdata;
+                    end else if (load_rdata != mt_pattern(clr_addr + {mt_beat, 2'b00})) begin
+                        mt_errors <= mt_errors + 32'd1;
+                        if (mt_first == 32'hFFFF_FFFF)
+                            mt_first <= {7'd0, clr_addr + {mt_beat, 2'b00}};
+                    end
+                    mt_beat <= mt_beat + 2'd1;
+                    if (mt_beat == 2'd3) begin
+                        load_req  <= 0;
+                        load_busy <= 0;
+                        clr_addr  <= clr_addr + 25'd16;
+                    end
+                end else begin
+                    load_req  <= 0;
+                    load_busy <= 0;
+                end
             end
         end else if (clr_run) begin
-            if (clr_addr == DRAM_END) clr_run <= 1'b0;
-            else begin
-                load_addr <= clr_addr;
-                load_data <= 32'd0;
-                load_req  <= 1'b1;
-                load_busy <= 1'b1;
-                clr_addr  <= clr_addr + 25'd4;
+            if (clr_addr == ((mt_phase == MT_ROM) ? ((rom_end + 25'd15) & ~25'd15)
+                                                  : DRAM_END)) begin
+                case (mt_phase)
+                MT_WRITE: begin mt_phase <= MT_READ;  clr_addr <= DRAM_BASE; end
+                MT_READ:  begin mt_phase <= MT_ROM;   clr_addr <= 25'd0;     end
+                MT_ROM:   begin mt_phase <= MT_CLEAR; clr_addr <= DRAM_BASE; end
+                default:  clr_run <= 1'b0;
+                endcase
+            end else begin
+                load_addr  <= clr_addr;
+                load_data  <= (mt_phase == MT_WRITE) ? mt_pattern(clr_addr) : 32'd0;
+                load_we    <= (mt_phase == MT_WRITE) || (mt_phase == MT_CLEAR);
+                load_burst <= (mt_phase == MT_READ)  || (mt_phase == MT_ROM);
+                mt_beat    <= 2'd0;
+                load_req   <= 1'b1;
+                load_busy  <= 1'b1;
+                if (mt_phase == MT_WRITE || mt_phase == MT_CLEAR)
+                    clr_addr <= clr_addr + 25'd4;
             end
         end else if (ioctl_download && ioctl_wr) begin
             case (ioctl_addr[1:0])
@@ -303,14 +403,21 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
         end
         // A download that wrote something is a ROM, and then the memory
         // is walked before the core sees any of it.
+        if (ioctl_download && !dl_d) begin rom_words <= 32'd0; rom_sum <= 32'd0; end
         if (dl_d && !ioctl_download && (rom_words != 0)) begin
             rom_present <= 1'b1;
             clr_run     <= 1'b1;
             clr_addr    <= DRAM_BASE;
+            mt_phase    <= MT_WRITE;
+            mt_errors   <= 32'd0; mt_first <= 32'hFFFF_FFFF; rom_back <= 32'd0;
         end else if (rst_d && !reset && rom_present) begin
             clr_run  <= 1'b1;
             clr_addr <= DRAM_BASE;
+            mt_phase <= MT_WRITE;
+            mt_errors <= 32'd0; mt_first <= 32'hFFFF_FFFF; rom_back <= 32'd0;
         end
+        // The loader's own writes are whole words, not bursts.
+        if (ioctl_download) begin load_we <= 1'b1; load_burst <= 1'b0; end
     end
 end
 
@@ -320,6 +427,7 @@ assign ioctl_wait = load_busy;
 
 wire [31:0] obs_pc, obs_insn, obs_retired;
 wire [31:0] obs_ihit, obs_imiss, obs_dhit, obs_dmiss, obs_io, obs_uart;
+wire [31:0] obs_resets, obs_exc, obs_faults, obs_last_epc, obs_last_bad;
 wire [15:0] sdram_dq_o, sdram_dq_i;
 wire        sdram_dq_oe;
 
@@ -328,10 +436,12 @@ assign sdram_dq_i = SDRAM_DQ;
 
 dr840_machine machine (
     .clk(clk_sys), .rst_n(rst_n), .boot_monitor(status[2]),
+    .pen_down(pen_down), .pen_px(pen_px), .pen_py(pen_py),
     // Held in reset until there is a ROM to run. The loader owns the
     // memory while it is arriving, and before that there is nothing to do.
     .load_en(ioctl_download | load_busy | ~rom_ok),
     .load_addr(load_addr), .load_data(load_data),
+    .load_we(load_we), .load_burst(load_burst), .load_rdata(load_rdata),
     .load_req(load_req), .load_ack(load_ack),
     .SDRAM_A(SDRAM_A), .SDRAM_BA(SDRAM_BA),
     .SDRAM_DQ_O(sdram_dq_o), .SDRAM_DQ_OE(sdram_dq_oe),
@@ -343,11 +453,25 @@ dr840_machine machine (
     .obs_pc(obs_pc), .obs_insn(obs_insn), .obs_retired(obs_retired),
     .obs_ihit(obs_ihit), .obs_imiss(obs_imiss),
     .obs_dhit(obs_dhit), .obs_dmiss(obs_dmiss), .obs_io(obs_io),
-    .obs_uart_bytes(obs_uart),
-    .uart_txd(UART_TXD), .uart_rxd(UART_RXD),
+    .obs_uart_bytes(obs_uart), .obs_resets(obs_resets), .obs_exc(obs_exc),
+    .obs_faults(obs_faults), .obs_last_epc(obs_last_epc), .obs_last_bad(obs_last_bad),
+    .uart_txd(guest_txd), .uart_rxd(UART_RXD),
     .lcd_ce_pix(lcd_ce), .lcd_hs(lcd_hs), .lcd_vs(lcd_vs), .lcd_de(lcd_de),
     .lcd_r(lcd_r), .lcd_g(lcd_g), .lcd_b(lcd_b)
 );
+
+// The serial port is the guest's when the guest is the monitor, which
+// talks on it. Magic Cap never does, so then it carries the machine's own
+// status line instead (rtl/dr840_status.sv), which scripts/serial reads.
+wire guest_txd, status_txd;
+dr840_status #(.CLK_HZ(92_000_000)) status_line (
+    .clk(clk_sys), .rst_n(rst_n),
+    .v0(obs_resets), .v1(obs_exc), .v2(rom_sum), .v3(obs_pc), .v4(obs_retired),
+    .v5(obs_faults), .v6(obs_last_epc), .v7(obs_last_bad),
+    .v8(mt_errors), .v9(rom_back),
+    .txd(status_txd)
+);
+assign UART_TXD = status[2] ? guest_txd : status_txd;
 
 assign CLK_VIDEO = clk_sys;
 
@@ -368,8 +492,8 @@ dr840_hud hud (
     .clk(clk_sys), .rst_n(rst_n),
     .ce_pix(hud_ce), .hs(hud_hs), .vs(hud_vs), .de(hud_de),
     .r(hud_r), .g(hud_g), .b(hud_b),
-    .v0(obs_pc), .v1(obs_insn), .v2(obs_retired), .v3(obs_ihit),
-    .v4(obs_imiss), .v5(obs_dhit), .v6(obs_dmiss), .v7(obs_io),
+    .v0(obs_pc), .v1(obs_insn), .v2(obs_retired), .v3(obs_resets),
+    .v4(obs_exc), .v5(rom_sum), .v6(obs_dmiss), .v7(obs_io),
     .v8(rom_words), .v9(obs_uart)
 );
 

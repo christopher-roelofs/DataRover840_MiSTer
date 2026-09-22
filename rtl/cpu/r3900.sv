@@ -92,7 +92,14 @@ module r3900 #(
     output wire        retire_valid,
     output wire [31:0] retire_pc,
     output wire [31:0] retire_insn,
-    output wire [31:0] retire_next_pc
+    output wire [31:0] retire_next_pc,
+    // The exception as it is committed: code, the EPC it will record, and
+    // Cause's interrupt-pending bits at that moment. For the status line.
+    output wire        exc_valid,
+    output wire [4:0]  exc_code,
+    output wire [31:0] exc_epc,
+    output wire [5:0]  exc_ip,
+    output wire [31:0] exc_bad
 );
 
     // =================================================== architectural state
@@ -784,6 +791,18 @@ module r3900 #(
     // All exceptions are committed here, at one point in the pipeline, so
     // that the oldest instruction always wins without a priority network.
     assign exc_flush = me_v && me_exc_out_v && adv_mem;
+    // A cycle after the fact, from CP0's own registers: the live version
+    // put a subtractor and a mux on a path that leaves the core, and cost
+    // ten nanoseconds.
+    reg exc_valid_r;
+    always @(posedge clk or negedge rst_n)
+        if (!rst_n)   exc_valid_r <= 1'b0;
+        else if (cen) exc_valid_r <= exc_flush;
+    assign exc_valid = exc_valid_r;
+    assign exc_code  = cp0[CP0_CAUSE][6:2];
+    assign exc_epc   = cp0[CP0_EPC];
+    assign exc_ip    = cp0[CP0_CAUSE][15:10];
+    assign exc_bad   = cp0[CP0_BADVADDR];
 
     wire [31:0] exc_vector = cp0[CP0_STATUS][22] ? 32'hBFC0_0180 : 32'h8000_0080;
 
@@ -1019,6 +1038,7 @@ module r3900 #(
             end
 
             // ------------------------------------------------ exception
+            // (also brought out, below, for the status line)
             if (exc_flush) begin
                 exc_count <= exc_count + 64'd1;
                 // EPC names the branch when the faulting instruction sat in

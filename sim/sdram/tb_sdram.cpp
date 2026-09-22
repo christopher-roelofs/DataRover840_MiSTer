@@ -108,10 +108,15 @@ int main(int argc, char **argv) {
     int  iolog = 0, iolog_max = 0, iolog_rep = 0;
     long watch_write = -1;         // a physical address whose stores to report
     const char *dump_fb = nullptr; uint64_t fb_every = 0, fb_next = 0; int fb_n = 0;
+    // --tap x,y,at,len: press the pen at panel pixel (x,y) from instruction
+    // `at` for `len` instructions, in the converter's counts on the
+    // reference's calibration -- the same numbers its --tap-px produces.
+    long tap_x = -1, tap_y = -1; uint64_t tap_at = 0, tap_len = 2000000;
     // --trace-after pc,hit,n: print n retired instructions from the hit-th
     // execution of pc, the reference's option of the same name.
     uint32_t ta_pc = 0; uint64_t ta_hit = 0, ta_hits = 0, ta_n = 0, ta_left = 0;
     uint32_t last_pc = 0;
+    uint64_t exc_taken = 0, exc_last_report = 0;
     char iolog_last[96] = "";
     std::map<uint64_t,uint64_t> io_seen;
 
@@ -133,6 +138,11 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--iolog") && i + 1 < argc) iolog_max = atoi(argv[++i]);
         else if (!strcmp(argv[i], "--watch-write") && i + 1 < argc) watch_write = strtol(argv[++i], nullptr, 16);
         else if (!strcmp(argv[i], "--dump-fb") && i + 1 < argc) dump_fb = argv[++i];
+        else if (!strcmp(argv[i], "--tap") && i + 1 < argc) {
+            const char *a = argv[++i]; tap_x = strtol(a, nullptr, 10);
+            const char *c = strchr(a, ','); if (c) { tap_y = strtol(c + 1, nullptr, 10); c = strchr(c + 1, ',');
+            if (c) { tap_at = strtoull(c + 1, nullptr, 10); c = strchr(c + 1, ','); if (c) tap_len = strtoull(c + 1, nullptr, 10); } }
+        }
         else if (!strcmp(argv[i], "--trace-after") && i + 1 < argc) {
             const char *a = argv[++i]; ta_pc = strtoul(a, nullptr, 16);
             const char *c = strchr(a, ','); if (c) { ta_hit = strtoull(c + 1, nullptr, 10); c = strchr(c + 1, ','); if (c) ta_n = strtoull(c + 1, nullptr, 10); }
@@ -189,6 +199,7 @@ int main(int argc, char **argv) {
     dut->clk_div = clk_div;
     dut->tx39_en = tx39;
     dut->boot_monitor = monitor;
+    dut->pen_down = 0; dut->pen_x = 0; dut->pen_y = 0;
     dut->rst_n = 0; dut->irq_in = 0;
     dut->io_ack = 0; dut->io_err = 0;
     for (int i = 0; i < 8; i++) { dut->clk = 0; dut->eval(); dut->clk = 1; dut->eval(); }
@@ -352,7 +363,19 @@ int main(int argc, char **argv) {
             printf("[watch-write] %08lX <- %08X be=%X at insn %" PRIu64 " last pc %08X\n",
                    watch_write, dut->dbg_ram_wdata, dut->dbg_ram_be, idx, last_pc);
         }
-        if (dut->retire_valid && cen_now) last_pc = dut->retire_pc;
+        if (dut->retire_valid && cen_now) {
+            last_pc = dut->retire_pc;
+            if (last_pc == 0x80000080u || last_pc == 0xBFC00180u) exc_taken++;
+        }
+        // Every fault -- an exception that is not an interrupt -- by name.
+        if (dut->dbg_exc_valid && cen_now && dut->dbg_exc_code != 0)
+            printf("[fault] code %u epc %08X bad %08X at insn %" PRIu64 "\n",
+                   dut->dbg_exc_code, dut->dbg_exc_epc, dut->dbg_exc_bad, idx);
+        // Exceptions per ten million instructions: a storm is a number.
+        if (idx >= exc_last_report + 10000000) {
+            printf("[exc] %" PRIu64 " taken by insn %" PRIu64 "\n", exc_taken, idx);
+            exc_last_report = idx;
+        }
         if (ta_pc && dut->retire_valid && cen_now) {
             if (dut->retire_pc == ta_pc && ++ta_hits == ta_hit) ta_left = ta_n;
             if (ta_left) { printf("[trace] %08X %08X\n", dut->retire_pc, dut->retire_insn); ta_left--; }
@@ -380,6 +403,13 @@ int main(int argc, char **argv) {
             dbgn++;
         }
 
+        if (tap_x >= 0) {
+            bool down = idx >= tap_at && idx < tap_at + tap_len;
+            if (down != (bool)dut->pen_down) printf("[pen] %s at insn %" PRIu64 "\n", down ? "down" : "up", idx);
+            dut->pen_down = down;
+            dut->pen_x = 85 + (tap_x * 751 + 239) / 479;
+            dut->pen_y = 69 + (tap_y * 722 + 159) / 319;
+        }
         if (dump_fb && fb_every && idx >= fb_next) {
             char path[512]; snprintf(path, sizeof path, "%s.%04d.pgm", dump_fb, fb_n++);
             write_fb(path); fb_next += fb_every;

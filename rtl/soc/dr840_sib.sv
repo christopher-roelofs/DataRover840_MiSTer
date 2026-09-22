@@ -50,7 +50,12 @@ module dr840_sib #(
     output reg  [31:0] rdata,          // combinational on `off`
 
     // Bits to set in INTRSTATUS1 this cycle.
-    output reg  [31:0] int1_set
+    output reg  [31:0] int1_set,
+
+    // The pen, in the converter's own counts: 0..1023 across each layer.
+    input  wire        pen_down,
+    input  wire [9:0]  pen_x,
+    input  wire [9:0]  pen_y
 );
     // ------------------------------------------------------------ registers
     localparam [11:0] SIBSIZE = 12'h060, SNDRXSTART = 12'h064, SNDTXSTART = 12'h068;
@@ -83,16 +88,79 @@ module dr840_sib #(
     reg [15:0] ureg [0:15];
     integer k;
 
-    // What the converter sees with no pen on the panel. A four-wire panel
-    // is two resistive layers; a plate on the driven layer reads its rail,
-    // a plate on the other layer floats and reads zero.
+    // What the converter sees. A four-wire panel is two resistive layers
+    // that touch at one point. To read a coordinate the ROM puts a voltage
+    // gradient across one layer and measures the other, which floats to
+    // the potential at the contact; so the axis measured is set by which
+    // plates are driven, in TS_CR, not by which pin the converter is on.
+    // With no pen the undriven layer reads zero and a plate on the driven
+    // layer reads its rail.
+    //
+    // The ROM's pressure readings are cross-driven: one plate of each
+    // layer, so the only path runs along one layer to the contact, through
+    // it, and along the other to ground, and the powered pin reads a
+    // divider between the bias resistor and that path. It takes all four
+    // diagonals and adds them, which cancels position and leaves contact
+    // resistance, and rejects the set unless every reading is under 500.
+    // The resistances are the reference's model of an undocumented panel:
+    // a firm touch near 310 mid-panel, the worst corner near 465.
     wire [15:0] ts  = ureg[U_TS_CR];
     wire [2:0]  inp = ureg[U_ADC_CR][4:2];
-    wire ts_pow_x = ts[1], ts_gnd_mx = ts[4], ts_pow_y = ts[3], ts_gnd_my = ts[6];
-    wire ts_pow_mx = ts[0], ts_pow_my = ts[2];
+    wire ts_pow_mx = ts[0], ts_pow_x = ts[1], ts_pow_my = ts[2], ts_pow_y = ts[3];
+    wire ts_gnd_mx = ts[4], ts_gnd_x = ts[5], ts_gnd_my = ts[6], ts_gnd_y = ts[7];
     wire x_driven = ts_pow_x && ts_gnd_mx;
     wire y_driven = ts_pow_y && ts_gnd_my;
     wire meas_x   = (inp == 3'd0) || (inp == 3'd1);      // TSPX, TSMX
+
+    // Distance along each layer from each plate to the contact, on the
+    // layer's 400 units of resistance; the contact itself is 50.
+    localparam [11:0] LAYER_R = 12'd400, CONTACT_R = 12'd50, BIAS_R = 12'd1023;
+    // In stages, because none of it is in a hurry and all of it in one
+    // clock was not going to close.
+    reg  [19:0] xr, yr;
+    reg  [11:0] d_tsmx, d_tspx, d_tsmy, d_tspy;
+    reg  [11:0] path_a, path_b, path;
+    always @(posedge clk) begin
+        xr     <= pen_x * 10'd400;                        // /1024 below
+        yr     <= pen_y * 10'd400;
+        d_tsmx <= {2'd0, xr[19:10]}; d_tspx <= LAYER_R - {2'd0, xr[19:10]};
+        d_tsmy <= {2'd0, yr[19:10]}; d_tspy <= LAYER_R - {2'd0, yr[19:10]};
+        path_a <= (ts_pow_mx ? d_tsmx : 12'd0) + (ts_pow_x ? d_tspx : 12'd0)
+                + (ts_pow_my ? d_tsmy : 12'd0) + (ts_pow_y ? d_tspy : 12'd0);
+        path_b <= (ts_gnd_mx ? d_tsmx : 12'd0) + (ts_gnd_x ? d_tspx : 12'd0)
+                + (ts_gnd_my ? d_tsmy : 12'd0) + (ts_gnd_y ? d_tspy : 12'd0);
+        path   <= CONTACT_R + path_a + path_b;
+    end
+
+    // 1023 * path / (1023 + path), by a bit-serial divider that runs all
+    // the time. Its inputs change with the pen or a TS_CR write, and a
+    // conversion is read through a frame of the bus, thousands of clocks
+    // later; the twelve clocks this takes are invisible.
+    reg [21:0] div_n;                   // numerator remainder
+    reg [12:0] div_d;
+    reg [9:0]  div_q, press_q;
+    reg [3:0]  div_i;
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            div_n <= 22'd0; div_d <= 13'd0; div_q <= 10'd0; press_q <= 10'd0; div_i <= 4'd0;
+        end else if (div_i == 4'd0) begin
+            div_n <= {path, 10'd0} - {10'd0, path};        // 1023 * path
+            div_d <= BIAS_R + path;
+            div_q <= 10'd0;
+            div_i <= 4'd10;
+        end else begin
+            // Restoring division, one quotient bit per clock, MSB first.
+            if (div_n >= ({9'd0, div_d} << (div_i - 4'd1))) begin
+                div_n <= div_n - ({9'd0, div_d} << (div_i - 4'd1));
+                div_q <= {div_q[8:0], 1'b1};
+            end else
+                div_q <= {div_q[8:0], 1'b0};
+            // The last bit is being decided this clock; take it with it.
+            if (div_i == 4'd1) press_q <= {div_q[8:0], (div_n >= {9'd0, div_d})};
+            div_i <= div_i - 4'd1;
+        end
+    end
+
     reg  [9:0] adc_sample;
     always @(*) begin
         case (inp)
@@ -100,16 +168,22 @@ module dr840_sib #(
         3'd6:       adc_sample = AUX_MAIN_BATTERY[9:0];
         3'd7:       adc_sample = AUX_BACKUP_BATTERY[9:0];
         default:
-            if ((x_driven && !meas_x) || (y_driven && meas_x))
+            if (!pen_down && ((x_driven && !meas_x) || (y_driven && meas_x)))
                 adc_sample = 10'd0;                       // the floating layer
+            else if (x_driven && !meas_x)
+                adc_sample = pen_x;                       // Y layer floats to X
+            else if (y_driven && meas_x)
+                adc_sample = pen_y;                       // X layer floats to Y
             else if (x_driven && meas_x)
                 adc_sample = (inp == 3'd0) ? 10'h3FF : 10'd0;
             else if (y_driven && !meas_x)
                 adc_sample = (inp == 3'd2) ? 10'h3FF : 10'd0;
-            else                                          // cross-driven, open
+            else if (!pen_down)                           // cross-driven, open
                 adc_sample = ((inp == 3'd0 && ts_pow_x)  || (inp == 3'd1 && ts_pow_mx) ||
                               (inp == 3'd2 && ts_pow_y)  || (inp == 3'd3 && ts_pow_my))
                              ? 10'h3FF : 10'd0;
+            else
+                adc_sample = press_q;                     // cross-driven, touched
         endcase
     end
 
@@ -166,6 +240,13 @@ module dr840_sib #(
             // The codec's pin reaches the ICU whether or not the bus is
             // clocked: once sound has finished the OS turns the bus off and
             // waits on SIBIRQPOSINT alone to be woken by a touch.
+            // In the idle mode the panel sits biased and a touch pulls
+            // TSPX down, which is a source: that is how the OS hears of a
+            // touch without polling. Held while the pen is down; the OS
+            // clears it and, if the pen is still there, it is set again.
+            if (ts[9:8] == 2'd0 && pen_down)
+                ureg[U_IE_STATUS] <= ureg[U_IE_STATUS] | 16'h1000;
+
             if (irq_out != irq_seen) begin
                 irq_seen <= irq_out;
                 set_now = set_now | (irq_out ? INT1_IRQPOS : INT1_IRQNEG);

@@ -69,12 +69,19 @@ module tb_sdram (
     // testbench does when it is not.
     input  wire        tx39_en,
     input  wire        boot_monitor,
+    input  wire        pen_down,
+    input  wire [9:0]  pen_x,
+    input  wire [9:0]  pen_y,
     output wire        dbg_tx_stb,
     output wire        dbg_ram_we,
     output wire [3:0]  dbg_ram_be,
     output wire [31:0] dbg_ram_wdata,
     output wire [31:0] dbg_vid_ctrl1,
     output wire [31:0] dbg_vid_ctrl3,
+    output wire        dbg_exc_valid,
+    output wire [4:0]  dbg_exc_code,
+    output wire [31:0] dbg_exc_epc,
+    output wire [31:0] dbg_exc_bad,
     output wire        dbg_io_ack,
     output wire [31:0] dbg_io_rdata,
     output wire [7:0]  dbg_tx_data,
@@ -103,6 +110,8 @@ module tb_sdram (
         .dmem_err(derr), .irq_in(tx39_en ? t_irq : irq_in),
         .retire_valid(retire_valid), .retire_pc(retire_pc),
         .retire_insn(retire_insn), .retire_next_pc(retire_next_pc),
+        .exc_valid(dbg_exc_valid), .exc_code(dbg_exc_code), .exc_epc(dbg_exc_epc),
+        .exc_ip(), .exc_bad(dbg_exc_bad),
         .ihit_count(ihit_count), .imiss_count(imiss_count),
         .dhit_count(dhit_count), .dmiss_count(dmiss_count)
     );
@@ -138,6 +147,7 @@ module tb_sdram (
     dr840_lcd lcd (
         .clk(clk), .cen(cen), .rst_n(rst_n),
         .ctrl1(dbg_vid_ctrl1), .ctrl2(vid_ctrl2), .ctrl3(dbg_vid_ctrl3),
+        .cur_x(9'd0), .cur_y(9'd0), .cur_down(1'b0),
         .vmem_addr(va), .vmem_req(vreq), .vmem_burst(), .vmem_ack(vack), .vmem_rdata(vrd),
         .ce_pix(), .hs(), .vs(), .de(), .r(), .g(), .b()
     );
@@ -148,6 +158,7 @@ module tb_sdram (
         .io_be(io_be), .io_wdata(io_wdata),
         .io_ack(t_ack), .io_rdata(t_rdata), .io_err(t_err),
         .boot_monitor(boot_monitor), .uart_txd(), .uart_rxd(1'b1), .irq_out(t_irq),
+        .pen_down(pen_down), .pen_x(pen_x), .pen_y(pen_y),
         .vid_ctrl1(dbg_vid_ctrl1), .vid_ctrl2(vid_ctrl2), .vid_ctrl3(dbg_vid_ctrl3),
         .dbg_tx_bytes(dbg_tx_bytes), .dbg_io_reads(),
         .dbg_tx_stb(dbg_tx_stb), .dbg_tx_data(dbg_tx_data)

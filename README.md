@@ -302,7 +302,8 @@ values in hex (`rtl/dr840_hud.sv`).
 | 0 | the last retired PC |
 | 1 | the instruction at it |
 | 2 | instructions retired |
-| 3, 4 | instruction cache hits, misses |
+| 3 | times the core has been let out of reset |
+| 4 | exceptions taken since |
 | 5, 6 | data cache hits, misses |
 | 7 | device reads |
 | 8 | ROM words loaded |

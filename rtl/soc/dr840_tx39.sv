@@ -45,6 +45,11 @@ module dr840_tx39 #(
     // monitor instead of Magic Cap. It is IOCTRL's input pin 3.
     input  wire        boot_monitor,
 
+    // The pen, in the converter's counts.
+    input  wire        pen_down,
+    input  wire [9:0]  pen_x,
+    input  wire [9:0]  pen_y,
+
     // The debug serial port. UART A is what the IDT monitor prints on.
     output reg         uart_txd,
     input  wire        uart_rxd,
@@ -183,7 +188,8 @@ module dr840_tx39 #(
     dr840_sib #(.CLK_HZ(CLK_HZ)) sib (
         .clk(clk), .rst_n(rst_n),
         .wr(io_start && is_tx39 && io_we && is_sib), .off(off), .wdata(io_wdata),
-        .rdata(sib_rdata), .int1_set(sib_set)
+        .rdata(sib_rdata), .int1_set(sib_set),
+        .pen_down(pen_down), .pen_x(pen_x), .pen_y(pen_y)
     );
 
     // The two Glacier PC Card controllers, at 0x10400000 and 0x10800000:
@@ -281,6 +287,7 @@ module dr840_tx39 #(
     reg [39:0] rtc_alarm;
     reg [31:0] t_ctrl, t_per;
     reg [39:0] per_acc;                 // the last multiple of the reload passed
+    reg        alarm_armed;             // an alarm written and not yet fired
     reg        stp_armed;
     reg [39:0] stp_deadline;
 
@@ -337,7 +344,7 @@ module dr840_tx39 #(
             rx_busy <= 1'b0; rx_bit <= 4'd0; rx_cnt <= 20'd0; rxd_sync <= 3'b111;
             rtc <= 40'd0; rtc_acc <= 32'd0; rtc_alarm <= 40'd0;
             t_ctrl <= 32'd0; t_per <= 32'd0; per_acc <= 40'd0;
-            stp_armed <= 1'b0; stp_deadline <= 40'd0;
+            stp_armed <= 1'b0; stp_deadline <= 40'd0; alarm_armed <= 1'b0;
             served <= 1'b0;
             dbg_tx_bytes <= 32'd0; dbg_io_reads <= 32'd0;
             dbg_tx_stb <= 1'b0; dbg_tx_data <= 8'd0;
@@ -361,10 +368,20 @@ module dr840_tx39 #(
                     rtc     <= rtc + 40'd1;
                 end else rtc_acc <= rtc_acc + 32'd32768;
             end
-            // The alarm fires once when the counter reaches it.
-            if (rtc_alarm != 40'd0 && rtc >= rtc_alarm &&
-                !icu_status[4][30])
+            // The alarm fires once, when the counter reaches it, and not
+            // again until the alarm is written again. As a level -- set
+            // whenever the counter is past the alarm and the status is
+            // clear -- it came straight back the clock after the OS
+            // cleared it, before the OS had set the next one, and it kept
+            // coming back: twelve thousand interrupts a second, from the
+            // moment the twenty-second alarm the boot sets came due, on
+            // about half the boots. The reference has the same level, but
+            // only looks at it once a tick, and a tick is long enough for
+            // the handler to get its next alarm in first.
+            if (alarm_armed && rtc >= rtc_alarm) begin
+                alarm_armed   <= 1'b0;
                 icu_status[4] <= icu_status[4] | INT5_ALARMINT;
+            end
             // The periodic timer fires each time the counter crosses a
             // multiple of the reload value; derived from the RTC so the
             // rate is right however it is sampled.
@@ -475,8 +492,10 @@ module dr840_tx39 #(
                                          INT2_UARTATXINT | INT2_UARTAEMPTY;
                 end else if (off == T_ALMHI) begin
                     rtc_alarm[39:32] <= io_wdata[7:0];
+                    alarm_armed <= 1'b1;
                 end else if (off == T_ALMLO) begin
                     rtc_alarm[31:0] <= io_wdata;
+                    alarm_armed <= 1'b1;
                 end else if (off == T_CTRL) begin
                     t_ctrl <= io_wdata;
                     if (io_wdata[3]) begin

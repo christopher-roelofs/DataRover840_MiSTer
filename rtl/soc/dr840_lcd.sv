@@ -31,6 +31,12 @@ module dr840_lcd (
     input  wire [31:0] ctrl2,
     input  wire [31:0] ctrl3,
 
+    // Where the pointer is, in panel pixels, and whether it is pressed.
+    // A touch screen has no pointer, but a mouse has nothing else.
+    input  wire [8:0]  cur_x,
+    input  wire [8:0]  cur_y,
+    input  wire        cur_down,
+
     // The memory port, physical addresses, bursts of four words.
     output reg  [31:0] vmem_addr,
     output reg         vmem_req,
@@ -146,13 +152,21 @@ module dr840_lcd (
     wire [1:0]  level = invvid ? ~ink : ink;
     wire [7:0]  gray  = 8'd255 - {level, level, level, level};   // 0,85,170,255
 
+    // A crosshair, seven pixels each way, inverted over the picture; a
+    // pressed one fills its centre.
+    wire [9:0] cdx = (px > {1'b0, cur_x}) ? px - {1'b0, cur_x} : {1'b0, cur_x} - px;
+    wire [9:0] cdy = (py > {1'b0, cur_y}) ? py - {1'b0, cur_y} : {1'b0, cur_y} - py;
+    wire on_cursor = ((cdx == 10'd0 && cdy <= 10'd7) || (cdy == 10'd0 && cdx <= 10'd7))
+                   || (cur_down && cdx <= 10'd1 && cdy <= 10'd1);
+    wire [7:0] gray_c = on_cursor ? ~gray : gray;
+
     always @(posedge clk) begin
         hs <= hs_p;
         vs <= vs_p;
         de <= active;
         if (!active)          {r, g, b} <= 24'd0;
         else if (!envid)      {r, g, b} <= 24'h50_50_50;          // panel off
-        else if (in_panel)    {r, g, b} <= {gray, gray, gray};
+        else if (in_panel)    {r, g, b} <= {gray_c, gray_c, gray_c};
         else                  {r, g, b} <= 24'h30_30_30;          // the bezel
     end
 
