@@ -277,6 +277,11 @@ int main(int argc, char **argv) {
     printf("instruction image: %zu distinct addresses\n", imem.size());
 
     Dut *dut = new Dut;
+    // One rate in this harness: the core's clock enable is held high. Left
+    // undriven it is zero, the core never moves, and the run times out --
+    // which is what happened, silently, when the port was added and this
+    // harness went on being run from a binary built before it.
+    dut->cen = 1;
     dut->rst_n = 0;
     dut->irq_in = 0;
     dut->ibus_ack = 0;

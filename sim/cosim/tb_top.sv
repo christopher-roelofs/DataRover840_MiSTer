@@ -7,6 +7,7 @@ module tb_top #(
     parameter bit COUNT_PER_INSN = 1'b0
 ) (
     input  wire        clk,
+    input  wire        cen,          // the core's clock enable
     input  wire        rst_n,
     output wire [31:0] ibus_addr,
     output wire        ibus_req,
@@ -34,7 +35,7 @@ module tb_top #(
     output wire [31:0] dmiss_count
 );
     r3900_cached #(.COUNT_PER_INSN(COUNT_PER_INSN)) u (
-        .clk(clk), .rst_n(rst_n),
+        .clk(clk), .cen(cen), .rst_n(rst_n),
         .imem_addr(ibus_addr), .imem_req(ibus_req), .imem_burst(ibus_burst),
         .imem_ack(ibus_ack), .imem_rdata(ibus_rdata), .imem_err(ibus_err),
         .dmem_addr(dbus_addr), .dmem_req(dbus_req), .dmem_burst(dbus_burst),

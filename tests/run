@@ -24,8 +24,10 @@ if [ ! -x tools/gentrace ]; then
     gcc -O2 -o tools/gentrace tools/gentrace.c -I"$MRC/src" \
         "$MRC/build/libmrc_cpu_mips.a" "$MRC/build/libmrc_common.a"
 fi
-[ -x sim/cosim/obj_dir/Vr3900 ] || make -C sim/cosim >/dev/null
-[ -x sim/cosim/obj_cached/Vtb_top ] || make -C sim/cosim cached >/dev/null
+# Always through make, never "only if missing": make knows when the RTL is
+# newer than the binary, a file test does not, and a run from a stale
+# binary passes without testing anything.
+make -C sim/cosim all cached >/dev/null
 
 mkdir -p "$OUT"
 pass=0; fail=0

@@ -51,7 +51,17 @@ $(BOARD_OBJ)/Vtb_board: $(BOARD_RTL) tb_board.sv tb_board.cpp goldtrace.h
 	  -CFLAGS "-O2 -I$(CURDIR)" -Mdir $(BOARD_OBJ) \
 	  tb_board.sv $(BOARD_RTL) tb_board.cpp
 
+# The first million ROM instructions through every harness. This exists
+# because the board harness sat broken for several commits -- an input left
+# unconnected when a port was added -- and nothing ran it. Anything that
+# builds a harness should also run it.
+ROM ?= ../../../magicrecomp/roms/Data Rover 840/DataRover-840-USA.image
+check: all cached board
+	@echo "== bare core ==";    ./$(OBJ)/V$(TOP) --state ../golden/reset-1m.trc --bus ../golden/reset-1m.bus --rom "$(ROM)" | tail -1
+	@echo "== with caches =="; ./$(CACHED_OBJ)/Vtb_top --state ../golden/reset-1m.trc --bus ../golden/reset-1m.bus --rom "$(ROM)" | tail -1
+	@echo "== with board ==";  ./$(BOARD_OBJ)/Vtb_board --state ../golden/reset-1m.trc --bus ../golden/reset-1m.bus --rom "$(ROM)" | tail -1
+
 clean:
 	rm -rf $(OBJ) $(CACHED_OBJ) $(BOARD_OBJ)
 
-.PHONY: all run clean cached board
+.PHONY: all run clean cached board check

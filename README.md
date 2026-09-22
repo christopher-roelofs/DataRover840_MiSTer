@@ -89,8 +89,13 @@ somewhere downstream.
 
 ```sh
 scripts/mktrace                  # regenerate sim/golden/reset-1m.{trc,bus}
-cd sim/cosim && make && make run
+cd sim/cosim && make check       # the first million through every harness
 ```
+
+`make check` is the thing to run after touching anything. It exists because
+the board harness sat frozen for several commits after a port was added to
+the core and not wired into it, and the directed tests went on passing from
+binaries built before the change. A harness nobody runs is not a harness.
 
 Traces are not in git -- a million instructions is 144 MB.
 
