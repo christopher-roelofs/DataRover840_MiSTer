@@ -17,3 +17,4 @@ output_files/
 *.summary
 sim/cosim/obj_board/
 sim/sdram/obj_dir/
+sim/lcd/obj_dir/

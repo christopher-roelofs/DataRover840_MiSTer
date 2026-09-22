@@ -154,8 +154,13 @@ module dr840_mem #(
     // arbiter had moved on and be handed to the data side, which would take
     // it as the first word of its own line. Every word after that lands one
     // slot late and the line is quietly wrong.
-    // The LCD comes after both: it asks for a line at a time, early, and
-    // has a whole raster line to get it.
+    // The LCD goes first. It asks for one burst at a time and drops its
+    // request in between, so it takes the memory for sixteen bytes and
+    // gives it back: eight of those per raster line, against the three
+    // thousand clocks a raster line lasts, is about six percent of the
+    // memory and it is never more. Last in line it would instead depend on
+    // both caches being idle in the same cycle, which is not something the
+    // picture should have to hope for.
     localparam [1:0] A_FREE = 2'd0, A_DATA = 2'd1, A_INSN = 2'd2, A_LCD = 2'd3;
     reg [1:0] owner;
 
@@ -163,19 +168,19 @@ module dr840_mem #(
     wire i_wants_ram = imem_req && (i_tgt == T_RAM);
     wire v_wants_ram = vmem_req && (v_tgt == T_RAM);
 
-    wire grant_d = (owner == A_DATA) || ((owner == A_FREE) && d_wants_ram);
+    wire grant_v = (owner == A_LCD) || ((owner == A_FREE) && v_wants_ram);
+    wire grant_d = (owner == A_DATA) ||
+                   ((owner == A_FREE) && !v_wants_ram && d_wants_ram);
     wire grant_i = (owner == A_INSN) ||
-                   ((owner == A_FREE) && !d_wants_ram && i_wants_ram);
-    wire grant_v = (owner == A_LCD) ||
-                   ((owner == A_FREE) && !d_wants_ram && !i_wants_ram && v_wants_ram);
+                   ((owner == A_FREE) && !v_wants_ram && !d_wants_ram && i_wants_ram);
 
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n)
             owner <= A_FREE;
         else case (owner)
-            A_FREE: if (d_wants_ram)      owner <= A_DATA;
+            A_FREE: if (v_wants_ram)      owner <= A_LCD;
+                    else if (d_wants_ram) owner <= A_DATA;
                     else if (i_wants_ram) owner <= A_INSN;
-                    else if (v_wants_ram) owner <= A_LCD;
             A_DATA: if (!d_wants_ram && !ram_busy) owner <= A_FREE;
             A_INSN: if (!i_wants_ram && !ram_busy) owner <= A_FREE;
             A_LCD:  if (!v_wants_ram && !ram_busy) owner <= A_FREE;
@@ -186,6 +191,7 @@ module dr840_mem #(
     assign ram_req   = (grant_d & d_wants_ram) | (grant_i & i_wants_ram) | (grant_v & v_wants_ram);
     assign ram_addr  = grant_d ? d_dec[24:0] : grant_i ? i_dec[24:0] : v_dec[24:0];
     assign ram_burst = grant_d ? dmem_burst  : grant_i ? imem_burst  : 1'b1;
+
     assign ram_we    = grant_d ? dmem_we     : 1'b0;
     assign ram_be    = grant_d ? dmem_be     : 4'b1111;
     assign ram_wdata = dmem_wdata;

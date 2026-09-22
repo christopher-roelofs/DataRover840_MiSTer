@@ -507,6 +507,7 @@ rtl/soc/dr840_lcd.sv    the LCD controller, onto a 640x480 raster
 rtl/dr840_machine.sv    the machine: clock enable, loader mux, core, board, SoC
 rtl/emu.sv              the MiSTer top: ROM loader, UART pins, debug display
 scripts/deploy          builds a boot on the MiSTer; scripts/serial reads it
+sim/lcd/             the panel's scanout against the framebuffer it scans
 sim/sdram/           the whole memory path against a model of the chip
 sim/cosim/           Verilator lockstep harness against magicrecomp
 sim/golden/          reference traces (regenerated, not committed)
@@ -553,6 +554,25 @@ collapsed to one line and a count, so the two boots diff directly; with
   enabled source pending; the OS idle routine polls it. It is read-only.
 - **The Glacier card-detect pins are active low.** An empty slot reads them
   high, and returning zero leaves the ROM's debounce polling forever.
+
+Two more came from the hardware rather than from a diff, and neither could
+have come from anywhere else:
+
+- **A burst address is aligned down to sixteen bytes** by the adapter, which
+  had only ever been handed cache lines, and cache lines are aligned. A
+  panel line is 120 bytes, so every other line begins eight bytes off a
+  boundary and came back shifted by eight: half the screen right and half
+  of it wrong. The controller now fetches the aligned window the line falls
+  in and reads out at an offset. `sim/lcd` scans a framebuffer whose every
+  line is distinguishable and reports which source line each screen line
+  actually came from, which is how this was found and is what keeps it
+  found.
+- **Nothing cleared the DRAM.** Magic Cap keeps its world in RAM and expects
+  it to survive a power cycle -- the real machine's RAM is battery-backed --
+  so it found the previous run's memory, recognised it as its own and
+  damaged, and spent the boot on "Cleaning up". A model's memory begins as
+  zeroes, so no simulation could have shown this. The loader walks the four
+  megabytes before the core is let go, and a reset asks for the same walk.
 
 ## Next
 

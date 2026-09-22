@@ -219,7 +219,9 @@ wire rst_n = ~reset;
 // and without back-pressure the writes that do not fit are simply lost --
 // a ROM with holes in it, which looks like a CPU bug.
 
-localparam [24:0] ROM_BASE = 25'h000_0000;
+localparam [24:0] ROM_BASE  = 25'h000_0000;
+localparam [24:0] DRAM_BASE = 25'h080_0000;
+localparam [24:0] DRAM_END  = 25'h0C0_0000;   // 4 MB fitted
 
 reg  [31:0] word_buf;
 reg  [24:0] load_addr;
@@ -233,19 +235,51 @@ wire        load_ack;
 // On the display that looks exactly like a working machine: the pc climbs
 // and the retired count climbs. It is worth being able to tell those apart.
 reg [31:0] rom_words;
-reg        rom_ok;
+reg        rom_present;
 
-always @(posedge clk_sys or negedge rst_n) begin
-    if (!rst_n) begin
-        load_req <= 0; load_busy <= 0; dl_d <= 0;
-        rom_words <= 0; rom_ok <= 0;
+// And the memory is cleared before the core is let go.
+//
+// Nothing else clears it. Magic Cap keeps its whole world in RAM and
+// expects to find it there after a power cycle -- the real machine's RAM
+// is battery-backed -- so what it finds on a MiSTer is the last run's
+// memory, or whatever the SDRAM powered up holding. It recognises that as
+// its own world, damaged, and spends the boot on "Cleaning up" instead of
+// starting. The simulation never saw it: a model's memory begins as
+// zeroes, and zeroes are what this makes.
+//
+// A reset asks for the same walk, because a reset the guest can tell from
+// a power cycle is not much of a reset.
+reg        clr_run;
+reg [24:0] clr_addr;
+reg        rst_d;
+wire       rom_ok = rom_present & ~clr_run;
+
+// Deliberately not reset by the OSD's reset. What this block knows -- that
+// a ROM has been loaded -- is not something a reset may forget: forgetting
+// it holds the core in reset for ever, with no download coming to let go.
+wire hard_rst_n = pll_locked & ~RESET;
+
+always @(posedge clk_sys or negedge hard_rst_n) begin
+    if (!hard_rst_n) begin
+        load_req <= 0; load_busy <= 0; dl_d <= 0; rst_d <= 0;
+        rom_words <= 0; rom_present <= 0; clr_run <= 0; clr_addr <= 0;
     end else begin
-        dl_d <= ioctl_download;
+        dl_d  <= ioctl_download;
+        rst_d <= reset;
         if (load_busy) begin
             if (load_ack) begin
                 load_req  <= 0;
                 load_busy <= 0;
-                rom_words <= rom_words + 32'd1;
+                if (!clr_run) rom_words <= rom_words + 32'd1;
+            end
+        end else if (clr_run) begin
+            if (clr_addr == DRAM_END) clr_run <= 1'b0;
+            else begin
+                load_addr <= clr_addr;
+                load_data <= 32'd0;
+                load_req  <= 1'b1;
+                load_busy <= 1'b1;
+                clr_addr  <= clr_addr + 25'd4;
             end
         end else if (ioctl_download && ioctl_wr) begin
             case (ioctl_addr[1:0])
@@ -267,9 +301,16 @@ always @(posedge clk_sys or negedge rst_n) begin
             load_req  <= 1'b1;
             load_busy <= 1'b1;
         end
-        // A download that wrote something is a ROM. Latched, so a later
-        // reset from the OSD does not throw it away.
-        if (dl_d && !ioctl_download && (rom_words != 0)) rom_ok <= 1'b1;
+        // A download that wrote something is a ROM, and then the memory
+        // is walked before the core sees any of it.
+        if (dl_d && !ioctl_download && (rom_words != 0)) begin
+            rom_present <= 1'b1;
+            clr_run     <= 1'b1;
+            clr_addr    <= DRAM_BASE;
+        end else if (rst_d && !reset && rom_present) begin
+            clr_run  <= 1'b1;
+            clr_addr <= DRAM_BASE;
+        end
     end
 end
 

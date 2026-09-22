@@ -93,15 +93,23 @@ module dr840_lcd (
         x0   <= 10'((11'd640 - pw_c) >> 1);
         y0   <= 10'((11'd480 - ph_c) >> 1);
     end
+    wire [9:0] px_w = hc - x0;                         // pixel within the panel
+    wire [9:0] py_w = vc - y0;
+
     // The pixel's place, a stage later. A pixel lasts four clocks, and
     // everything from here to the colour is delayed together, so the only
     // effect is the whole picture a clock late, which nothing can see.
     reg [9:0] px, py;
+    reg [5:0] show_idx;
     reg       in_panel, active, hs_p, vs_p;
     always @(posedge clk) begin
-        px       <= hc - x0;
-        py       <= vc - y0;
-        in_panel <= (hc >= x0) && ({1'b0, hc - x0} < pw_c) && (vc >= y0) && ({1'b0, vc - y0} < ph_c);
+        px       <= px_w;
+        py       <= py_w;
+        // Which word of which bank the pixel comes from, worked out here so
+        // the line buffer's read has a whole pixel to itself. `woff` is why
+        // it is not simply the pixel's word: see the fetch below.
+        show_idx <= {py_w[0], px_w[8:4] + {3'd0, woff[py_w[0]]}};
+        in_panel <= (hc >= x0) && ({1'b0, px_w} < pw_c) && (vc >= y0) && ({1'b0, py_w} < ph_c);
         active   <= (hc < H_ACT) && (vc < V_ACT);
         hs_p     <= (hc >= H_ACT + H_FP) && (hc < H_ACT + H_FP + H_SY);
         vs_p     <= (vc >= V_ACT + V_FP) && (vc < V_ACT + V_FP + V_SY);
@@ -110,14 +118,26 @@ module dr840_lcd (
     // ------------------------------------------------------------ line buffers
     // Two of 32 words: one being shown, one being filled with the next
     // panel line. Which is which follows the raster line's parity.
+    //
+    // A burst starts where the memory says it starts, and the memory reads
+    // sixteen bytes from a sixteen-byte boundary -- the adapter throws the
+    // low four bits of the address away, because every burst it had ever
+    // been given was a cache line and cache lines are aligned. A panel line
+    // is 120 bytes, so every other line begins eight bytes off a boundary,
+    // and every other line came back shifted by eight bytes: half the
+    // screen right, half of it wrong, which is what it looked like.
+    //
+    // So the buffer holds the aligned 128-byte window the line falls in,
+    // and `woff` is how far into that window the line starts -- nought or
+    // two words. Thirty words of line plus two of offset is exactly the
+    // thirty-two the buffer holds.
     reg [31:0] lbuf [0:63];
-    wire        show_bank = py[0];
-    wire [4:0]  show_word = px[8:4];                   // 16 pixels per word
+    reg [1:0]  woff [0:1];
     // Read asynchronously: the raster's pixel is registered from the
     // address in the same cycle, as the debug display does it, and a
     // registered read would hand the previous word to the first pixel of
     // each new one.
-    wire [31:0] show_q = lbuf[{show_bank, show_word}];
+    wire [31:0] show_q = lbuf[show_idx];
     // The pixel: 2 bits, most significant first, in the word as it was in
     // memory -- big-endian, so pixel 0 is bits 31:30.
     wire [3:0]  pix_i = px[3:0];
@@ -149,10 +169,12 @@ module dr840_lcd (
     reg         fetching;
     reg         pend;                                  // a line is due
     wire        line_start = (hc == 10'd0) && (pdiv == 2'd3);
+    // Where the line starts, which is not where its first burst starts.
     reg  [31:0] line_base;
     // Line base = fb + line * line_bytes. A multiply, once per line, so it
     // is done serially: base is kept and stepped by line_bytes.
     reg  [31:0] next_base;
+    wire [31:0] base_now = (next_py == 10'd0) ? fb_pa : next_base;
     // The bank being filled is the one the fetched line will show from.
     wire        fill_bank = fetch_line[0];
 
@@ -161,6 +183,7 @@ module dr840_lcd (
             fetching <= 1'b0; burst <= 4'd0; beat <= 2'd0; vmem_req <= 1'b0;
             vmem_addr <= 32'd0; fetch_line <= 10'd0; pend <= 1'b0;
             line_base <= 32'd0; next_base <= 32'd0;
+            woff[0] <= 2'd0; woff[1] <= 2'd0;
         end else begin
             // Everything the board sees moves on the core's edges, so the
             // .sdc can give it the same two periods it gives the caches.
@@ -172,23 +195,31 @@ module dr840_lcd (
                 burst      <= 4'd0;
                 beat       <= 2'd0;
                 fetch_line <= next_py;
-                line_base  <= (next_py == 10'd0) ? fb_pa : next_base;
-                vmem_addr  <= (next_py == 10'd0) ? fb_pa : next_base;
+                line_base  <= base_now;
+                woff[next_py[0]] <= base_now[3:2];
+                vmem_addr  <= {base_now[31:4], 4'd0};
                 vmem_req   <= 1'b1;
                 end
             end else if (fetching && cen) begin
-                if (vmem_ack) begin
+                // The bus is given back between bursts. The arbiter puts
+                // this first when it asks -- a line is eight bursts against
+                // a raster line's three thousand clocks, so letting it wait
+                // for the core to be idle is a race it can lose -- and
+                // holding the request across all eight would then lock the
+                // core out for the whole fetch rather than one burst of it.
+                if (!vmem_req) begin
+                    vmem_addr <= {line_base[31:4], 4'd0} + {24'd0, burst, 4'd0};
+                    vmem_req  <= 1'b1;
+                end else if (vmem_ack) begin
                     lbuf[{fill_bank, burst[2:0], beat}] <= vmem_rdata;
                     beat <= beat + 2'd1;
                     if (beat == 2'd3) begin
+                        vmem_req <= 1'b0;
                         if (burst == 4'd7) begin
                             fetching  <= 1'b0;
-                            vmem_req  <= 1'b0;
                             next_base <= line_base + {21'd0, line_bytes};
-                        end else begin
-                            burst     <= burst + 4'd1;
-                            vmem_addr <= line_base + {24'd0, burst + 4'd1, 4'd0};
-                        end
+                        end else
+                            burst <= burst + 4'd1;
                     end else begin
                         vmem_addr <= {vmem_addr[31:4], beat + 2'd1, 2'b00};
                     end
