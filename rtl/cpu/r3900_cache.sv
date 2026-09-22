@@ -427,6 +427,9 @@ module r3900_cached #(
     output wire [31:0] exc_epc,
     output wire [5:0]  exc_ip,
     output wire [31:0] exc_bad,
+    output wire [31:0] stall_store,
+    output wire [31:0] stall_load,
+    output wire [31:0] stall_fetch,
 
     output wire [31:0] ihit_count,
     output wire [31:0] imiss_count,
@@ -452,7 +455,8 @@ module r3900_cached #(
         .irq_in(irq_in), .cache_op(cop), .cache_op_addr(cop_addr),
         .retire_valid(retire_valid), .retire_pc(retire_pc),
         .retire_insn(retire_insn), .retire_next_pc(retire_next_pc),
-        .exc_valid(exc_valid), .exc_code(exc_code), .exc_epc(exc_epc), .exc_ip(exc_ip), .exc_bad(exc_bad)
+        .exc_valid(exc_valid), .exc_code(exc_code), .exc_epc(exc_epc), .exc_ip(exc_ip), .exc_bad(exc_bad),
+        .stall_store(stall_store), .stall_load(stall_load), .stall_fetch(stall_fetch)
     );
 
     r3900_cache cache (

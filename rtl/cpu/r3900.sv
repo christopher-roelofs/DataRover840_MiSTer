@@ -99,7 +99,12 @@ module r3900 #(
     output wire [4:0]  exc_code,
     output wire [31:0] exc_epc,
     output wire [5:0]  exc_ip,
-    output wire [31:0] exc_bad
+    output wire [31:0] exc_bad,
+    // Where the cycles go. A machine that is too slow for its own
+    // peripherals is a machine whose stalls are worth counting.
+    output reg  [31:0] stall_store,    // waiting for a write-through
+    output reg  [31:0] stall_load,     // waiting for a load
+    output reg  [31:0] stall_fetch     // waiting for an instruction
 );
 
     // =================================================== architectural state
@@ -803,6 +808,17 @@ module r3900 #(
     assign exc_epc   = cp0[CP0_EPC];
     assign exc_ip    = cp0[CP0_CAUSE][15:10];
     assign exc_bad   = cp0[CP0_BADVADDR];
+
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            stall_store <= 32'd0; stall_load <= 32'd0; stall_fetch <= 32'd0;
+        end else if (cen) begin
+            if (stall_mem &&  dbus_we) stall_store <= stall_store + 32'd1;
+            if (stall_mem && !dbus_we) stall_load  <= stall_load  + 32'd1;
+            if (!stall_mem && !fetch_ok && !exc_flush)
+                stall_fetch <= stall_fetch + 32'd1;
+        end
+    end
 
     wire [31:0] exc_vector = cp0[CP0_STATUS][22] ? 32'hBFC0_0180 : 32'h8000_0080;
 

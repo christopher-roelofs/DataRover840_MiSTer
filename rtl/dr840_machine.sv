@@ -119,6 +119,7 @@ module dr840_machine (
         .retire_valid(retire_valid), .retire_pc(obs_pc),
         .retire_insn(obs_insn), .retire_next_pc(),
         .exc_valid(exc_valid), .exc_code(exc_code), .exc_epc(exc_epc), .exc_ip(exc_ip), .exc_bad(exc_bad),
+        .stall_store(), .stall_load(), .stall_fetch(),
         .ihit_count(obs_ihit), .imiss_count(obs_imiss),
         .dhit_count(obs_dhit), .dmiss_count(obs_dmiss)
     );
@@ -229,7 +230,7 @@ module dr840_machine (
         .io_err(io_err),
         .boot_monitor(boot_monitor), .uart_txd(uart_txd), .uart_rxd(uart_rxd),
         .pen_down(pen_down), .pen_x(pen_x), .pen_y(pen_y),
-        .irq_out(soc_irq),
+        .irq_out(soc_irq), .dbg_pending(),
         .vid_ctrl1(vid_ctrl1), .vid_ctrl2(vid_ctrl2), .vid_ctrl3(vid_ctrl3),
         .dbg_tx_bytes(obs_uart_bytes), .dbg_io_reads(obs_io),
         .dbg_tx_stb(), .dbg_tx_data()

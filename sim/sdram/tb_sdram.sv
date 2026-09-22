@@ -8,7 +8,10 @@
 // bytes come back right, which is what this is for.
 `default_nettype none
 
-module tb_sdram (
+module tb_sdram #(
+    parameter RTC_SLOW = 1,          // the RTC ticks this many times slower
+    parameter SIB_SLOW = 1           // and the serial bus's frames likewise
+) (
     input  wire        clk,
     // How many memory clocks there are to one core clock. 1 runs the core
     // at the memory's rate; 2 is the arrangement a single PLL gives on the
@@ -78,6 +81,11 @@ module tb_sdram (
     output wire [31:0] dbg_ram_wdata,
     output wire [31:0] dbg_vid_ctrl1,
     output wire [31:0] dbg_vid_ctrl3,
+    // The registers at a fault. A fault names the load; the registers say
+    // where the machine got the address it could not use.
+    output wire [31:0] dbg_r2, dbg_r4, dbg_r5, dbg_r16,
+    output wire [31:0] dbg_stall_store, dbg_stall_load, dbg_stall_fetch,
+    output wire        dbg_pending,
     output wire        dbg_exc_valid,
     output wire [4:0]  dbg_exc_code,
     output wire [31:0] dbg_exc_epc,
@@ -112,6 +120,8 @@ module tb_sdram (
         .retire_insn(retire_insn), .retire_next_pc(retire_next_pc),
         .exc_valid(dbg_exc_valid), .exc_code(dbg_exc_code), .exc_epc(dbg_exc_epc),
         .exc_ip(), .exc_bad(dbg_exc_bad),
+        .stall_store(dbg_stall_store), .stall_load(dbg_stall_load),
+        .stall_fetch(dbg_stall_fetch),
         .ihit_count(ihit_count), .imiss_count(imiss_count),
         .dhit_count(dhit_count), .dmiss_count(dmiss_count)
     );
@@ -144,6 +154,11 @@ module tb_sdram (
     wire [31:0] vid_ctrl2;
     wire [31:0] va, vrd;
     wire        vreq, vack;
+    assign dbg_r2  = cpu.cpu.regs[2];
+    assign dbg_r4  = cpu.cpu.regs[4];
+    assign dbg_r5  = cpu.cpu.regs[5];
+    assign dbg_r16 = cpu.cpu.regs[16];
+
     dr840_lcd lcd (
         .clk(clk), .cen(cen), .rst_n(rst_n),
         .ctrl1(dbg_vid_ctrl1), .ctrl2(vid_ctrl2), .ctrl3(dbg_vid_ctrl3),
@@ -152,13 +167,15 @@ module tb_sdram (
         .ce_pix(), .hs(), .vs(), .de(), .r(), .g(), .b()
     );
 
-    dr840_tx39 #(.CLK_HZ(92_000_000)) tx39 (
+    dr840_tx39 #(.CLK_HZ(92_000_000),
+                 .RTC_HZ(92_000_000 * RTC_SLOW),
+                 .SIB_HZ(92_000_000 * SIB_SLOW)) tx39 (
         .clk(clk), .cen(cen), .rst_n(rst_n),
         .io_addr(io_addr), .io_req(io_req & tx39_en), .io_we(io_we),
         .io_be(io_be), .io_wdata(io_wdata),
         .io_ack(t_ack), .io_rdata(t_rdata), .io_err(t_err),
         .boot_monitor(boot_monitor), .uart_txd(), .uart_rxd(1'b1), .irq_out(t_irq),
-        .pen_down(pen_down), .pen_x(pen_x), .pen_y(pen_y),
+        .pen_down(pen_down), .pen_x(pen_x), .pen_y(pen_y), .dbg_pending(dbg_pending),
         .vid_ctrl1(dbg_vid_ctrl1), .vid_ctrl2(vid_ctrl2), .vid_ctrl3(dbg_vid_ctrl3),
         .dbg_tx_bytes(dbg_tx_bytes), .dbg_io_reads(),
         .dbg_tx_stb(dbg_tx_stb), .dbg_tx_data(dbg_tx_data)

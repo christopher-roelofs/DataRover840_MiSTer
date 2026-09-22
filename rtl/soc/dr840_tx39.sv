@@ -24,7 +24,14 @@
 `default_nettype none
 
 module dr840_tx39 #(
-    parameter CLK_HZ = 92_000_000
+    parameter CLK_HZ = 92_000_000,
+    // What the RTC and the serial bus believe the clock is. Both are real
+    // rates on real hardware -- a 32.768 kHz crystal and a frame sync --
+    // and these exist so a simulation can ask what happens when they are
+    // slower against the same core, which is a question about how much
+    // interrupt the guest can take.
+    parameter RTC_HZ = CLK_HZ,
+    parameter SIB_HZ = CLK_HZ
 ) (
     input  wire        clk,
     // The requester's clock enable; see the handshake below.
@@ -55,6 +62,7 @@ module dr840_tx39 #(
     input  wire        uart_rxd,
 
     output wire [5:0]  irq_out,       // IP2..IP7
+    output wire        dbg_pending,   // anything enabled and pending, live
 
     // VIDEOCTRL1..3 for the LCD controller: enable and format, geometry,
     // and where the framebuffer is.
@@ -138,6 +146,29 @@ module dr840_tx39 #(
     // write-one-to-clear at the same offsets they read from; bank 6 drives
     // IP4 and is read-only.
     reg [31:0] icu_status [0:5];
+    // What is being set and cleared in this one cycle.
+    //
+    // Ten different places used to assign icu_status directly, in one
+    // always block, and the last assignment of a cycle won. So a source
+    // that fired on the very clock the guest wrote its clear -- a timer
+    // tick, a received byte, a sound buffer going by -- was not merely
+    // late, it was gone, and the guest waited for an interrupt that had
+    // already happened and been thrown away. The faster the sources, the
+    // oftener that fell on the same edge, which is why slowing any of them
+    // down made the machine survive and why making it twice as fast did
+    // too.
+    //
+    // Now every site adds to `icu_set` or `icu_clr`, and the banks are
+    // written once, at the end, clearing before setting: a source raised
+    // on the same edge as its clear survives, as it does on a machine
+    // where the two are separate events in time.
+    reg [31:0] icu_set [0:5];
+    reg [31:0] icu_clr [0:5];
+    // And the enable a write is about to install, so the line can be
+    // worked out from what the banks will hold rather than what they hold.
+    reg        icu_en_wr;
+    reg [2:0]  icu_en_idx;
+    reg [31:0] icu_en_val;
     reg [31:0] icu_enable [0:5];
 
     // Status banks are 0x100..0x114, four bytes apart, so off[4:2] is the
@@ -185,7 +216,7 @@ module dr840_tx39 #(
     wire        is_sib = (off >= 12'h060) && (off <= 12'h090);
     wire [31:0] sib_rdata;
     wire [31:0] sib_set;                // bits to raise in INTRSTATUS1
-    dr840_sib #(.CLK_HZ(CLK_HZ)) sib (
+    dr840_sib #(.CLK_HZ(SIB_HZ)) sib (
         .clk(clk), .rst_n(rst_n),
         .wr(io_start && is_tx39 && io_we && is_sib), .off(off), .wdata(io_wdata),
         .rdata(sib_rdata), .int1_set(sib_set),
@@ -256,11 +287,12 @@ module dr840_tx39 #(
     // missed by 8.6 ns. An interrupt line is a level and nobody minds it
     // arriving a cycle later, and moving it on the core's own edges is what
     // lets the .sdc give it two periods.
-    reg [5:0] irq_r;
-    always @(posedge clk or negedge rst_n)
-        if (!rst_n)   irq_r <= 6'd0;
-        else if (cen) irq_r <= {1'b0, ip_high, 1'b0, ip_normal, 2'b00};  // [2]=IP4 [4]=IP6
+    // Driven from the banks' next values, in the block that writes them.
+    reg [5:0]  irq_r;
+    reg [31:0] nxt_st, nxt_en;
+    reg        nxt_normal, nxt_high;
     assign irq_out = irq_r;
+    assign dbg_pending = ip_normal | ip_high;
 
     // ------------------------------------------------------- RTC and timers
     //
@@ -345,10 +377,15 @@ module dr840_tx39 #(
             rtc <= 40'd0; rtc_acc <= 32'd0; rtc_alarm <= 40'd0;
             t_ctrl <= 32'd0; t_per <= 32'd0; per_acc <= 40'd0;
             stp_armed <= 1'b0; stp_deadline <= 40'd0; alarm_armed <= 1'b0;
-            served <= 1'b0;
+            served <= 1'b0; irq_r <= 6'd0;
             dbg_tx_bytes <= 32'd0; dbg_io_reads <= 32'd0;
             dbg_tx_stb <= 1'b0; dbg_tx_data <= 8'd0;
         end else begin
+            for (k = 0; k < 6; k = k + 1) begin
+                icu_set[k] = 32'd0;
+                icu_clr[k] = 32'd0;
+            end
+            icu_en_wr = 1'b0; icu_en_idx = 3'd0; icu_en_val = 32'd0;
             rxd_sync <= {rxd_sync[1:0], uart_rxd};
             dbg_tx_stb <= 1'b0;
             // Carried out on an enabled edge and taken on the next one, so
@@ -359,12 +396,12 @@ module dr840_tx39 #(
             else if (served && cen)   served <= 1'b0;
 
             // ---------------------------------------------- INTRSTATUS1
-            icu_status[0] <= icu_status[0] | sib_set;
+            icu_set[0] = icu_set[0] | sib_set;
 
             // ---------------------------------------------- RTC
             if (!t_ctrl[6]) begin
-                if (rtc_acc + 32'd32768 >= CLK_HZ) begin
-                    rtc_acc <= rtc_acc + 32'd32768 - CLK_HZ;
+                if (rtc_acc + 32'd32768 >= RTC_HZ) begin
+                    rtc_acc <= rtc_acc + 32'd32768 - RTC_HZ;
                     rtc     <= rtc + 40'd1;
                 end else rtc_acc <= rtc_acc + 32'd32768;
             end
@@ -380,7 +417,7 @@ module dr840_tx39 #(
             // the handler to get its next alarm in first.
             if (alarm_armed && rtc >= rtc_alarm) begin
                 alarm_armed   <= 1'b0;
-                icu_status[4] <= icu_status[4] | INT5_ALARMINT;
+                icu_set[4] = icu_set[4] | INT5_ALARMINT;
             end
             // The periodic timer fires each time the counter crosses a
             // multiple of the reload value; derived from the RTC so the
@@ -392,14 +429,14 @@ module dr840_tx39 #(
             if (t_ctrl[4] && per_val != 16'd0) begin
                 if (per_acc + {24'd0, per_val} <= rtc) begin
                     per_acc       <= per_acc + {24'd0, per_val};
-                    icu_status[4] <= icu_status[4] | INT5_PERINT;
+                    icu_set[4] = icu_set[4] | INT5_PERINT;
                 end
             end else if (per_val != 16'd0 && per_acc + {24'd0, per_val} <= rtc)
                 per_acc <= per_acc + {24'd0, per_val};
             // The stop timer.
             if (stp_armed && rtc >= stp_deadline) begin
                 stp_armed     <= 1'b0;
-                icu_status[4] <= icu_status[4] | INT5_STPTIMERINT;
+                icu_set[4] = icu_set[4] | INT5_STPTIMERINT;
             end
 
             // ---------------------------------------------- transmit
@@ -426,10 +463,10 @@ module dr840_tx39 #(
                             tx_hold_full <= 1'b0;
                             tx_bit       <= 4'd0;
                             uart_txd     <= 1'b0;   // next start bit
-                            icu_status[1] <= icu_status[1] | INT2_UARTATXINT;
+                            icu_set[1] = icu_set[1] | INT2_UARTATXINT;
                         end else begin
                             tx_busy <= 1'b0;
-                            icu_status[1] <= icu_status[1] | INT2_UARTAEMPTY;
+                            icu_set[1] = icu_set[1] | INT2_UARTAEMPTY;
                         end
                     end else tx_bit <= tx_bit + 4'd1;
                 end else tx_cnt <= tx_cnt + 20'd1;
@@ -448,7 +485,7 @@ module dr840_tx39 #(
                     rx_busy    <= 1'b0;
                     ua_rx      <= rx_shift;
                     ua_rx_full <= 1'b1;
-                    icu_status[1] <= icu_status[1] | INT2_UARTARXINT;
+                    icu_set[1] = icu_set[1] | INT2_UARTARXINT;
                 end else begin
                     rx_shift <= {rxd_sync[2], rx_shift[7:1]};
                     rx_bit   <= rx_bit + 4'd1;
@@ -476,10 +513,10 @@ module dr840_tx39 #(
                 end
                 if (off >= 12'h100 && off < 12'h114) begin
                     // Write-one-to-clear, banks 1..5.
-                    icu_status[off[4:2]] <= (icu_status[off[4:2]] & ~io_wdata)
-                                          | ((off[4:2] == 3'd0) ? sib_set : 32'd0);
+                    icu_clr[off[4:2]] = icu_clr[off[4:2]] | io_wdata;
                 end else if (off >= 12'h118 && off < 12'h130) begin
                     icu_enable[en_idx] <= io_wdata;
+                    icu_en_wr = 1'b1; icu_en_idx = en_idx; icu_en_val = io_wdata;
                 end else if (off == UARTA_CTRL1) begin
                     // UARTON, EMPTY and the full flags are status, not
                     // settable.
@@ -488,8 +525,8 @@ module dr840_tx39 #(
                     // The event that gets the ROM through reset: enabling
                     // the UART is itself the first ready.
                     if (!ua_ctrl1[0] && io_wdata[0])
-                        icu_status[1] <= icu_status[1] |
-                                         INT2_UARTATXINT | INT2_UARTAEMPTY;
+                        icu_set[1] = icu_set[1] |
+                                     INT2_UARTATXINT | INT2_UARTAEMPTY;
                 end else if (off == T_ALMHI) begin
                     rtc_alarm[39:32] <= io_wdata[7:0];
                     alarm_armed <= 1'b1;
@@ -515,7 +552,7 @@ module dr840_tx39 #(
                         tx_bit   <= 4'd0;
                         tx_cnt   <= 20'd0;
                         uart_txd <= 1'b0;           // start bit
-                        icu_status[1] <= icu_status[1] | INT2_UARTATXINT;
+                        icu_set[1] = icu_set[1] | INT2_UARTATXINT;
                     end else begin
                         tx_hold      <= io_wdata[7:0];
                         tx_hold_full <= 1'b1;
@@ -527,9 +564,32 @@ module dr840_tx39 #(
                 dbg_io_reads <= dbg_io_reads + 32'd1;
                 if (is_tx39 && off == UARTA_HOLD) begin
                     ua_rx_full <= 1'b0;
-                    icu_status[1] <= icu_status[1] & ~INT2_UARTARXINT;
+                    icu_clr[1] = icu_clr[1] | INT2_UARTARXINT;
                 end
             end
+
+            // Cleared, then set: nothing raised this cycle is lost. And the
+            // interrupt line comes from the same next values.
+            //
+            // Registered off the *current* ones, the line stayed up for a
+            // core cycle after the guest cleared the last source, and the
+            // core could take an interrupt whose cause had already gone --
+            // six of them in a hundred and eighty million instructions,
+            // each an interrupt the guest has nothing to dispatch on. A
+            // late assertion is harmless where a late deassertion is not,
+            // and clears only ever happen on enabled edges, so taking the
+            // line from the next state makes it exact.
+            nxt_normal = 1'b0;
+            nxt_high   = 1'b0;
+            for (k = 0; k < 6; k = k + 1) begin
+                nxt_st = (icu_status[k] & ~icu_clr[k]) | icu_set[k];
+                nxt_en = (icu_en_wr && icu_en_idx == k[2:0]) ? icu_en_val
+                                                            : icu_enable[k];
+                icu_status[k] <= nxt_st;
+                if (k < 5) nxt_normal = nxt_normal | (|(nxt_st & nxt_en));
+                else       nxt_high   = nxt_high   | (|(nxt_st & nxt_en));
+            end
+            if (cen) irq_r <= {1'b0, nxt_high, 1'b0, nxt_normal, 2'b00};
         end
     end
 

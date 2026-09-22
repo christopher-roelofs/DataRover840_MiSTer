@@ -104,6 +104,26 @@ int main(int argc, char **argv) {
     int clk_div = 1;
     bool stub = false;
     bool tx39 = false, monitor = false;
+    // Replay: the peripherals answer from the reference's own trace, so
+    // both machines see the same devices at the same moments and stay in
+    // step. Then the first access of mine that is not the reference's next
+    // one is where this machine went wrong -- which is the only way to
+    // compare two machines whose interrupts do not arrive together.
+    bool replay = false;
+    // Check: this machine's own peripherals answer, and every access is
+    // compared against the reference's trace anyway. The two must agree
+    // access for access until one of these devices says something the
+    // reference's did not -- and that is the difference that matters,
+    // because everything after it is this machine believing it.
+    bool check = false; int checked_bad = 0;
+    // The reference's interrupts, at the instruction counts it took them.
+    // Replaying the devices is not enough to keep two machines in step:
+    // what a device says is only half of it, and when the line went up is
+    // the other half. With both, they run the same instructions and the
+    // first access that differs is a real difference.
+    const char *irq_path = nullptr;
+    std::vector<std::pair<uint32_t,uint32_t>> IRQ;
+    size_t irqidx = 0;
     bool io_req_d = false;
     int  iolog = 0, iolog_max = 0, iolog_rep = 0;
     long watch_write = -1;         // a physical address whose stores to report
@@ -116,7 +136,11 @@ int main(int argc, char **argv) {
     // execution of pc, the reference's option of the same name.
     uint32_t ta_pc = 0; uint64_t ta_hit = 0, ta_hits = 0, ta_n = 0, ta_left = 0;
     uint32_t last_pc = 0;
-    uint64_t exc_taken = 0, exc_last_report = 0;
+    uint64_t exc_taken = 0, exc_last_report = 0, exc_spurious = 0;
+    // The last instructions before a fault. A fault names the load that
+    // could not be done; what is wanted is how the machine came to ask.
+    struct { uint32_t pc, insn, a0, v0; } hist[256];
+    unsigned hist_n = 0; int faults_shown = 0;
     char iolog_last[96] = "";
     std::map<uint64_t,uint64_t> io_seen;
 
@@ -149,6 +173,9 @@ int main(int argc, char **argv) {
         }
         else if (!strcmp(argv[i], "--fb-every") && i + 1 < argc) fb_every = strtoull(argv[++i], nullptr, 10);
         else if (!strcmp(argv[i], "--free")) stub = true;
+        else if (!strcmp(argv[i], "--replay")) replay = true;
+        else if (!strcmp(argv[i], "--check")) check = true;
+        else if (!strcmp(argv[i], "--irq") && i + 1 < argc) irq_path = argv[++i];
     }
     if (!state_path || !bus_path || !rom_path) {
         fprintf(stderr, "usage: Vtb_sdram --state F --bus F --rom F "
@@ -179,7 +206,7 @@ int main(int argc, char **argv) {
             IO.push_back(Ball[i]);
 
     uint64_t n_state = st.count;
-    if (stub) n_state = limit ? limit : n_state;      // free-running
+    if (stub || replay || check) n_state = limit ? limit : n_state;  // free-running
     else if (limit && limit < n_state) n_state = limit;
     printf("reference: %" PRIu64 " instructions, %zu device access(es) of "
            "%" PRIu64 " total\n", n_state, IO.size(), (uint64_t)bs.count);
@@ -227,6 +254,14 @@ int main(int argc, char **argv) {
         fclose(f);
         printf("fb: %s (base %06X, ctrl1 %08X)\n", path, pa, c1);
     };
+    if (irq_path) {
+        FILE *f = fopen(irq_path, "rb");
+        if (!f) { fprintf(stderr, "cannot open %s\n", irq_path); return 1; }
+        uint32_t rec[2];
+        while (fread(rec, sizeof rec, 1, f) == 1) IRQ.push_back({rec[0], rec[1]});
+        fclose(f);
+        printf("%zu interrupts to replay\n", IRQ.size());
+    }
     uint64_t idx = 0, ioidx = 0, cycles = 0;
     // A request is answered on the core's edge after the one it was first
     // seen on, never the same one: the board decides which reply to hand
@@ -249,7 +284,7 @@ int main(int argc, char **argv) {
         // be an acknowledgement the core never sees.
         if (tx39) {
             // The block answers for itself; nothing to do here.
-        } else if (stub && dut->io_req && dut->dbg_cen && io_pending) {
+        } else if (stub && !replay && dut->io_req && dut->dbg_cen && io_pending) {
             bool tx39 = (dut->io_addr >= 0x10C00000u) && (dut->io_addr < 0x10C00400u);
             dut->io_rdata = tx39 ? 0u : 0xFFFFFFFFu;
             dut->io_err   = 0;
@@ -309,6 +344,14 @@ int main(int argc, char **argv) {
         // stands for a whole core period. Counting it per memory clock
         // would retire every instruction twice over at a divider of two.
         bool cen_now = dut->dbg_cen, req_now = dut->io_req;
+        // Hold the line up from the instruction the reference took it on
+        // until this machine has taken it too.
+        if (!IRQ.empty()) {
+            if (irqidx < IRQ.size() && idx >= IRQ[irqidx].first)
+                dut->irq_in = (IRQ[irqidx].second >> 2) & 0x3F;
+            else
+                dut->irq_in = 0;
+        }
         dut->eval();
         dut->clk = 1; dut->eval();
         if (cen_now) io_pending = req_now && !io_fire;
@@ -321,6 +364,29 @@ int main(int argc, char **argv) {
         // Logged as the reference's --log-mmio prints it, so the two boots
         // diff directly. Taken at the acknowledgement, when a read's value
         // exists; a transaction is one acknowledgement.
+        if (check && dut->io_req && dut->dbg_io_ack && dut->dbg_cen && checked_bad < 12) {
+            uint32_t a = dut->io_addr, be = dut->io_be;
+            unsigned size = (be == 0xF) ? 4 : ((be == 0xC || be == 0x3) ? 2 : 1);
+            uint32_t v = dut->io_we ? dut->io_wdata : dut->dbg_io_rdata;
+            if (size == 2) { v = (be == 0xC) ? (v >> 16) : (v & 0xFFFF); a += (be == 0xC) ? 0 : 2; }
+            else if (size == 1) { int lane = (be == 8) ? 0 : (be == 4) ? 1 : (be == 2) ? 2 : 3; v = (v >> (24 - lane * 8)) & 0xFF; a += lane; }
+            if (ioidx >= IO.size()) {
+                printf("[check] past the end of the reference at access %" PRIu64 "\n", ioidx);
+                checked_bad = 12;
+            } else {
+                const bus_rec &b = IO[ioidx];
+                unsigned rsize = BUS_SIZE(b.flags);
+                bool rwr = BUS_IS_WRITE(b.flags);
+                if (b.addr != a || rwr != (bool)dut->io_we || rsize != size || b.value != v) {
+                    printf("[check] access %" PRIu64 " at insn %" PRIu64 ": reference %s%u %08X = %08X,"
+                           " this machine %s%u %08X = %08X\n", ioidx, idx,
+                           rwr ? "W" : "R", rsize * 8, b.addr, b.value,
+                           dut->io_we ? "W" : "R", size * 8, a, v);
+                    checked_bad++;
+                }
+            }
+            ioidx++;
+        }
         if (iolog_max && dut->io_req && dut->dbg_io_ack && dut->dbg_cen) {
             uint32_t a = dut->io_addr;
             const char *dev; uint32_t base;
@@ -334,6 +400,12 @@ int main(int argc, char **argv) {
             uint32_t v = dut->io_we ? dut->io_wdata : dut->dbg_io_rdata;
             if (size == 16) { uint32_t o = (be == 0xC) ? 0 : 2; v = (be == 0xC) ? (v >> 16) : (v & 0xFFFF); a += o; }
             else if (size == 8) { int lane = (be == 8) ? 0 : (be == 4) ? 1 : (be == 2) ? 2 : 3; v = (v >> (24 - lane * 8)) & 0xFF; a += lane; }
+            // In the reference's own shape, so the two collapse and diff.
+            if (getenv("ACC")) {
+                printf("%s%d %08X %08X\n", dut->io_we ? "W" : "R", size, a, v);
+                iolog++;
+                goto acc_done;
+            }
             char line[96];
             if (*dev) snprintf(line, sizeof line, "[mmio] %c%d %s+%03X = %08X%s", dut->io_we ? 'W' : 'R', size, dev, a - base, v,
                                getenv("IOLOG_CYCLES") ? "" : "");
@@ -349,6 +421,7 @@ int main(int argc, char **argv) {
                 printf("%s", line);
                 strcpy(iolog_last, line); iolog_rep = 1; iolog++;
             }
+            acc_done: ;
         }
         if (tx39 && dut->io_req && !io_req_d)
             io_seen[(uint64_t)dut->io_addr | (dut->io_we ? (1ull<<32) : 0)]++;
@@ -364,13 +437,31 @@ int main(int argc, char **argv) {
                    watch_write, dut->dbg_ram_wdata, dut->dbg_ram_be, idx, last_pc);
         }
         if (dut->retire_valid && cen_now) {
+            hist[hist_n++ & 255] = {dut->retire_pc, dut->retire_insn, dut->dbg_r4, dut->dbg_r2};
             last_pc = dut->retire_pc;
-            if (last_pc == 0x80000080u || last_pc == 0xBFC00180u) exc_taken++;
+            if (last_pc == 0x80000080u || last_pc == 0xBFC00180u) {
+                exc_taken++;
+                if (!IRQ.empty() && irqidx < IRQ.size() && idx >= IRQ[irqidx].first)
+                    irqidx++;          // taken; wait for the reference's next
+                // An interrupt taken with nothing enabled and pending is
+                // one the guest cannot account for.
+                if (!dut->dbg_pending) exc_spurious++;
+            }
         }
         // Every fault -- an exception that is not an interrupt -- by name.
-        if (dut->dbg_exc_valid && cen_now && dut->dbg_exc_code != 0)
-            printf("[fault] code %u epc %08X bad %08X at insn %" PRIu64 "\n",
-                   dut->dbg_exc_code, dut->dbg_exc_epc, dut->dbg_exc_bad, idx);
+        if (dut->dbg_exc_valid && cen_now && dut->dbg_exc_code != 0) {
+            printf("\n[fault] code %u epc %08X bad %08X at insn %" PRIu64
+                   "  v0=%08X a0=%08X a1=%08X s0=%08X\n",
+                   dut->dbg_exc_code, dut->dbg_exc_epc, dut->dbg_exc_bad, idx,
+                   dut->dbg_r2, dut->dbg_r4, dut->dbg_r5, dut->dbg_r16);
+            if (dut->dbg_exc_code != 9 && faults_shown++ < 2) {
+                unsigned n = hist_n < 200 ? hist_n : 200;
+                for (unsigned k = n; k > 0; k--) {
+                    auto &h = hist[(hist_n - k) & 255];
+                    printf("[path] %08X %08X  a0=%08X v0=%08X\n", h.pc, h.insn, h.a0, h.v0);
+                }
+            }
+        }
         // Exceptions per ten million instructions: a storm is a number.
         if (idx >= exc_last_report + 10000000) {
             printf("[exc] %" PRIu64 " taken by insn %" PRIu64 "\n", exc_taken, idx);
@@ -414,7 +505,7 @@ int main(int argc, char **argv) {
             char path[512]; snprintf(path, sizeof path, "%s.%04d.pgm", dump_fb, fb_n++);
             write_fb(path); fb_next += fb_every;
         }
-        if (dut->retire_valid && cen_now && stub) {
+        if (dut->retire_valid && cen_now && (stub || replay || check)) {
             // Nothing to compare against: the reference saw real devices
             // and this did not, so they part company at the first one.
             // Record where it goes instead.
@@ -463,6 +554,11 @@ int main(int argc, char **argv) {
     // and the memory's being faster is the whole point of the divider.
     uint64_t core_cycles = cycles / (clk_div < 1 ? 1 : clk_div);
     if (dump_fb) write_fb(dump_fb);
+    printf("interrupts: %" PRIu64 " taken, %" PRIu64 " with nothing pending\n",
+           exc_taken, exc_spurious);
+    printf("stalls: %u waiting on a store, %u on a load, %u on an instruction"
+           " (of %" PRIu64 " core clocks)\n",
+           dut->dbg_stall_store, dut->dbg_stall_load, dut->dbg_stall_fetch, core_cycles);
     printf("\nmatched %" PRIu64 " of %" PRIu64 " instructions, %zu device "
            "access(es), %" PRIu64 " memory clocks, %" PRIu64
            " core clocks (%.3f IPC at core rate, divider %d)\n",
