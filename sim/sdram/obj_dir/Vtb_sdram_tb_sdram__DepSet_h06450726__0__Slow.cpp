@@ -130,6 +130,7 @@ VL_ATTR_COLD void Vtb_sdram_tb_sdram___ctor_var_reset(Vtb_sdram_tb_sdram* vlSelf
     for (int __Vi0 = 0; __Vi0 < 256; ++__Vi0) {
         vlSelf->__PVT__tx39__DOT__rf[__Vi0] = VL_RAND_RESET_I(32);
     }
+    vlSelf->__PVT__tx39__DOT__rf_q = VL_RAND_RESET_I(32);
     for (int __Vi0 = 0; __Vi0 < 6; ++__Vi0) {
         vlSelf->__PVT__tx39__DOT__icu_status[__Vi0] = VL_RAND_RESET_I(32);
     }
@@ -179,6 +180,9 @@ VL_ATTR_COLD void Vtb_sdram_tb_sdram___ctor_var_reset(Vtb_sdram_tb_sdram* vlSelf
     vlSelf->__PVT__ctl__DOT__unnamedblk1__DOT__ch2_rq = VL_RAND_RESET_I(1);
     vlSelf->__PVT__ctl__DOT__unnamedblk1__DOT__ch3_rq = VL_RAND_RESET_I(1);
     vlSelf->__PVT__ctl__DOT__unnamedblk1__DOT__ch = VL_RAND_RESET_I(2);
+    vlSelf->__Vdlyvdim0__tx39__DOT__rf__v0 = 0;
+    vlSelf->__Vdlyvval__tx39__DOT__rf__v0 = VL_RAND_RESET_I(32);
+    vlSelf->__Vdlyvset__tx39__DOT__rf__v0 = 0;
     vlSelf->__Vdly__ram_ack = VL_RAND_RESET_I(1);
     vlSelf->__Vdly__adapter__DOT__state = VL_RAND_RESET_I(4);
     vlSelf->__Vdly__ch1_ready = VL_RAND_RESET_I(1);

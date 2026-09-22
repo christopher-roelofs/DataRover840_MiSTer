@@ -105,6 +105,14 @@ module dr840_tx39 #(
     end
     wire [7:0] rf_idx = off[9:2];
 
+    // Read synchronously. Read combinationally and this is not a memory at
+    // all: Quartus builds 8,192 flip-flops and a 256-to-1 multiplexer in
+    // front of them, which cost 5,000 ALMs and ten nanoseconds of slack the
+    // first time it was written that way. The handshake already spans two
+    // cycles, so the value is ready before the acknowledgement is.
+    reg [31:0] rf_q;
+    always @(posedge clk) rf_q <= rf[rf_idx];
+
     // ------------------------------------------------- interrupt controller
 
     // Banks 1..6 at 0x100, enables at 0x118. Banks 1-5 drive IP2 and are
@@ -390,7 +398,7 @@ module dr840_tx39 #(
         end else if (off == MBUSCTRL) begin
             // Never busy, and the bus reads high because nothing is
             // pulling it down.
-            io_rdata = (rf[rf_idx] & ~MBUSCTRL_BUSY) | MBUSCTRL_IN_HIGH;
+            io_rdata = (rf_q & ~MBUSCTRL_BUSY) | MBUSCTRL_IN_HIGH;
         end else if (off >= 12'h118 && off < 12'h130) begin
             io_rdata = icu_enable[en_idx];
         end else if (off == UARTA_CTRL1) begin
@@ -403,7 +411,7 @@ module dr840_tx39 #(
         end else if (off == UARTA_HOLD) begin
             io_rdata = {24'd0, ua_rx};
         end else begin
-            io_rdata = rf[rf_idx];
+            io_rdata = rf_q;
         end
     end
 

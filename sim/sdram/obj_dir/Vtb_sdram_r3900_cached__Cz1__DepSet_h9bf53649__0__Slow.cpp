@@ -83,13 +83,3 @@ VL_ATTR_COLD void Vtb_sdram_r3900_cached__Cz1___stl_sequent__TOP__tb_sdram__cpu_
     vlSelf->__PVT__cache__DOT__d_read_hit = ((IData)(vlSelf->cache__DOT____VdfgTmp_ha01f3fd2__0) 
                                              & (IData)(__PVT__cache__DOT__d_tag_match));
 }
-
-VL_ATTR_COLD void Vtb_sdram_r3900_cached__Cz1___stl_sequent__TOP__tb_sdram__cpu__2(Vtb_sdram_r3900_cached__Cz1* vlSelf) {
-    if (false && vlSelf) {}  // Prevent unused
-    Vtb_sdram__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
-    VL_DEBUG_IF(VL_DBG_MSGF("+        Vtb_sdram_r3900_cached__Cz1___stl_sequent__TOP__tb_sdram__cpu__2\n"); );
-    // Body
-    vlSelf->__PVT__drd = ((IData)(vlSelf->__PVT__cache__DOT__d_read_hit)
-                           ? vlSelf->__PVT__cache__DOT__dram_eff
-                           : vlSymsp->TOP__tb_sdram.__PVT__drd);
-}

@@ -203,12 +203,6 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__0(Vtb_sdram_
     __Vdlyvset__tx39__DOT__icu_status__v9 = 0;
     CData/*0:0*/ __Vdlyvset__tx39__DOT__icu_status__v10;
     __Vdlyvset__tx39__DOT__icu_status__v10 = 0;
-    CData/*7:0*/ __Vdlyvdim0__tx39__DOT__rf__v0;
-    __Vdlyvdim0__tx39__DOT__rf__v0 = 0;
-    IData/*31:0*/ __Vdlyvval__tx39__DOT__rf__v0;
-    __Vdlyvval__tx39__DOT__rf__v0 = 0;
-    CData/*0:0*/ __Vdlyvset__tx39__DOT__rf__v0;
-    __Vdlyvset__tx39__DOT__rf__v0 = 0;
     CData/*2:0*/ __Vdlyvdim0__tx39__DOT__icu_enable__v0;
     __Vdlyvdim0__tx39__DOT__icu_enable__v0 = 0;
     IData/*31:0*/ __Vdlyvval__tx39__DOT__icu_enable__v0;
@@ -220,7 +214,7 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__0(Vtb_sdram_
     // Body
     vlSelf->__Vdly__adapter__DOT__state = vlSelf->__PVT__adapter__DOT__state;
     vlSelf->__Vdly__ram_ack = vlSelf->__PVT__ram_ack;
-    __Vdlyvset__tx39__DOT__rf__v0 = 0U;
+    vlSelf->__Vdlyvset__tx39__DOT__rf__v0 = 0U;
     __Vdlyvset__tx39__DOT__icu_enable__v0 = 0U;
     __Vdlyvset__tx39__DOT__icu_enable__v1 = 0U;
     __Vdly__tx39__DOT__rx_cnt = vlSelf->__PVT__tx39__DOT__rx_cnt;
@@ -378,16 +372,13 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__0(Vtb_sdram_
         if ((((IData)(vlSelf->__PVT__tx39__DOT__io_start) 
               & (IData)(vlSelf->__PVT__tx39__DOT__is_tx39)) 
              & (IData)(vlSelf->io_we))) {
-            __Vdlyvval__tx39__DOT__rf__v0 = ((0xe0U 
-                                              == (0xfffU 
-                                                  & vlSelf->io_addr))
-                                              ? (0xdfffffffU 
-                                                 & vlSymsp->TOP__tb_sdram__cpu__cpu.__PVT__store_word)
-                                              : vlSymsp->TOP__tb_sdram__cpu__cpu.__PVT__store_word);
-            __Vdlyvset__tx39__DOT__rf__v0 = 1U;
-            __Vdlyvdim0__tx39__DOT__rf__v0 = (0xffU 
-                                              & (vlSelf->io_addr 
-                                                 >> 2U));
+            vlSelf->__Vdlyvval__tx39__DOT__rf__v0 = 
+                ((0xe0U == (0xfffU & vlSelf->io_addr))
+                  ? (0xdfffffffU & vlSymsp->TOP__tb_sdram__cpu__cpu.__PVT__store_word)
+                  : vlSymsp->TOP__tb_sdram__cpu__cpu.__PVT__store_word);
+            vlSelf->__Vdlyvset__tx39__DOT__rf__v0 = 1U;
+            vlSelf->__Vdlyvdim0__tx39__DOT__rf__v0 
+                = (0xffU & (vlSelf->io_addr >> 2U));
             if (((0x100U <= (0xfffU & vlSelf->io_addr)) 
                  & (0x118U > (0xfffU & vlSelf->io_addr)))) {
                 vlSelf->tx39__DOT____Vlvbound_h2237671c__0 
@@ -583,10 +574,6 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__0(Vtb_sdram_
     if (Vtb_sdram__ConstPool__TABLE_ha033e788_0[__Vtableidx1]) {
         vlSelf->__PVT__board__DOT__owner = Vtb_sdram__ConstPool__TABLE_h8b08f1f0_0
             [__Vtableidx1];
-    }
-    if (__Vdlyvset__tx39__DOT__rf__v0) {
-        vlSelf->__PVT__tx39__DOT__rf[__Vdlyvdim0__tx39__DOT__rf__v0] 
-            = __Vdlyvval__tx39__DOT__rf__v0;
     }
     if (__Vdlyvset__tx39__DOT__icu_enable__v0) {
         vlSelf->__PVT__tx39__DOT__icu_enable[__Vdlyvdim0__tx39__DOT__icu_enable__v0] 
@@ -979,6 +966,10 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__3(Vtb_sdram_
     CData/*5:0*/ __Vtableidx2;
     __Vtableidx2 = 0;
     // Body
+    if (vlSelf->__Vdlyvset__tx39__DOT__rf__v0) {
+        vlSelf->__PVT__tx39__DOT__rf[vlSelf->__Vdlyvdim0__tx39__DOT__rf__v0] 
+            = vlSelf->__Vdlyvval__tx39__DOT__rf__v0;
+    }
     if (vlSymsp->TOP.rst_n) {
         vlSelf->__PVT__ch1_req = 0U;
         vlSelf->__PVT__ch2_req = 0U;
@@ -1321,8 +1312,13 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__4(Vtb_sdram_
     __PVT__board__DOT__grant_d = ((1U == (IData)(vlSelf->__PVT__board__DOT__owner)) 
                                   | ((0U == (IData)(vlSelf->__PVT__board__DOT__owner)) 
                                      & (IData)(vlSelf->__PVT__board__DOT__d_wants_ram)));
-    vlSelf->io_we = ((IData)(vlSelf->__PVT__board__DOT__d_wants_io) 
-                     & (IData)(vlSymsp->TOP__tb_sdram__cpu.__PVT__dmem_we));
+    if (vlSelf->__PVT__board__DOT__d_wants_io) {
+        vlSelf->io_we = vlSymsp->TOP__tb_sdram__cpu.__PVT__dmem_we;
+        vlSelf->io_addr = vlSymsp->TOP__tb_sdram__cpu.__PVT__dmem_addr;
+    } else {
+        vlSelf->io_we = 0U;
+        vlSelf->io_addr = vlSymsp->TOP__tb_sdram__cpu.__PVT__imem_addr;
+    }
     if (__PVT__board__DOT__grant_d) {
         vlSelf->__PVT__ram_we = vlSymsp->TOP__tb_sdram__cpu.__PVT__dmem_we;
         vlSelf->__PVT__ram_be = vlSymsp->TOP__tb_sdram__cpu.__PVT__dmem_be;
@@ -1375,13 +1371,17 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__4(Vtb_sdram_
                                                         : vlSelf->__PVT__adapter__DOT__hold)))));
     vlSelf->board__DOT____VdfgTmp_hdb4dbddb__0 = ((IData)(__PVT__board__DOT__grant_d) 
                                                   & (IData)(vlSelf->__PVT__board__DOT__d_wants_ram));
-    vlSelf->io_addr = ((IData)(vlSelf->__PVT__board__DOT__d_wants_io)
-                        ? vlSymsp->TOP__tb_sdram__cpu.__PVT__dmem_addr
-                        : vlSymsp->TOP__tb_sdram__cpu.__PVT__imem_addr);
     vlSelf->__PVT__tx39__DOT__is_tx39 = ((0x10c00000U 
                                           <= vlSelf->io_addr) 
                                          & (0x10c00400U 
                                             > vlSelf->io_addr));
+}
+
+VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_comb__TOP__tb_sdram__0(Vtb_sdram_tb_sdram* vlSelf) {
+    if (false && vlSelf) {}  // Prevent unused
+    Vtb_sdram__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
+    VL_DEBUG_IF(VL_DBG_MSGF("+      Vtb_sdram_tb_sdram___nba_comb__TOP__tb_sdram__0\n"); );
+    // Body
     vlSelf->__PVT__t_rdata = ((IData)(vlSelf->__PVT__tx39__DOT__is_tx39)
                                ? ((0x104U == (0xfffU 
                                               & vlSelf->io_addr))
@@ -1459,11 +1459,7 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__4(Vtb_sdram_
                                                           ? 
                                                          (0x20000000U 
                                                           | (0x7fffffffU 
-                                                             & vlSelf->__PVT__tx39__DOT__rf
-                                                             [
-                                                             (0xffU 
-                                                              & (vlSelf->io_addr 
-                                                                 >> 2U))]))
+                                                             & vlSelf->__PVT__tx39__DOT__rf_q))
                                                           : 
                                                          (((0x118U 
                                                             <= 
@@ -1517,12 +1513,7 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__4(Vtb_sdram_
                                                               (0xfffU 
                                                                & vlSelf->io_addr))
                                                               ? (IData)(vlSelf->__PVT__tx39__DOT__ua_rx)
-                                                              : 
-                                                             vlSelf->__PVT__tx39__DOT__rf
-                                                             [
-                                                             (0xffU 
-                                                              & (vlSelf->io_addr 
-                                                                 >> 2U))])))))))))))))
+                                                              : vlSelf->__PVT__tx39__DOT__rf_q)))))))))))))
                                : 0xffffffffU);
     vlSelf->__PVT__io_rdata_mux = ((IData)(vlSymsp->TOP.tx39_en)
                                     ? vlSelf->__PVT__t_rdata
@@ -1530,4 +1521,74 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__4(Vtb_sdram_
     vlSelf->__PVT__drd = ((IData)(vlSelf->__PVT__board__DOT__d_wants_io)
                            ? vlSelf->__PVT__io_rdata_mux
                            : vlSelf->__PVT__ram_rdata);
+}
+
+VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_comb__TOP__tb_sdram__1(Vtb_sdram_tb_sdram* vlSelf) {
+    if (false && vlSelf) {}  // Prevent unused
+    Vtb_sdram__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
+    VL_DEBUG_IF(VL_DBG_MSGF("+      Vtb_sdram_tb_sdram___nba_comb__TOP__tb_sdram__1\n"); );
+    // Init
+    CData/*0:0*/ __PVT__io_ack_mux;
+    __PVT__io_ack_mux = 0;
+    CData/*0:0*/ __PVT__board__DOT__i_wants_io;
+    __PVT__board__DOT__i_wants_io = 0;
+    CData/*0:0*/ board__DOT____VdfgTmp_h56676f03__0;
+    board__DOT____VdfgTmp_h56676f03__0 = 0;
+    CData/*0:0*/ board__DOT____VdfgTmp_hab3cb56a__0;
+    board__DOT____VdfgTmp_hab3cb56a__0 = 0;
+    // Body
+    vlSelf->__PVT__board__DOT__i_wants_ram = ((IData)(vlSymsp->TOP__tb_sdram__cpu.__PVT__imem_req) 
+                                              & (0U 
+                                                 == 
+                                                 (0x6000000U 
+                                                  & vlSelf->__PVT__board__DOT__i_dec)));
+    vlSelf->board__DOT____VdfgTmp_h288a1ef5__0 = ((IData)(vlSymsp->TOP__tb_sdram__cpu.__PVT__imem_req) 
+                                                  & (0x4000000U 
+                                                     == 
+                                                     (0x6000000U 
+                                                      & vlSelf->__PVT__board__DOT__i_dec)));
+    __PVT__board__DOT__i_wants_io = ((IData)(vlSymsp->TOP__tb_sdram__cpu.__PVT__imem_req) 
+                                     & (0x2000000U 
+                                        == (0x6000000U 
+                                            & vlSelf->__PVT__board__DOT__i_dec)));
+    vlSelf->board__DOT____VdfgTmp_h22b91ed1__0 = ((
+                                                   (2U 
+                                                    == (IData)(vlSelf->__PVT__board__DOT__owner)) 
+                                                   | ((0U 
+                                                       == (IData)(vlSelf->__PVT__board__DOT__owner)) 
+                                                      & ((~ (IData)(vlSelf->__PVT__board__DOT__d_wants_ram)) 
+                                                         & (IData)(vlSelf->__PVT__board__DOT__i_wants_ram)))) 
+                                                  & (IData)(vlSelf->__PVT__board__DOT__i_wants_ram));
+    vlSelf->board__DOT____VdfgTmp_h8306d34d__0 = ((~ (IData)(vlSelf->__PVT__board__DOT__d_wants_io)) 
+                                                  & (IData)(__PVT__board__DOT__i_wants_io));
+    vlSelf->io_req = ((IData)(vlSelf->__PVT__board__DOT__d_wants_io) 
+                      | (IData)(__PVT__board__DOT__i_wants_io));
+    vlSelf->dbg_ram_req = ((IData)(vlSelf->board__DOT____VdfgTmp_hdb4dbddb__0) 
+                           | (IData)(vlSelf->board__DOT____VdfgTmp_h22b91ed1__0));
+    vlSelf->__Vcellinp__tx39__io_req = ((IData)(vlSelf->io_req) 
+                                        & (IData)(vlSymsp->TOP.tx39_en));
+    vlSelf->__PVT__tx39__DOT__io_start = ((~ (IData)(vlSelf->__PVT__tx39__DOT__served)) 
+                                          & (IData)(vlSelf->__Vcellinp__tx39__io_req));
+    __PVT__io_ack_mux = ((IData)(vlSymsp->TOP.tx39_en)
+                          ? ((IData)(vlSelf->__Vcellinp__tx39__io_req) 
+                             & (IData)(vlSelf->__PVT__tx39__DOT__served))
+                          : (IData)(vlSymsp->TOP.io_ack));
+    board__DOT____VdfgTmp_h56676f03__0 = ((IData)(vlSelf->board__DOT____VdfgTmp_h8306d34d__0) 
+                                          & (IData)(__PVT__io_ack_mux));
+    board__DOT____VdfgTmp_hab3cb56a__0 = ((IData)(vlSelf->__PVT__board__DOT__d_wants_io) 
+                                          & (IData)(__PVT__io_ack_mux));
+    vlSelf->__PVT__ierr = ((IData)(vlSelf->board__DOT____VdfgTmp_h288a1ef5__0) 
+                           | ((IData)(board__DOT____VdfgTmp_h56676f03__0) 
+                              & (IData)(vlSelf->__PVT__io_err_mux)));
+    vlSelf->dbg_iack = (((IData)(vlSelf->board__DOT____VdfgTmp_h22b91ed1__0) 
+                         & (IData)(vlSelf->__PVT__ram_ack)) 
+                        | ((IData)(board__DOT____VdfgTmp_h56676f03__0) 
+                           | (IData)(vlSelf->board__DOT____VdfgTmp_h288a1ef5__0)));
+    vlSelf->__PVT__derr = ((IData)(vlSelf->board__DOT____VdfgTmp_h223955ac__0) 
+                           | ((IData)(board__DOT____VdfgTmp_hab3cb56a__0) 
+                              & (IData)(vlSelf->__PVT__io_err_mux)));
+    vlSelf->dbg_dack = (((IData)(vlSelf->board__DOT____VdfgTmp_hdb4dbddb__0) 
+                         & (IData)(vlSelf->__PVT__ram_ack)) 
+                        | ((IData)(board__DOT____VdfgTmp_hab3cb56a__0) 
+                           | (IData)(vlSelf->board__DOT____VdfgTmp_h223955ac__0)));
 }
