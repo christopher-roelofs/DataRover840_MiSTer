@@ -41,8 +41,11 @@ module tb_board (
     wire        dreq, dbur, dwe, dack, derr;
     wire [3:0]  dbe;
 
+    // One rate throughout in this harness, so the enable is held high. Left
+    // unconnected it floats to zero and the core never moves -- which is
+    // exactly what happened, silently, when the port was added.
     r3900_cached #(.COUNT_PER_INSN(1'b1)) cpu (
-        .clk(clk), .rst_n(rst_n),
+        .clk(clk), .cen(1'b1), .rst_n(rst_n),
         .imem_addr(ia), .imem_req(ireq), .imem_burst(ibur),
         .imem_ack(iack), .imem_rdata(ird), .imem_err(ierr),
         .dmem_addr(da), .dmem_req(dreq), .dmem_burst(dbur), .dmem_we(dwe),
