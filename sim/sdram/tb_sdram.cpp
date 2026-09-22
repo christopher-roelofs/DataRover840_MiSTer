@@ -108,6 +108,9 @@ int main(int argc, char **argv) {
     int  iolog = 0, iolog_max = 0, iolog_rep = 0;
     long watch_write = -1;         // a physical address whose stores to report
     const char *dump_fb = nullptr; uint64_t fb_every = 0, fb_next = 0; int fb_n = 0;
+    // --trace-after pc,hit,n: print n retired instructions from the hit-th
+    // execution of pc, the reference's option of the same name.
+    uint32_t ta_pc = 0; uint64_t ta_hit = 0, ta_hits = 0, ta_n = 0, ta_left = 0;
     uint32_t last_pc = 0;
     char iolog_last[96] = "";
     std::map<uint64_t,uint64_t> io_seen;
@@ -130,6 +133,10 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--iolog") && i + 1 < argc) iolog_max = atoi(argv[++i]);
         else if (!strcmp(argv[i], "--watch-write") && i + 1 < argc) watch_write = strtol(argv[++i], nullptr, 16);
         else if (!strcmp(argv[i], "--dump-fb") && i + 1 < argc) dump_fb = argv[++i];
+        else if (!strcmp(argv[i], "--trace-after") && i + 1 < argc) {
+            const char *a = argv[++i]; ta_pc = strtoul(a, nullptr, 16);
+            const char *c = strchr(a, ','); if (c) { ta_hit = strtoull(c + 1, nullptr, 10); c = strchr(c + 1, ','); if (c) ta_n = strtoull(c + 1, nullptr, 10); }
+        }
         else if (!strcmp(argv[i], "--fb-every") && i + 1 < argc) fb_every = strtoull(argv[++i], nullptr, 10);
         else if (!strcmp(argv[i], "--free")) stub = true;
     }
@@ -317,7 +324,9 @@ int main(int argc, char **argv) {
             if (size == 16) { uint32_t o = (be == 0xC) ? 0 : 2; v = (be == 0xC) ? (v >> 16) : (v & 0xFFFF); a += o; }
             else if (size == 8) { int lane = (be == 8) ? 0 : (be == 4) ? 1 : (be == 2) ? 2 : 3; v = (v >> (24 - lane * 8)) & 0xFF; a += lane; }
             char line[96];
-            if (*dev) snprintf(line, sizeof line, "[mmio] %c%d %s+%03X = %08X", dut->io_we ? 'W' : 'R', size, dev, a - base, v);
+            if (*dev) snprintf(line, sizeof line, "[mmio] %c%d %s+%03X = %08X%s", dut->io_we ? 'W' : 'R', size, dev, a - base, v,
+                               getenv("IOLOG_CYCLES") ? "" : "");
+            if (*dev && getenv("IOLOG_CYCLES")) printf("[cyc %" PRIu64 " insn %" PRIu64 "] ", cycles, idx);
             else      snprintf(line, sizeof line, "[mmio] %c%d %08X = %08X", dut->io_we ? 'W' : 'R', size, a, v);
             // A poll is one line with a count, not a thousand lines: the
             // log is for comparing the order of events against the
@@ -339,11 +348,15 @@ int main(int argc, char **argv) {
             fflush(stdout);
         }
         if (watch_write >= 0 && dut->dbg_start && dut->dbg_start_kind != 0 && dut->dbg_start_kind != 3 &&
-            (dut->dbg_start_addr & ~3u) == ((uint32_t)watch_write & ~3u)) {
+            (dut->dbg_start_addr & ~3u) == ((DRAM_BASE + (uint32_t)watch_write) & ~3u)) {
             printf("[watch-write] %08lX <- %08X be=%X at insn %" PRIu64 " last pc %08X\n",
                    watch_write, dut->dbg_ram_wdata, dut->dbg_ram_be, idx, last_pc);
         }
         if (dut->retire_valid && cen_now) last_pc = dut->retire_pc;
+        if (ta_pc && dut->retire_valid && cen_now) {
+            if (dut->retire_pc == ta_pc && ++ta_hits == ta_hit) ta_left = ta_n;
+            if (ta_left) { printf("[trace] %08X %08X\n", dut->retire_pc, dut->retire_insn); ta_left--; }
+        }
         if (getenv("DBG") && idx > 81280 && dut->dbg_start && dbgn < 30) {
             static const char *k[] = {"read ", "write", "rmw  ", "BURST"};
             printf("[start] cycle %6" PRIu64 " %s addr %07X\n",

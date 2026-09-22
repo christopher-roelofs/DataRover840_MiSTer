@@ -82,15 +82,30 @@ module dr840_lcd (
         end
     end
 
-    // Where the panel sits: centred, clipped to the raster.
-    wire [10:0] pw_c = (pw > 11'd640) ? 11'd640 : pw;
-    wire [10:0] ph_c = (ph > 11'd480) ? 11'd480 : ph;
-    wire [9:0]  x0   = 10'((11'd640 - pw_c) >> 1);
-    wire [9:0]  y0   = 10'((11'd480 - ph_c) >> 1);
-    wire [9:0]  px   = hc - x0;                        // pixel within the panel
-    wire [9:0]  py   = vc - y0;
-    wire in_panel = (hc >= x0) && ({1'b0, px} < pw_c) && (vc >= y0) && ({1'b0, py} < ph_c);
-    wire active   = (hc < H_ACT) && (vc < V_ACT);
+    // Where the panel sits: centred, clipped to the raster. Registered:
+    // the geometry changes once, and from the register straight into the
+    // pixel's arithmetic it was 12 ns in one clock.
+    reg [10:0] pw_c, ph_c;
+    reg [9:0]  x0, y0;
+    always @(posedge clk) begin
+        pw_c <= (pw > 11'd640) ? 11'd640 : pw;
+        ph_c <= (ph > 11'd480) ? 11'd480 : ph;
+        x0   <= 10'((11'd640 - pw_c) >> 1);
+        y0   <= 10'((11'd480 - ph_c) >> 1);
+    end
+    // The pixel's place, a stage later. A pixel lasts four clocks, and
+    // everything from here to the colour is delayed together, so the only
+    // effect is the whole picture a clock late, which nothing can see.
+    reg [9:0] px, py;
+    reg       in_panel, active, hs_p, vs_p;
+    always @(posedge clk) begin
+        px       <= hc - x0;
+        py       <= vc - y0;
+        in_panel <= (hc >= x0) && ({1'b0, hc - x0} < pw_c) && (vc >= y0) && ({1'b0, vc - y0} < ph_c);
+        active   <= (hc < H_ACT) && (vc < V_ACT);
+        hs_p     <= (hc >= H_ACT + H_FP) && (hc < H_ACT + H_FP + H_SY);
+        vs_p     <= (vc >= V_ACT + V_FP) && (vc < V_ACT + V_FP + V_SY);
+    end
 
     // ------------------------------------------------------------ line buffers
     // Two of 32 words: one being shown, one being filled with the next
@@ -112,8 +127,8 @@ module dr840_lcd (
     wire [7:0]  gray  = 8'd255 - {level, level, level, level};   // 0,85,170,255
 
     always @(posedge clk) begin
-        hs <= (hc >= H_ACT + H_FP) && (hc < H_ACT + H_FP + H_SY);
-        vs <= (vc >= V_ACT + V_FP) && (vc < V_ACT + V_FP + V_SY);
+        hs <= hs_p;
+        vs <= vs_p;
         de <= active;
         if (!active)          {r, g, b} <= 24'd0;
         else if (!envid)      {r, g, b} <= 24'h50_50_50;          // panel off

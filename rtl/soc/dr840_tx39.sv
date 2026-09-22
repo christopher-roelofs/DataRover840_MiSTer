@@ -155,7 +155,12 @@ module dr840_tx39 #(
     // Pins 0 and 1 are the card slots' detect lines, high with a card in.
     localparam [11:0] IOCTRL            = 12'h180;
     localparam [31:0] IOCTRL_PIN_MASK   = 32'h0000_007F;
-    wire [31:0] ioctrl_pins = boot_monitor ? 32'd0 : 32'h0000_0008;
+    // The button comes from the framework at the full rate; registered on
+    // the core's edge it is one of this block's registers, with the two
+    // periods the .sdc gives them. Straight through, it missed by 2.8 ns.
+    reg boot_monitor_q;
+    always @(posedge clk) if (cen) boot_monitor_q <= boot_monitor;
+    wire [31:0] ioctrl_pins = boot_monitor_q ? 32'd0 : 32'h0000_0008;
 
     // POWERCTRL. PWROK says the supply rails are good, which on a machine
     // that is evidently running they are: it reads as set whatever was
@@ -232,6 +237,12 @@ module dr840_tx39 #(
                        (icu_status[2] & icu_enable[2]) | (icu_status[3] & icu_enable[3]) |
                        (icu_status[4] & icu_enable[4]));
     wire ip_high   = |(icu_status[5] & icu_enable[5]);
+    // INTRSTATUS6 is a summary as much as a bank: IRQLOW says something,
+    // somewhere, is pending and enabled. The OS idle routine polls it to
+    // decide between returning to work and sleeping again; reported as
+    // the bare bank it never returned. INTRSTATUS6 is read-only.
+    wire        icu_pending = ip_normal | ip_high;
+    wire [31:0] intrstatus6 = icu_status[5] | (icu_pending ? 32'h4000_0000 : 32'd0);
 
     // Registered, and on an enabled edge. Combinationally this is a
     // hundred and sixty bits of and-or feeding straight into the core's
@@ -269,7 +280,7 @@ module dr840_tx39 #(
     reg [31:0] rtc_acc;
     reg [39:0] rtc_alarm;
     reg [31:0] t_ctrl, t_per;
-    reg [39:0] per_last;
+    reg [39:0] per_acc;                 // the last multiple of the reload passed
     reg        stp_armed;
     reg [39:0] stp_deadline;
 
@@ -325,7 +336,7 @@ module dr840_tx39 #(
             uart_txd <= 1'b1;
             rx_busy <= 1'b0; rx_bit <= 4'd0; rx_cnt <= 20'd0; rxd_sync <= 3'b111;
             rtc <= 40'd0; rtc_acc <= 32'd0; rtc_alarm <= 40'd0;
-            t_ctrl <= 32'd0; t_per <= 32'd0; per_last <= 40'd0;
+            t_ctrl <= 32'd0; t_per <= 32'd0; per_acc <= 40'd0;
             stp_armed <= 1'b0; stp_deadline <= 40'd0;
             served <= 1'b0;
             dbg_tx_bytes <= 32'd0; dbg_io_reads <= 32'd0;
@@ -357,12 +368,17 @@ module dr840_tx39 #(
             // The periodic timer fires each time the counter crosses a
             // multiple of the reload value; derived from the RTC so the
             // rate is right however it is sampled.
+            // Fires when the counter crosses a multiple of the reload, as
+            // the reference does -- not a full period after enabling. The
+            // ROM enables it, waits for one tick and disables it, hundreds
+            // of times; a full period each time is twice the wait.
             if (t_ctrl[4] && per_val != 16'd0) begin
-                if ((rtc - per_last) >= {24'd0, per_val}) begin
-                    per_last      <= rtc;
+                if (per_acc + {24'd0, per_val} <= rtc) begin
+                    per_acc       <= per_acc + {24'd0, per_val};
                     icu_status[4] <= icu_status[4] | INT5_PERINT;
                 end
-            end else per_last <= rtc;
+            end else if (per_val != 16'd0 && per_acc + {24'd0, per_val} <= rtc)
+                per_acc <= per_acc + {24'd0, per_val};
             // The stop timer.
             if (stp_armed && rtc >= stp_deadline) begin
                 stp_armed     <= 1'b0;
@@ -441,7 +457,7 @@ module dr840_tx39 #(
                     end else if ((io_wdata & PWRCTRL_ENSTPTIMER) == 32'd0)
                         stp_armed <= 1'b0;
                 end
-                if (off >= 12'h100 && off < 12'h118) begin
+                if (off >= 12'h100 && off < 12'h114) begin
                     // Write-one-to-clear, banks 1..5.
                     icu_status[off[4:2]] <= (icu_status[off[4:2]] & ~io_wdata)
                                           | ((off[4:2] == 3'd0) ? sib_set : 32'd0);
@@ -464,7 +480,7 @@ module dr840_tx39 #(
                 end else if (off == T_CTRL) begin
                     t_ctrl <= io_wdata;
                     if (io_wdata[3]) begin
-                        rtc <= 40'd0; rtc_acc <= 32'd0; per_last <= 40'd0;
+                        rtc <= 40'd0; rtc_acc <= 32'd0; per_acc <= 40'd0;
                     end
                 end else if (off == T_PER) begin
                     t_per <= io_wdata;
@@ -524,6 +540,8 @@ module dr840_tx39 #(
             rd_live = sib_rdata;
         end else if (off == 12'h104) begin
             rd_live = icu_status[1] | INT2_MBUS_LEVEL;
+        end else if (off == 12'h114) begin
+            rd_live = intrstatus6;
         end else if (off >= 12'h100 && off < 12'h118) begin
             rd_live = icu_status[off[4:2]];
         end else if (off == T_RTCHI) begin
