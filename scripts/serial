@@ -1,0 +1,23 @@
+#!/bin/sh
+#
+# Reboot the core on the MiSTer and print what it says on its serial port.
+#
+#   scripts/serial [host] [seconds]
+#
+# The core's UART_TXD goes to the HPS's own UART, which Linux on the MiSTer
+# sees as /dev/ttyS1. The IDT monitor talks at 38400 8N1. The core is
+# reloaded through the .mgl so the ROM is attached without touching the
+# OSD; the capture is opened first so nothing from the boot is missed.
+set -e
+HOST=${1:-192.168.86.171}
+SECS=${2:-12}
+PASS=${MISTER_PASS:-1}
+
+sshpass -p "$PASS" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+    "root@$HOST" "
+stty -F /dev/ttyS1 38400 raw -echo cs8 -parenb -cstopb
+(timeout $SECS cat /dev/ttyS1 > /tmp/serial.cap &)
+sleep 1
+echo load_core /media/fat/_Console/DataRover840.mgl > /dev/MiSTer_cmd
+sleep $((SECS + 1))
+cat /tmp/serial.cap"

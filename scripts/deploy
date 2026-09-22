@@ -31,9 +31,14 @@ sshpass -p "$PASS" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/nu
 sshpass -p "$PASS" scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
     "$ROM" "root@$HOST:/media/fat/games/DataRover840/$(basename "$ROM" .image).rom"
 
+# The .mgl names the core and the ROM together, so a load_core of it boots
+# straight into the monitor with nothing to pick from the OSD.
+sshpass -p "$PASS" scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+    DataRover840.mgl "root@$HOST:$DEST/DataRover840.mgl"
+
 echo "deploy: loading the core"
 sshpass -p "$PASS" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-    "root@$HOST" "echo load_core $DEST/$NAME > /dev/MiSTer_cmd" || \
+    "root@$HOST" "echo load_core $DEST/DataRover840.mgl > /dev/MiSTer_cmd" || \
     echo "deploy: could not ask MiSTer to load it; pick it from the menu"
 
-echo "deploy: done. The ROM is in games/DataRover840; load it from the OSD."
+echo "deploy: done. scripts/serial shows what the monitor says."

@@ -6,9 +6,12 @@ the device's own 4.3 MB ROM, as the hardware would.
 
 ## Status
 
-**The CPU matches the reference core over ten million instructions from
-reset**, including every one of the 2,146,801 data-bus accesses in that
-window. Nothing else exists yet: no SoC, no video, no MiSTer wiring.
+**It boots on the hardware.** Load the core on a MiSTer and the IDT
+monitor's banner comes out of the serial port, all 377 bytes of it,
+byte-identical to what the reference emulator prints, through the `<IDT>`
+prompt (`scripts/serial`). Underneath that: **the CPU matches the reference
+core over ten million instructions from reset**, including every one of the
+2,146,801 data-bus accesses in that window.
 
 ```
 matched 10000000 of 10000000 instructions, 2146802 bus accesses,
@@ -38,7 +41,8 @@ On the DE10-Nano part, the core alone:
 
 With the clock enable and its multicycle constraints, the cached core closes
 at a **95 MHz clock** -- the SDRAM's rate, advancing every second edge -- with
-0.439 ns of slack. See **Clocking**.
+0.439 ns of slack. The whole machine, with the peripheral block, closes at
+78 MHz. See **Clocking**.
 
 ### What that is worth
 
@@ -253,22 +257,22 @@ quartus_sh --flow compile DataRover840     # output_files/DataRover840.rbf
 scripts/deploy                             # copies core and ROM to the MiSTer
 ```
 
-It builds and meets timing: 9,709 ALMs of 41,910, 65 of 553 M10K, 37 DSP,
-with 0.616 ns of setup slack and 0.252 ns of hold on the 92 MHz clock. Most
-of that area is the MiSTer framework; the core itself is 3,208 ALMs and 7
-M10K.
+It builds and meets timing: 10,504 ALMs of 41,910, 65 of 553 M10K, with
+0.225 ns of setup slack and 0.253 ns of hold on the 78 MHz clock. Most of
+that area is the MiSTer framework; the core itself is 3,208 ALMs and 7 M10K.
 
-The clock is 92 MHz rather than 95 because of one path. The core's own
-critical path -- the data cache's fill state, through the stall network, to
-the fetch redirect -- takes 21.16 ns, and two periods of 95 MHz is 21.05.
-It missed by 113 picoseconds, which is the core wanting more time than it
-was being given rather than anything being wrong with it. Two periods of
-92 MHz is 21.7 ns.
+The clock is 78 MHz rather than the 95 the core closes at alone because of
+one path, and the story of it is in **Clocking**.
 
-`scripts/deploy` puts the core in `_Console` and the ROM in
-`games/DataRover840`, then asks MiSTer to load it. The ROM is chosen from
-the OSD; it arrives over `ioctl` and is written into the SDRAM before the
-core leaves reset.
+`scripts/deploy` puts the core in `_Console`, the ROM in
+`games/DataRover840`, and a `.mgl` beside the core that names them both,
+then asks MiSTer to load the `.mgl`. That boots with the ROM attached and
+nothing to pick from the OSD. The ROM arrives over `ioctl` and is written
+into the SDRAM before the core leaves reset.
+
+`scripts/serial` reboots it that way and prints what comes out of the
+serial port. The core's `UART_TXD` reaches the HPS's own UART, which Linux
+on the MiSTer sees as `/dev/ttyS1`; the monitor runs it at 38400 8N1.
 
 The HPS sends bytes and the controller has no byte enables, so bytes are
 assembled into whole words first -- four times fewer transactions, and no
@@ -279,10 +283,9 @@ that looks exactly like a CPU bug.
 
 ### What you see
 
-**No peripheral exists yet**, so the guest can neither draw nor print. A
-build that runs and a build that is wedged would look identical, so the
-video is a debug display instead of the machine's own: eight 32-bit values
-in hex (`rtl/dr840_hud.sv`).
+There is no LCD controller yet, so the guest cannot draw. The video is a
+debug display instead of the machine's own: ten 32-bit values in hex
+(`rtl/dr840_hud.sv`).
 
 | row | |
 |---|---|
@@ -291,22 +294,22 @@ in hex (`rtl/dr840_hud.sv`).
 | 2 | instructions retired |
 | 3, 4 | instruction cache hits, misses |
 | 5, 6 | data cache hits, misses |
-| 7 | device reads attempted |
+| 7 | device reads |
+| 8 | ROM words loaded |
+| 9 | bytes sent on UART A |
 
-Row 2 climbing means the core is fetching from SDRAM and executing. Row 0
-sitting still means it is in a loop -- which is what to expect while
-`rtl/dr840_io_stub.sv` is standing in for the peripherals: the ROM polls a
-register that will never change. The stub answers everything immediately so
-the machine keeps running rather than stalling on the first register it
-touches, and it is wrong on purpose.
+Row 2 climbing means the core is fetching from SDRAM and executing. Row 9
+stopping at 0x179 (377) means the banner is out and the monitor is waiting
+at its prompt. Row 8 at zero means no ROM has been loaded yet, and the core
+is held in reset until one is.
 
 ## Clocking
 
-One clock, one domain, nothing to cross. The SDRAM runs at 95 MHz and the
+One clock, one domain, nothing to cross. The SDRAM runs at 78 MHz and the
 core is the same clock gated down by a clock enable, so it advances every
-second edge -- an effective 47.5 MHz, which is what it closes at. Every
-register in the core and its caches is enabled; the adapter and the
-controller are not.
+second edge -- an effective 39 MHz. Every register in the core and its
+caches is enabled; the adapter and the controller are not. The peripheral
+block moves on the core's edges too.
 
 The point is latency measured in the core's own cycles. A memory access
 takes about twelve memory clocks whatever else happens, and at a divider of
@@ -349,8 +352,26 @@ With those, the core and caches close at 95 MHz with 0.439 ns to spare.
 Without them the same design fails by a factor of two, and the failure looks
 like the core being too slow rather than the constraints being wrong.
 
+**Why 78 and not 95.** The whole machine has one path longer than the rest:
+a cache's fill address, through the board's decode, into the acknowledge,
+up the stall network to the fetch redirect and down into the instruction
+cache's RAM address. Alone, the core closed at 95 with that path at 21.16
+ns; with the peripheral block placed alongside it the same path is 24.3 ns.
+Registering the decode looked like the obvious cure and made things worse
+by 10 ns, for a reason worth knowing: the path launches from wherever its
+first register is, and the new register was in the board, outside the group
+the `.sdc` gives two periods to. It did not shorten anything, it moved the
+starting line. The decode is combinational again and the clock is where two
+periods cover 24.3 ns with margin. The fetch lookahead does not have to
+wait on the data side's acknowledge to be correct, only to be fast, and
+cutting that dependency is how the clock comes back.
+
+Everything derived from the clock is a parameter -- the SDRAM's refresh
+interval, the UART's bit period, the RTC's 32.768 kHz tick -- so a retarget
+is one number in `rtl/dr840_machine.sv` and the PLL.
+
 The controller's refresh constants are derived from its clock now rather
-than written out for 100 MHz. At the 95 MHz this actually runs at, the
+than written out for 100 MHz. At 95 MHz, where this first ran, the
 100 MHz numbers refresh every 8.2 us where the part wants 7.8 -- about 7,800
 refreshes in the 64 ms that needs 8,192. Close enough to look fine and not
 close enough to be right; the chip model's worst gap fell from 1,559 clocks
@@ -455,6 +476,10 @@ rtl/cpu/r3900_cache.sv  the caches, and the core wrapped in them
 rtl/board/dr840_mem.sv  address decode and the memory arbiter
 rtl/board/dr840_sdram.sv  the memory port onto the controller's channels
 rtl/board/sdram.sv      Sorgelig's MiSTer SDRAM controller
+rtl/soc/dr840_tx39.sv   the TX39 peripheral block: interrupts, UART A, RTC, MBUS
+rtl/dr840_machine.sv    the machine: clock enable, loader mux, core, board, SoC
+rtl/emu.sv              the MiSTer top: ROM loader, UART pins, debug display
+scripts/deploy          builds a boot on the MiSTer; scripts/serial reads it
 sim/sdram/           the whole memory path against a model of the chip
 sim/cosim/           Verilator lockstep harness against magicrecomp
 sim/golden/          reference traces (regenerated, not committed)
@@ -468,18 +493,18 @@ sys/                 MiSTer framework
 
 ## Next
 
-1. The TX39 peripheral block, starting with UART A and the interrupt
-   controller. That is what turns the debug display into the machine's own
-   output: the framework already brings a UART out to the HPS, so the IDT
-   monitor banner would arrive over SSH.
-   Transmit-ready is a **level**, not an edge -- the reset path waits on it
-   without ever writing the holding register, and an edge there is why the
-   ROM would never get past reset.
-2. TX39 peripheral block, enough of it to reach the IDT monitor banner:
-   BIU, interrupt controller, UART A, clock/power control.
+1. Recover the clock. The dline -> decode -> ack -> stall -> redirect ->
+   I-cache RAM chain is 24.3 ns and sets the whole machine's period. The
+   fetch side's lookahead can be made independent of the data side's
+   acknowledge; that alone should return to 92-95 MHz.
+2. Recover the IPC lost to the handshakes on the core's edges: 0.719 at
+   the core's rate over the banner path, against 0.75 before them.
 3. LCD controller to MiSTer video. 480x320 at 2 bpp, four pixels per byte,
    most significant bits first -- the same panel format every Magic Cap
-   machine uses.
+   machine uses. That is what turns the debug display into the machine's
+   own screen.
 4. SIB and the UCB1100: touchscreen ADC, the AD2/AD3 battery rails, the
    periodic sound-in interrupt the boot path waits on.
 5. Empty PC Card slots with card-detect high, MBUS idle.
+6. An external interrupt test: the ICU is exercised by the ROM's own timer
+   path but nothing yet drives an IP line from outside the block.
