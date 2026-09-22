@@ -136,6 +136,12 @@ VL_ATTR_COLD void Vtb_sdram_tb_sdram___ctor_var_reset(Vtb_sdram_tb_sdram* vlSelf
     for (int __Vi0 = 0; __Vi0 < 6; ++__Vi0) {
         vlSelf->__PVT__tx39__DOT__icu_enable[__Vi0] = VL_RAND_RESET_I(32);
     }
+    vlSelf->__PVT__tx39__DOT__rtc = VL_RAND_RESET_Q(40);
+    vlSelf->__PVT__tx39__DOT__rtc_acc = VL_RAND_RESET_I(32);
+    vlSelf->__PVT__tx39__DOT__rtc_alarm = VL_RAND_RESET_Q(40);
+    vlSelf->__PVT__tx39__DOT__t_ctrl = VL_RAND_RESET_I(32);
+    vlSelf->__PVT__tx39__DOT__t_per = VL_RAND_RESET_I(32);
+    vlSelf->__PVT__tx39__DOT__per_last = VL_RAND_RESET_Q(40);
     vlSelf->__PVT__tx39__DOT__ua_ctrl1 = VL_RAND_RESET_I(32);
     vlSelf->__PVT__tx39__DOT__ua_ctrl2 = VL_RAND_RESET_I(32);
     vlSelf->__PVT__tx39__DOT__ua_rx = VL_RAND_RESET_I(8);

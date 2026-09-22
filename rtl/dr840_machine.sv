@@ -40,6 +40,10 @@ module dr840_machine (
     output wire        SDRAM_CKE,
     output wire        SDRAM_CLK,
 
+    // ---- the debug serial port. UART A is where the monitor prints.
+    output wire        uart_txd,
+    input  wire        uart_rxd,
+
     // ---- what a debug display can show
     output wire [31:0] obs_pc,
     output wire [31:0] obs_insn,
@@ -48,7 +52,8 @@ module dr840_machine (
     output wire [31:0] obs_imiss,
     output wire [31:0] obs_dhit,
     output wire [31:0] obs_dmiss,
-    output wire [31:0] obs_io
+    output wire [31:0] obs_io,
+    output wire [31:0] obs_uart_bytes
 );
 
     // The core's clock enable: every second edge of the memory's clock.
@@ -72,7 +77,7 @@ module dr840_machine (
         .dmem_addr(da), .dmem_req(dreq), .dmem_burst(dbur), .dmem_we(dwe),
         .dmem_be(dbe), .dmem_wdata(dwd), .dmem_ack(dack), .dmem_rdata(drd),
         .dmem_err(derr),
-        .irq_in(6'd0),
+        .irq_in(soc_irq),
         .retire_valid(retire_valid), .retire_pc(obs_pc),
         .retire_insn(obs_insn), .retire_next_pc(),
         .ihit_count(obs_ihit), .imiss_count(obs_imiss),
@@ -94,6 +99,7 @@ module dr840_machine (
     wire [31:0] io_addr, io_wdata, io_rdata;
     wire        io_req, io_we, io_ack, io_err;
     wire [3:0]  io_be;
+    wire [5:0]  soc_irq;
 
     dr840_mem board (
         .clk(clk), .rst_n(core_rst_n),
@@ -110,11 +116,19 @@ module dr840_machine (
         .io_err(io_err)
     );
 
-    dr840_io_stub io (
-        .clk(clk), .rst_n(core_rst_n),
+    // The interrupt controller, UART A, MBUS and the RTC. Everything else
+    // in the block reads back what was written, which is what the ROM
+    // needs; everything outside it reads all-ones, which is an empty PC
+    // Card slot.
+    dr840_tx39 #(.CLK_HZ(92_000_000)) soc (
+        .clk(clk), .cen(cen), .rst_n(core_rst_n),
         .io_addr(io_addr), .io_req(io_req), .io_we(io_we), .io_be(io_be),
         .io_wdata(io_wdata), .io_ack(io_ack), .io_rdata(io_rdata),
-        .io_err(io_err), .io_count(obs_io)
+        .io_err(io_err),
+        .uart_txd(uart_txd), .uart_rxd(uart_rxd),
+        .irq_out(soc_irq),
+        .dbg_tx_bytes(obs_uart_bytes), .dbg_io_reads(obs_io),
+        .dbg_tx_stb(), .dbg_tx_data()
     );
 
     // The loader takes the memory while it is running; the board has it

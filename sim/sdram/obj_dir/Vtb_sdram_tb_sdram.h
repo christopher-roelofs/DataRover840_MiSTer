@@ -147,12 +147,15 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_sdram_tb_sdram final : public VerilatedMo
         IData/*31:0*/ __PVT__ch2_dout;
         IData/*31:0*/ __PVT__ch2_din;
         IData/*26:0*/ __PVT__board__DOT__i_dec;
+        IData/*31:0*/ __PVT__tx39__DOT__rtc_acc;
+        IData/*31:0*/ __PVT__tx39__DOT__t_ctrl;
+        IData/*31:0*/ __PVT__tx39__DOT__t_per;
         IData/*31:0*/ __PVT__tx39__DOT__ua_ctrl1;
+    };
+    struct {
         IData/*31:0*/ __PVT__tx39__DOT__ua_ctrl2;
         IData/*19:0*/ __PVT__tx39__DOT__tx_cnt;
         IData/*19:0*/ __PVT__tx39__DOT__rx_cnt;
-    };
-    struct {
         IData/*31:0*/ tx39__DOT____Vlvbound_h2237671c__0;
         IData/*31:0*/ tx39__DOT____Vlvbound_hadcbb189__0;
         IData/*31:0*/ __PVT__adapter__DOT__hold;
@@ -162,6 +165,9 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_sdram_tb_sdram final : public VerilatedMo
         IData/*31:0*/ __Vdly__ch2_dout;
         IData/*31:0*/ __Vdly__ctl__DOT__unnamedblk1__DOT__saved_data;
         QData/*63:0*/ __PVT__ch1_dout;
+        QData/*39:0*/ __PVT__tx39__DOT__rtc;
+        QData/*39:0*/ __PVT__tx39__DOT__rtc_alarm;
+        QData/*39:0*/ __PVT__tx39__DOT__per_last;
         QData/*63:0*/ __Vdly__ch1_dout;
         VlUnpacked<IData/*31:0*/, 256> __PVT__tx39__DOT__rf;
         VlUnpacked<IData/*31:0*/, 6> __PVT__tx39__DOT__icu_status;

@@ -130,8 +130,9 @@ assign SD_SCK   = 0;
 assign SD_MOSI  = 0;
 assign SD_CS    = 1;
 assign UART_RTS = 0;
-assign UART_TXD = 0;
 assign UART_DTR = 0;
+// UART A goes to the framework's serial port, which the HPS exposes as a
+// tty. The IDT monitor's banner comes out there.
 assign USER_OUT = '1;
 
 assign DDRAM_CLK      = 0;
@@ -272,7 +273,7 @@ assign ioctl_wait = load_busy;
 ////////////////////////////////////////////////////////////////////////////
 
 wire [31:0] obs_pc, obs_insn, obs_retired;
-wire [31:0] obs_ihit, obs_imiss, obs_dhit, obs_dmiss, obs_io;
+wire [31:0] obs_ihit, obs_imiss, obs_dhit, obs_dmiss, obs_io, obs_uart;
 wire [15:0] sdram_dq_o, sdram_dq_i;
 wire        sdram_dq_oe;
 
@@ -295,7 +296,9 @@ dr840_machine machine (
     .SDRAM_CKE(SDRAM_CKE), .SDRAM_CLK(SDRAM_CLK),
     .obs_pc(obs_pc), .obs_insn(obs_insn), .obs_retired(obs_retired),
     .obs_ihit(obs_ihit), .obs_imiss(obs_imiss),
-    .obs_dhit(obs_dhit), .obs_dmiss(obs_dmiss), .obs_io(obs_io)
+    .obs_dhit(obs_dhit), .obs_dmiss(obs_dmiss), .obs_io(obs_io),
+    .obs_uart_bytes(obs_uart),
+    .uart_txd(UART_TXD), .uart_rxd(UART_RXD)
 );
 
 assign CLK_VIDEO = clk_sys;
@@ -306,7 +309,7 @@ dr840_hud hud (
     .r(VGA_R), .g(VGA_G), .b(VGA_B),
     .v0(obs_pc), .v1(obs_insn), .v2(obs_retired), .v3(obs_ihit),
     .v4(obs_imiss), .v5(obs_dhit), .v6(obs_dmiss), .v7(obs_io),
-    .v8(rom_words), .v9({31'd0, rom_ok})
+    .v8(rom_words), .v9(obs_uart)
 );
 
 endmodule

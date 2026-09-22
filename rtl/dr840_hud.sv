@@ -16,7 +16,7 @@
 //   row 6  data cache misses
 //   row 7  device reads attempted
 //   row 8  ROM words written into the SDRAM
-//   row 9  1 once a ROM has been loaded, 0 before
+//   row 9  bytes the guest has written to UART A
 //
 // Row 8 is the one to look at first. Zero there means no ROM arrived, and
 // the core is held in reset rather than running forward through blank

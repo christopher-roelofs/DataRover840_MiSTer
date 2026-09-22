@@ -142,6 +142,34 @@ module dr840_tx39 #(
     wire ip4 = |(icu_status[5] & icu_enable[5]);
     assign irq_out = {3'b000, ip4, 1'b0, ip2};     // IP7..IP2, so [0]=IP2 [2]=IP4
 
+    // ------------------------------------------------------- RTC and timers
+    //
+    // All three run from the 32.768 kHz crystal, which on this board is a
+    // separate low-speed oscillator. The RTC is a 40-bit free-running
+    // counter: 0x140 holds bits 39..32 and 0x144 bits 31..0, and the ROM
+    // polls the low word to let time pass. Without it the banner stops
+    // after four lines.
+    //
+    // The tick comes from an accumulator rather than a divider, because
+    // 92 MHz is not a multiple of 32768 and rounding the divisor would put
+    // the clock out by enough to matter over a day.
+    localparam [11:0] T_RTCHI = 12'h140, T_RTCLO = 12'h144;
+    localparam [11:0] T_ALMHI = 12'h148, T_ALMLO = 12'h14C;
+    localparam [11:0] T_CTRL  = 12'h150, T_PER   = 12'h154;
+    localparam [31:0] TIMERCTRL_FREEZERTC = 32'h0000_0040;
+    localparam [31:0] TIMERCTRL_ENPERTIMER = 32'h0000_0010;
+    localparam [31:0] TIMERCTRL_RTCCLR    = 32'h0000_0008;
+    localparam [31:0] INT5_ALARMINT       = 32'h4000_0000;
+    localparam [31:0] INT5_PERINT         = 32'h2000_0000;
+
+    reg [39:0] rtc;
+    reg [31:0] rtc_acc;
+    reg [39:0] rtc_alarm;
+    reg [31:0] t_ctrl, t_per;
+    reg [39:0] per_last;
+
+    wire [15:0] per_val = t_per[15:0];
+
     // ------------------------------------------------------------- UART A
 
     localparam [11:0] UARTA_CTRL1 = 12'h0B0, UARTA_CTRL2 = 12'h0B4;
@@ -186,6 +214,8 @@ module dr840_tx39 #(
             tx_busy <= 1'b0; tx_hold_full <= 1'b0; tx_bit <= 4'd0; tx_cnt <= 20'd0;
             uart_txd <= 1'b1;
             rx_busy <= 1'b0; rx_bit <= 4'd0; rx_cnt <= 20'd0; rxd_sync <= 3'b111;
+            rtc <= 40'd0; rtc_acc <= 32'd0; rtc_alarm <= 40'd0;
+            t_ctrl <= 32'd0; t_per <= 32'd0; per_last <= 40'd0;
             served <= 1'b0;
             dbg_tx_bytes <= 32'd0; dbg_io_reads <= 32'd0;
             dbg_tx_stb <= 1'b0; dbg_tx_data <= 8'd0;
@@ -195,6 +225,27 @@ module dr840_tx39 #(
             if (!io_req)        served <= 1'b0;   // idle
             else if (!served)   served <= 1'b1;   // carried out this cycle
             else if (cen)       served <= 1'b0;   // taken; next one may start
+
+            // ---------------------------------------------- RTC
+            if (!t_ctrl[6]) begin
+                if (rtc_acc + 32'd32768 >= CLK_HZ) begin
+                    rtc_acc <= rtc_acc + 32'd32768 - CLK_HZ;
+                    rtc     <= rtc + 40'd1;
+                end else rtc_acc <= rtc_acc + 32'd32768;
+            end
+            // The alarm fires once when the counter reaches it.
+            if (rtc_alarm != 40'd0 && rtc >= rtc_alarm &&
+                !icu_status[4][30])
+                icu_status[4] <= icu_status[4] | INT5_ALARMINT;
+            // The periodic timer fires each time the counter crosses a
+            // multiple of the reload value; derived from the RTC so the
+            // rate is right however it is sampled.
+            if (t_ctrl[4] && per_val != 16'd0) begin
+                if ((rtc - per_last) >= {24'd0, per_val}) begin
+                    per_last      <= rtc;
+                    icu_status[4] <= icu_status[4] | INT5_PERINT;
+                end
+            end else per_last <= rtc;
 
             // ---------------------------------------------- transmit
             if (tx_busy) begin
@@ -272,6 +323,17 @@ module dr840_tx39 #(
                     if (!ua_ctrl1[0] && io_wdata[0])
                         icu_status[1] <= icu_status[1] |
                                          INT2_UARTATXINT | INT2_UARTAEMPTY;
+                end else if (off == T_ALMHI) begin
+                    rtc_alarm[39:32] <= io_wdata[7:0];
+                end else if (off == T_ALMLO) begin
+                    rtc_alarm[31:0] <= io_wdata;
+                end else if (off == T_CTRL) begin
+                    t_ctrl <= io_wdata;
+                    if (io_wdata[3]) begin
+                        rtc <= 40'd0; rtc_acc <= 32'd0; per_last <= 40'd0;
+                    end
+                end else if (off == T_PER) begin
+                    t_per <= io_wdata;
                 end else if (off == UARTA_CTRL2) begin
                     ua_ctrl2 <= io_wdata;
                 end else if (off == UARTA_HOLD) begin
@@ -313,6 +375,18 @@ module dr840_tx39 #(
             io_rdata = icu_status[1] | INT2_MBUS_LEVEL;
         end else if (off >= 12'h100 && off < 12'h118) begin
             io_rdata = icu_status[off[4:2]];
+        end else if (off == T_RTCHI) begin
+            io_rdata = {24'd0, rtc[39:32]};
+        end else if (off == T_RTCLO) begin
+            io_rdata = rtc[31:0];
+        end else if (off == T_ALMHI) begin
+            io_rdata = {24'd0, rtc_alarm[39:32]};
+        end else if (off == T_ALMLO) begin
+            io_rdata = rtc_alarm[31:0];
+        end else if (off == T_CTRL) begin
+            io_rdata = t_ctrl;
+        end else if (off == T_PER) begin
+            io_rdata = t_per;
         end else if (off == MBUSCTRL) begin
             // Never busy, and the bus reads high because nothing is
             // pulling it down.
