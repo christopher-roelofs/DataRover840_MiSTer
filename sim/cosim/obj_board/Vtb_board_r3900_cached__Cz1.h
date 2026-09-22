@@ -21,6 +21,7 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_board_r3900_cached__Cz1 final : public Ve
     struct {
         VL_IN8(__PVT__clk,0,0);
         VL_IN8(__PVT__rst_n,0,0);
+        VL_IN8(__PVT__cen,0,0);
         VL_OUT8(__PVT__imem_req,0,0);
         VL_OUT8(__PVT__imem_burst,0,0);
         VL_IN8(__PVT__imem_ack,0,0);
@@ -82,9 +83,9 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_board_r3900_cached__Cz1 final : public Ve
         IData/*20:0*/ __PVT__cache__DOT__itag_wd;
         IData/*31:0*/ __PVT__cache__DOT__iram_q;
         IData/*20:0*/ __PVT__cache__DOT__itagv_q;
-        IData/*31:0*/ __PVT__cache__DOT__dline;
     };
     struct {
+        IData/*31:0*/ __PVT__cache__DOT__dline;
         IData/*22:0*/ __PVT__cache__DOT__dtag_wd;
         IData/*31:0*/ __PVT__cache__DOT__dram_q;
         IData/*22:0*/ __PVT__cache__DOT__dtagv_q;

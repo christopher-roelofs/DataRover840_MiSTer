@@ -18,6 +18,7 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_board_r3900__Cz2 final : public Verilated
     struct {
         VL_IN8(__PVT__clk,0,0);
         VL_IN8(__PVT__rst_n,0,0);
+        VL_IN8(__PVT__cen,0,0);
         VL_OUT8(__PVT__ibus_req,0,0);
         VL_OUT8(__PVT__ibus_cached,0,0);
         VL_IN8(__PVT__ibus_ack,0,0);
@@ -79,9 +80,9 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_board_r3900__Cz2 final : public Verilated
         CData/*0:0*/ __PVT__md_skip;
         CData/*0:0*/ __PVT__ex_is_div;
         CData/*0:0*/ __PVT__ex_sys;
-        CData/*0:0*/ __PVT__ex_bp;
     };
     struct {
+        CData/*0:0*/ __PVT__ex_bp;
         CData/*0:0*/ __PVT__ex_exc_out_v;
         CData/*4:0*/ __PVT__ex_exc_out_code;
         CData/*0:0*/ __PVT__ex_exc_out_badv;
@@ -145,9 +146,9 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_board_r3900__Cz2 final : public Verilated
         CData/*0:0*/ __Vfunc_is_store__49__Vfuncout;
         CData/*0:0*/ __Vfunc_is_store__50__Vfuncout;
         CData/*0:0*/ __Vfunc_is_store__51__Vfuncout;
-        CData/*0:0*/ __Vfunc_is_store__52__Vfuncout;
     };
     struct {
+        CData/*0:0*/ __Vfunc_is_store__52__Vfuncout;
         CData/*0:0*/ __Vfunc_is_load__53__Vfuncout;
         CData/*0:0*/ __Vfunc_is_branch__54__Vfuncout;
         CData/*0:0*/ __Vfunc_writes_gpr__55__Vfuncout;
@@ -211,9 +212,9 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_board_r3900__Cz2 final : public Verilated
         IData/*31:0*/ __PVT__wb_value;
         IData/*31:0*/ __PVT__wb_hi;
         IData/*31:0*/ __PVT__wb_lo;
-        IData/*31:0*/ __PVT__wb_cp0_d;
     };
     struct {
+        IData/*31:0*/ __PVT__wb_cp0_d;
         IData/*31:0*/ __PVT__cause_live;
         IData/*31:0*/ __PVT__fpc;
         IData/*31:0*/ __PVT__redir_pc;
@@ -277,9 +278,9 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_board_r3900__Cz2 final : public Verilated
         IData/*31:0*/ __Vfunc_is_store__25__i;
         IData/*31:0*/ __Vfunc_is_store__26__i;
         IData/*31:0*/ __Vfunc_is_load__29__i;
-        IData/*31:0*/ __Vfunc_is_load__30__i;
     };
     struct {
+        IData/*31:0*/ __Vfunc_is_load__30__i;
         IData/*31:0*/ __Vfunc_reads_rs__31__i;
         IData/*31:0*/ __Vfunc_reads_rt__32__i;
         IData/*31:0*/ __Vfunc_is_store__33__i;
@@ -343,9 +344,9 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_board_r3900__Cz2 final : public Verilated
         QData/*63:0*/ __PVT__md_rq;
         QData/*63:0*/ __PVT__md_shifted;
         QData/*32:0*/ __PVT__md_diff;
-        VlUnpacked<IData/*31:0*/, 32> regs;
     };
     struct {
+        VlUnpacked<IData/*31:0*/, 32> regs;
         VlUnpacked<IData/*31:0*/, 32> __PVT__cp0;
     };
 

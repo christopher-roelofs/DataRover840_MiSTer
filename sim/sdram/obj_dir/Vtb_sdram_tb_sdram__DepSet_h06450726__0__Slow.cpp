@@ -11,7 +11,7 @@ VL_ATTR_COLD void Vtb_sdram_tb_sdram___eval_static__TOP__tb_sdram(Vtb_sdram_tb_s
     VL_DEBUG_IF(VL_DBG_MSGF("+      Vtb_sdram_tb_sdram___eval_static__TOP__tb_sdram\n"); );
     // Body
     vlSelf->__PVT__ctl__DOT__state = 0U;
-    vlSelf->__PVT__ctl__DOT__refresh_count = 0x1483U;
+    vlSelf->__PVT__ctl__DOT__refresh_count = 0x1b21U;
 }
 
 VL_ATTR_COLD void Vtb_sdram_tb_sdram___eval_initial__TOP__tb_sdram(Vtb_sdram_tb_sdram* vlSelf) {

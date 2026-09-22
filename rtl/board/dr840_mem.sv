@@ -122,26 +122,8 @@ module dr840_mem #(
         end
     endfunction
 
-    // The decode is registered, and trusted only once the address it was
-    // made from has stood for a clock. It is a chain of range comparisons,
-    // and combinational it sat on the longest path in the machine: from a
-    // cache's fill address, through here, into the acknowledgement, up the
-    // stall network to the fetch redirect and down into the instruction
-    // cache's RAM address -- 24.5 ns, against the 21.7 the core gets. The
-    // requesters hold an address for a whole core period and everything
-    // that acts on this samples on the core's edges, so a clock of latency
-    // here is invisible; the qualifier only guards the one clock in which
-    // the register still describes the previous address.
-    reg [26:0] i_dec, d_dec;
-    reg [31:0] i_addr_r, d_addr_r;
-    always @(posedge clk) begin
-        i_dec    <= decode(imem_addr);
-        d_dec    <= decode(dmem_addr);
-        i_addr_r <= imem_addr;
-        d_addr_r <= dmem_addr;
-    end
-    wire i_dec_ok = (i_addr_r == imem_addr);
-    wire d_dec_ok = (d_addr_r == dmem_addr);
+    wire [26:0] i_dec = decode(imem_addr);
+    wire [26:0] d_dec = decode(dmem_addr);
     wire [1:0]  i_tgt = i_dec[26:25];
     wire [1:0]  d_tgt = d_dec[26:25];
 
@@ -165,8 +147,8 @@ module dr840_mem #(
     localparam [1:0] A_FREE = 2'd0, A_DATA = 2'd1, A_INSN = 2'd2;
     reg [1:0] owner;
 
-    wire d_wants_ram = dmem_req && d_dec_ok && (d_tgt == T_RAM);
-    wire i_wants_ram = imem_req && i_dec_ok && (i_tgt == T_RAM);
+    wire d_wants_ram = dmem_req && (d_tgt == T_RAM);
+    wire i_wants_ram = imem_req && (i_tgt == T_RAM);
 
     wire grant_d = (owner == A_DATA) || ((owner == A_FREE) && d_wants_ram);
     wire grant_i = (owner == A_INSN) ||
@@ -195,8 +177,8 @@ module dr840_mem #(
 
     // Only the data side reaches these in practice, but an instruction
     // fetch from them is decoded rather than quietly dropped.
-    wire d_wants_io = dmem_req && d_dec_ok && (d_tgt == T_IO);
-    wire i_wants_io = imem_req && i_dec_ok && (i_tgt == T_IO);
+    wire d_wants_io = dmem_req && (d_tgt == T_IO);
+    wire i_wants_io = imem_req && (i_tgt == T_IO);
 
     assign io_req   = d_wants_io | (i_wants_io & ~d_wants_io);
     assign io_addr  = d_wants_io ? dmem_addr : imem_addr;
@@ -206,21 +188,18 @@ module dr840_mem #(
 
     // ------------------------------------------------------------ replies
 
-    wire d_none = dmem_req & d_dec_ok & (d_tgt == T_NONE);
-    wire i_none = imem_req & i_dec_ok & (i_tgt == T_NONE);
-
     assign dmem_ack   = (grant_d & d_wants_ram & ram_ack)
                       | (d_wants_io & io_ack)
-                      | d_none;
+                      | (dmem_req & (d_tgt == T_NONE));
     assign dmem_rdata = d_wants_io ? io_rdata : ram_rdata;
-    assign dmem_err   = d_none
+    assign dmem_err   = (dmem_req & (d_tgt == T_NONE))
                       | (d_wants_io & io_ack & io_err);
 
     assign imem_ack   = (grant_i & i_wants_ram & ram_ack)
                       | (i_wants_io & ~d_wants_io & io_ack)
-                      | i_none;
+                      | (imem_req & (i_tgt == T_NONE));
     assign imem_rdata = (i_wants_io & ~d_wants_io) ? io_rdata : ram_rdata;
-    assign imem_err   = i_none
+    assign imem_err   = (imem_req & (i_tgt == T_NONE))
                       | (i_wants_io & ~d_wants_io & io_ack & io_err);
 
 endmodule

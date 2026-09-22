@@ -269,12 +269,12 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__1(Vtb_sdram_
             vlSelf->__Vdly__ctl__DOT__state = 5U;
         } else if ((5U == (IData)(vlSelf->__PVT__ctl__DOT__state))) {
             vlSelf->__Vdly__ctl__DOT__state = 4U;
-            if ((0x2cdU < (IData)(vlSelf->__PVT__ctl__DOT__refresh_count))) {
+            if ((0x260U < (IData)(vlSelf->__PVT__ctl__DOT__refresh_count))) {
                 __Vdly__ctl__DOT__refresh_count = (0x3fffU 
                                                    & ((IData)(1U) 
                                                       + 
                                                       ((IData)(vlSelf->__PVT__ctl__DOT__refresh_count) 
-                                                       - (IData)(0x2cdU))));
+                                                       - (IData)(0x260U))));
                 vlSelf->__Vdly__ctl__DOT__state = 0xaU;
                 vlSelf->__PVT__ctl__DOT__command = 1U;
                 vlSelf->__PVT__ctl__DOT__chip = 0U;
@@ -283,7 +283,7 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__1(Vtb_sdram_
             vlSelf->__Vdly__ctl__DOT__state = 9U;
             vlSelf->__PVT__ctl__DOT__command = 1U;
             vlSelf->__PVT__ctl__DOT__chip = 1U;
-        } else if ((0x59aU < (IData)(vlSelf->__PVT__ctl__DOT__refresh_count))) {
+        } else if ((0x4c0U < (IData)(vlSelf->__PVT__ctl__DOT__refresh_count))) {
             vlSelf->__Vdly__ctl__DOT__state = 5U;
         } else if (vlSelf->__PVT__ctl__DOT__unnamedblk1__DOT__ch1_rq) {
             vlSelf->__Vdly__ctl__DOT__unnamedblk1__DOT__cas_addr 
@@ -393,7 +393,7 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__1(Vtb_sdram_
     }
     if ((1U & (~ (IData)(vlSymsp->TOP.rst_n)))) {
         vlSelf->__Vdly__ctl__DOT__state = 0U;
-        __Vdly__ctl__DOT__refresh_count = 0x1483U;
+        __Vdly__ctl__DOT__refresh_count = 0x1b21U;
     }
     vlSelf->__PVT__ctl__DOT__unnamedblk1__DOT__ch1_rq 
         = __Vdly__ctl__DOT__unnamedblk1__DOT__ch1_rq;
@@ -628,8 +628,8 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__2(Vtb_sdram_
                                                    << 1U)));
         if ((1U & (~ (vlSelf->__PVT__tx39__DOT__t_ctrl 
                       >> 6U)))) {
-            if ((0x57bcf00U <= ((IData)(0x8000U) + vlSelf->__PVT__tx39__DOT__rtc_acc))) {
-                __Vdly__tx39__DOT__rtc_acc = ((IData)(0xfa84b100U) 
+            if ((0x4a62f80U <= ((IData)(0x8000U) + vlSelf->__PVT__tx39__DOT__rtc_acc))) {
+                __Vdly__tx39__DOT__rtc_acc = ((IData)(0xfb5a5080U) 
                                               + vlSelf->__PVT__tx39__DOT__rtc_acc);
                 __Vdly__tx39__DOT__rtc = (0xffffffffffULL 
                                           & (1ULL + vlSelf->__PVT__tx39__DOT__rtc));
@@ -664,7 +664,7 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__2(Vtb_sdram_
         }
         if (vlSelf->__PVT__tx39__DOT__tx_busy) {
             if ((vlSelf->__PVT__tx39__DOT__tx_cnt >= 
-                 (0xfffffU & ((IData)(0x18fU) * (0xfffffU 
+                 (0xfffffU & ((IData)(0x152U) * (0xfffffU 
                                                  & ((IData)(1U) 
                                                     + 
                                                     (0x3ffU 
@@ -698,7 +698,7 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__2(Vtb_sdram_
         }
         if (vlSelf->__PVT__tx39__DOT__rx_busy) {
             if ((vlSelf->__PVT__tx39__DOT__rx_cnt >= 
-                 (0xfffffU & ((IData)(0x18fU) * (0xfffffU 
+                 (0xfffffU & ((IData)(0x152U) * (0xfffffU 
                                                  & ((IData)(1U) 
                                                     + 
                                                     (0x3ffU 
@@ -732,7 +732,7 @@ VL_INLINE_OPT void Vtb_sdram_tb_sdram___nba_sequent__TOP__tb_sdram__2(Vtb_sdram_
             vlSelf->__PVT__tx39__DOT__rx_bit = 0U;
             vlSelf->__PVT__tx39__DOT__rx_busy = 1U;
             __Vdly__tx39__DOT__rx_cnt = (0x7ffffU & 
-                                         (((IData)(0x18fU) 
+                                         (((IData)(0x152U) 
                                            * (0xfffffU 
                                               & ((IData)(1U) 
                                                  + 

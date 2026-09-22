@@ -11,6 +11,7 @@ VL_ATTR_COLD void Vtb_board_r3900__Cz2___ctor_var_reset(Vtb_board_r3900__Cz2* vl
     VL_DEBUG_IF(VL_DBG_MSGF("+          Vtb_board_r3900__Cz2___ctor_var_reset\n"); );
     // Body
     vlSelf->__PVT__clk = VL_RAND_RESET_I(1);
+    vlSelf->__PVT__cen = VL_RAND_RESET_I(1);
     vlSelf->__PVT__rst_n = VL_RAND_RESET_I(1);
     vlSelf->__PVT__ibus_addr = VL_RAND_RESET_I(32);
     vlSelf->__PVT__ibus_req = VL_RAND_RESET_I(1);

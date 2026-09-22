@@ -706,7 +706,7 @@ VL_INLINE_OPT void Vtb_board_r3900__Cz2___nba_sequent__TOP__tb_board__cpu__cpu__
         if (VL_UNLIKELY((vlSelf->__PVT__a_pc != vlSelf->__PVT__id_pc))) {
             VL_WRITEF("r3900: architectural pc %08x != fetched pc %08x\n",
                       32,vlSelf->__PVT__a_pc,32,vlSelf->__PVT__id_pc);
-            VL_STOP_MT("../../rtl/cpu/r3900.sv", 1054, "");
+            VL_STOP_MT("../../rtl/cpu/r3900.sv", 1058, "");
         }
     }
 }
