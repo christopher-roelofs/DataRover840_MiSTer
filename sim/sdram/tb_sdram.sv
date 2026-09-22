@@ -68,7 +68,15 @@ module tb_sdram (
     // The TX39 block answers the peripheral bus when this is set, and the
     // testbench does when it is not.
     input  wire        tx39_en,
+    input  wire        boot_monitor,
     output wire        dbg_tx_stb,
+    output wire        dbg_ram_we,
+    output wire [3:0]  dbg_ram_be,
+    output wire [31:0] dbg_ram_wdata,
+    output wire [31:0] dbg_vid_ctrl1,
+    output wire [31:0] dbg_vid_ctrl3,
+    output wire        dbg_io_ack,
+    output wire [31:0] dbg_io_rdata,
     output wire [7:0]  dbg_tx_data,
     output wire [31:0] dbg_tx_bytes
 );
@@ -112,6 +120,7 @@ module tb_sdram (
         .dmem_addr(da), .dmem_req(dreq), .dmem_burst(dbur), .dmem_we(dwe),
         .dmem_be(dbe), .dmem_wdata(dwd), .dmem_ack(dack), .dmem_rdata(drd),
         .dmem_err(derr),
+        .vmem_addr(va), .vmem_req(vreq), .vmem_ack(vack), .vmem_rdata(vrd),
         .ram_addr(ram_addr), .ram_req(ram_req), .ram_burst(ram_burst),
         .ram_we(ram_we), .ram_be(ram_be), .ram_wdata(ram_wdata),
         .ram_ack(ram_ack), .ram_rdata(ram_rdata), .ram_busy(ram_busy),
@@ -123,19 +132,34 @@ module tb_sdram (
     wire        t_ack, t_err;
     wire [31:0] t_rdata;
     wire [5:0]  t_irq;
+    wire [31:0] vid_ctrl2;
+    wire [31:0] va, vrd;
+    wire        vreq, vack;
+    dr840_lcd lcd (
+        .clk(clk), .cen(cen), .rst_n(rst_n),
+        .ctrl1(dbg_vid_ctrl1), .ctrl2(vid_ctrl2), .ctrl3(dbg_vid_ctrl3),
+        .vmem_addr(va), .vmem_req(vreq), .vmem_burst(), .vmem_ack(vack), .vmem_rdata(vrd),
+        .ce_pix(), .hs(), .vs(), .de(), .r(), .g(), .b()
+    );
 
     dr840_tx39 #(.CLK_HZ(92_000_000)) tx39 (
         .clk(clk), .cen(cen), .rst_n(rst_n),
         .io_addr(io_addr), .io_req(io_req & tx39_en), .io_we(io_we),
         .io_be(io_be), .io_wdata(io_wdata),
         .io_ack(t_ack), .io_rdata(t_rdata), .io_err(t_err),
-        .uart_txd(), .uart_rxd(1'b1), .irq_out(t_irq),
+        .boot_monitor(boot_monitor), .uart_txd(), .uart_rxd(1'b1), .irq_out(t_irq),
+        .vid_ctrl1(dbg_vid_ctrl1), .vid_ctrl2(vid_ctrl2), .vid_ctrl3(dbg_vid_ctrl3),
         .dbg_tx_bytes(dbg_tx_bytes), .dbg_io_reads(),
         .dbg_tx_stb(dbg_tx_stb), .dbg_tx_data(dbg_tx_data)
     );
 
     wire        io_ack_mux   = tx39_en ? t_ack   : io_ack;
     wire [31:0] io_rdata_mux = tx39_en ? t_rdata : io_rdata;
+    assign dbg_ram_we    = ram_we;
+    assign dbg_ram_be    = ram_be;
+    assign dbg_ram_wdata = ram_wdata;
+    assign dbg_io_ack   = io_ack_mux;
+    assign dbg_io_rdata = io_rdata_mux;
     wire        io_err_mux   = tx39_en ? t_err   : io_err;
 
     wire [26:1] ch1_addr, ch2_addr;

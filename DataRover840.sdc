@@ -57,6 +57,22 @@ set_multicycle_path -hold -end 1 \
     -from [get_registers {*dr840_mem:board|d_from_io* *dr840_mem:board|i_from_io*}] \
     -to   [get_registers {*r3900_cached:cpu|*}]
 
+# The LCD controller's fetch engine moves on the core's edges too, so its
+# requests into the adapter, and the adapter's replies back, have a whole
+# core period each.
+set_multicycle_path -setup -end 2 \
+    -from [get_registers {*dr840_lcd:lcd|*}] \
+    -to   [get_registers {*dr840_sdram:adapter|*}]
+set_multicycle_path -hold -end 1 \
+    -from [get_registers {*dr840_lcd:lcd|*}] \
+    -to   [get_registers {*dr840_sdram:adapter|*}]
+set_multicycle_path -setup -end 2 \
+    -from [get_registers {*dr840_sdram:adapter|*}] \
+    -to   [get_registers {*dr840_lcd:lcd|*}]
+set_multicycle_path -hold -end 1 \
+    -from [get_registers {*dr840_sdram:adapter|*}] \
+    -to   [get_registers {*dr840_lcd:lcd|*}]
+
 # The peripheral block runs at the full rate but only moves on the core's
 # edges -- it carries a transaction out on one and has it taken on the next,
 # and its interrupt lines are registered on them too. So everything crossing

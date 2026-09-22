@@ -103,9 +103,13 @@ int main(int argc, char **argv) {
     uint64_t limit = 0;
     int clk_div = 1;
     bool stub = false;
-    bool tx39 = false;
+    bool tx39 = false, monitor = false;
     bool io_req_d = false;
-    int  iolog = 0;
+    int  iolog = 0, iolog_max = 0, iolog_rep = 0;
+    long watch_write = -1;         // a physical address whose stores to report
+    const char *dump_fb = nullptr; uint64_t fb_every = 0, fb_next = 0; int fb_n = 0;
+    uint32_t last_pc = 0;
+    char iolog_last[96] = "";
     std::map<uint64_t,uint64_t> io_seen;
 
     for (int i = 1; i < argc; i++) {
@@ -122,6 +126,11 @@ int main(int argc, char **argv) {
         // whatever the guest hands to the UART. This is the machine
         // speaking for itself.
         else if (!strcmp(argv[i], "--tx39")) tx39 = true;
+        else if (!strcmp(argv[i], "--monitor")) monitor = true;
+        else if (!strcmp(argv[i], "--iolog") && i + 1 < argc) iolog_max = atoi(argv[++i]);
+        else if (!strcmp(argv[i], "--watch-write") && i + 1 < argc) watch_write = strtol(argv[++i], nullptr, 16);
+        else if (!strcmp(argv[i], "--dump-fb") && i + 1 < argc) dump_fb = argv[++i];
+        else if (!strcmp(argv[i], "--fb-every") && i + 1 < argc) fb_every = strtoull(argv[++i], nullptr, 10);
         else if (!strcmp(argv[i], "--free")) stub = true;
     }
     if (!state_path || !bus_path || !rom_path) {
@@ -172,11 +181,34 @@ int main(int argc, char **argv) {
            rom.size(), ROM_BASE, DRAM_BASE);
     dut->clk_div = clk_div;
     dut->tx39_en = tx39;
+    dut->boot_monitor = monitor;
     dut->rst_n = 0; dut->irq_in = 0;
     dut->io_ack = 0; dut->io_err = 0;
     for (int i = 0; i < 8; i++) { dut->clk = 0; dut->eval(); dut->clk = 1; dut->eval(); }
     dut->rst_n = 1;
 
+    // The framebuffer as the reference's --dump-fb writes it: a PGM, ink
+    // complemented to grey, from VIDEOCTRL2/3 as the guest left them.
+    auto write_fb = [&](const char *path) {
+        uint32_t c1 = dut->dbg_vid_ctrl1, c3 = dut->dbg_vid_ctrl3;
+        uint32_t pa = ((c3 >> 20) & 0xFFF) << 20 | ((c3 >> 4) & 0xFFFF) << 4;
+        unsigned w = 480, h = 320, stride = w / 4;
+        bool invert = (c1 & 4) != 0;
+        FILE *f = fopen(path, "wb");
+        if (!f) return;
+        fprintf(f, "P5\n%u %u\n255\n", w, h);
+        for (unsigned y = 0; y < h; y++)
+            for (unsigned x = 0; x < w; x++) {
+                uint32_t byte_addr = DRAM_BASE + pa + y * stride + x / 4;
+                uint16_t hw = dut->tb_sdram->chip->mem[byte_addr >> 1];
+                uint8_t bv = (byte_addr & 1) ? (hw & 0xFF) : (hw >> 8);
+                unsigned v = (bv >> (6 - 2 * (x % 4))) & 3;
+                if (invert) v = 3 - v;
+                fputc((int)(255 - v * 85), f);
+            }
+        fclose(f);
+        printf("fb: %s (base %06X, ctrl1 %08X)\n", path, pa, c1);
+    };
     uint64_t idx = 0, ioidx = 0, cycles = 0;
     // A request is answered on the core's edge after the one it was first
     // seen on, never the same one: the board decides which reply to hand
@@ -268,11 +300,35 @@ int main(int argc, char **argv) {
         // What the guest is touching on the peripheral bus, and in what
         // order. Guessing which register a poll loop is reading wastes more
         // time than printing it.
-        if (tx39 && dut->io_req && !io_req_d && iolog < 40) {
-            printf("[io] %s %08X%s\n", dut->io_we ? "write" : "read ",
-                   dut->io_addr,
-                   dut->io_we ? "" : "");
-            iolog++;
+        // Logged as the reference's --log-mmio prints it, so the two boots
+        // diff directly. Taken at the acknowledgement, when a read's value
+        // exists; a transaction is one acknowledgement.
+        if (iolog_max && dut->io_req && dut->dbg_io_ack && dut->dbg_cen) {
+            uint32_t a = dut->io_addr;
+            const char *dev; uint32_t base;
+            if      (a >= 0x10C00000u && a < 0x10C00400u) { dev = "tx39";      base = 0x10C00000u; }
+            else if (a >= 0x10400000u && a < 0x10800000u) { dev = "pcmcia0";   base = 0x10400000u; }
+            else if (a >= 0x10800000u && a < 0x10C00000u) { dev = "pcmcia1";   base = 0x10800000u; }
+            else if (a >= 0xFF000000u && a < 0xFF001000u) { dev = "kseg3-dev"; base = 0xFF000000u; }
+            else                                          { dev = "";          base = 0; }
+            uint32_t be = dut->io_be;
+            int size = (be == 0xF) ? 32 : ((be == 0xC || be == 0x3) ? 16 : 8);
+            uint32_t v = dut->io_we ? dut->io_wdata : dut->dbg_io_rdata;
+            if (size == 16) { uint32_t o = (be == 0xC) ? 0 : 2; v = (be == 0xC) ? (v >> 16) : (v & 0xFFFF); a += o; }
+            else if (size == 8) { int lane = (be == 8) ? 0 : (be == 4) ? 1 : (be == 2) ? 2 : 3; v = (v >> (24 - lane * 8)) & 0xFF; a += lane; }
+            char line[96];
+            if (*dev) snprintf(line, sizeof line, "[mmio] %c%d %s+%03X = %08X", dut->io_we ? 'W' : 'R', size, dev, a - base, v);
+            else      snprintf(line, sizeof line, "[mmio] %c%d %08X = %08X", dut->io_we ? 'W' : 'R', size, a, v);
+            // A poll is one line with a count, not a thousand lines: the
+            // log is for comparing the order of events against the
+            // reference, and the count of a poll is timing, not order.
+            if (!strcmp(line, iolog_last)) iolog_rep++;
+            else {
+                if (iolog_rep > 1) printf("  x%d", iolog_rep);
+                if (iolog_last[0]) printf("\n");
+                printf("%s", line);
+                strcpy(iolog_last, line); iolog_rep = 1; iolog++;
+            }
         }
         if (tx39 && dut->io_req && !io_req_d)
             io_seen[(uint64_t)dut->io_addr | (dut->io_we ? (1ull<<32) : 0)]++;
@@ -282,6 +338,12 @@ int main(int argc, char **argv) {
             fputc(c, stdout);
             fflush(stdout);
         }
+        if (watch_write >= 0 && dut->dbg_start && dut->dbg_start_kind != 0 && dut->dbg_start_kind != 3 &&
+            (dut->dbg_start_addr & ~3u) == ((uint32_t)watch_write & ~3u)) {
+            printf("[watch-write] %08lX <- %08X be=%X at insn %" PRIu64 " last pc %08X\n",
+                   watch_write, dut->dbg_ram_wdata, dut->dbg_ram_be, idx, last_pc);
+        }
+        if (dut->retire_valid && cen_now) last_pc = dut->retire_pc;
         if (getenv("DBG") && idx > 81280 && dut->dbg_start && dbgn < 30) {
             static const char *k[] = {"read ", "write", "rmw  ", "BURST"};
             printf("[start] cycle %6" PRIu64 " %s addr %07X\n",
@@ -305,6 +367,10 @@ int main(int argc, char **argv) {
             dbgn++;
         }
 
+        if (dump_fb && fb_every && idx >= fb_next) {
+            char path[512]; snprintf(path, sizeof path, "%s.%04d.pgm", dump_fb, fb_n++);
+            write_fb(path); fb_next += fb_every;
+        }
         if (dut->retire_valid && cen_now && stub) {
             // Nothing to compare against: the reference saw real devices
             // and this did not, so they part company at the first one.
@@ -353,6 +419,7 @@ int main(int argc, char **argv) {
     // The core's own cycles are what matter: its clock is what Fmax caps,
     // and the memory's being faster is the whole point of the divider.
     uint64_t core_cycles = cycles / (clk_div < 1 ? 1 : clk_div);
+    if (dump_fb) write_fb(dump_fb);
     printf("\nmatched %" PRIu64 " of %" PRIu64 " instructions, %zu device "
            "access(es), %" PRIu64 " memory clocks, %" PRIu64
            " core clocks (%.3f IPC at core rate, divider %d)\n",

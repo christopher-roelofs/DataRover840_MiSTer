@@ -41,11 +41,21 @@ module dr840_tx39 #(
     output wire [31:0] io_rdata,
     output wire        io_err,
 
+    // Held down at reset, the option button takes the ROM to the IDT
+    // monitor instead of Magic Cap. It is IOCTRL's input pin 3.
+    input  wire        boot_monitor,
+
     // The debug serial port. UART A is what the IDT monitor prints on.
     output reg         uart_txd,
     input  wire        uart_rxd,
 
     output wire [5:0]  irq_out,       // IP2..IP7
+
+    // VIDEOCTRL1..3 for the LCD controller: enable and format, geometry,
+    // and where the framebuffer is.
+    output reg  [31:0] vid_ctrl1,
+    output reg  [31:0] vid_ctrl2,
+    output reg  [31:0] vid_ctrl3,
 
     output reg  [31:0] dbg_tx_bytes,
     output reg  [31:0] dbg_io_reads,
@@ -139,6 +149,70 @@ module dr840_tx39 #(
     // available and always empty -- and those are levels, re-asserting
     // after software clears them through INTRCLEAR2, which is why they are
     // ORed into the read rather than stored.
+    // IOCTRL: bits 6..0 are input pins and read from the pins, whatever
+    // was written. Pin 3 is the option button, and the ROM's boot-select
+    // reads it 742,000 instructions in to choose Magic Cap or the monitor.
+    // Pins 0 and 1 are the card slots' detect lines, high with a card in.
+    localparam [11:0] IOCTRL            = 12'h180;
+    localparam [31:0] IOCTRL_PIN_MASK   = 32'h0000_007F;
+    wire [31:0] ioctrl_pins = boot_monitor ? 32'd0 : 32'h0000_0008;
+
+    // POWERCTRL. PWROK says the supply rails are good, which on a machine
+    // that is evidently running they are: it reads as set whatever was
+    // written, as the reference does. ONBUTN is the power button, an
+    // input, never pressed here. ENSTPTIMER starts a settling delay and
+    // the ROM waits on INTRSTATUS5.STPTIMERINT for it -- the monitor's
+    // touch_init does, and so does Magic Cap's boot. How long it is, the
+    // documentation does not say; the reference runs it off the RTC at
+    // (STPTIMERVAL + 1) ticks, and so does this.
+    localparam [11:0] POWERCTRL         = 12'h1C4;
+    localparam [31:0] PWRCTRL_ONBUTN    = 32'h8000_0000;
+    localparam [31:0] PWRCTRL_PWROK     = 32'h2000_0000;
+    localparam [31:0] PWRCTRL_ENSTPTIMER = 32'h0000_0800;
+    localparam [31:0] INT5_STPTIMERINT  = 32'h1000_0000;
+
+    // The serial interface bus and the codec behind it: rtl/soc/dr840_sib.sv.
+    wire        is_sib = (off >= 12'h060) && (off <= 12'h090);
+    wire [31:0] sib_rdata;
+    wire [31:0] sib_set;                // bits to raise in INTRSTATUS1
+    dr840_sib #(.CLK_HZ(CLK_HZ)) sib (
+        .clk(clk), .rst_n(rst_n),
+        .wr(io_start && is_tx39 && io_we && is_sib), .off(off), .wdata(io_wdata),
+        .rdata(sib_rdata), .int1_set(sib_set)
+    );
+
+    // The two Glacier PC Card controllers, at 0x10400000 and 0x10800000:
+    // 32 16-bit registers each, halfword accessed, no card in either slot.
+    // +0C is slot status; bits 10 and 11 are the card-detect pins, active
+    // low, so an empty slot reads them high whatever is written -- return
+    // zero there and the ROM's debounce never settles. Bits 1..3 are the
+    // card's ready, write-protect and battery inputs, low with no card.
+    // +18..+1E are event latches, write-one-to-clear; nothing raises them
+    // yet since nothing is ever inserted. Reads above the register file
+    // return all-ones, an undriven bus.
+    wire        is_glacier = (io_addr >= 32'h1040_0000) && (io_addr < 32'h10C0_0000);
+    wire        gl_slot    = io_addr[22];             // 0x10800000 is slot 1
+    wire        gl_inreg   = (io_addr[21:6] == 16'd0);
+    wire [5:0]  gl_idx     = {gl_slot, io_addr[5:1]};
+    localparam [15:0] GL_CD_MASK = 16'h0C00, GL_INPUTS = 16'h0C0E;
+    reg  [15:0] glr [0:63];
+    initial begin : glr_init
+        integer gi;
+        for (gi = 0; gi < 64; gi = gi + 1) glr[gi] = 16'd0;
+    end
+    reg  [15:0] glr_q;
+    always @(posedge clk) glr_q <= glr[gl_idx];
+    wire [15:0] gl_wval = io_be[3] ? io_wdata[31:16] : io_wdata[15:0];
+    wire [15:0] gl_rval = (io_addr[5:1] == 5'd6) ? ((glr_q & ~GL_CD_MASK) | GL_CD_MASK) : glr_q;
+    always @(posedge clk) if (io_start && is_glacier && gl_inreg && io_we) begin
+        if (io_addr[5:1] >= 5'd12 && io_addr[5:1] <= 5'd15)
+            glr[gl_idx] <= glr_q & ~gl_wval;                       // pending: W1C
+        else if (io_addr[5:1] == 5'd6)
+            glr[gl_idx] <= (glr_q & GL_INPUTS) | (gl_wval & ~GL_INPUTS);
+        else
+            glr[gl_idx] <= gl_wval;
+    end
+
     localparam [11:0] MBUSCTRL          = 12'h0E0;
     localparam [31:0] MBUSCTRL_BUSY     = 32'h8000_0000;
     localparam [31:0] MBUSCTRL_IN_HIGH  = 32'h2000_0000;
@@ -148,10 +222,16 @@ module dr840_tx39 #(
     localparam [31:0] INT2_UARTATXINT   = 32'h0400_0000;
     localparam [31:0] INT2_UARTAEMPTY   = 32'h0100_0000;
 
-    wire ip2 = |((icu_status[0] & icu_enable[0]) | (icu_status[1] & icu_enable[1]) |
-                 (icu_status[2] & icu_enable[2]) | (icu_status[3] & icu_enable[3]) |
-                 (icu_status[4] & icu_enable[4]));
-    wire ip4 = |(icu_status[5] & icu_enable[5]);
+    // Banks 1..5 drive IP4 and bank 6 drives IP6 -- NetBSD's tx39icu.c
+    // switches on MIPS_INT_MASK_2 and MIPS_INT_MASK_4, and those count
+    // hardware lines from zero: the third is Cause bit 12, IP4. This was
+    // IP2/IP4 for a while, read straight off that comment, and the ROM
+    // never enables IP2: Magic Cap's boot sat in its idle loop forever
+    // waiting for a flag that only an interrupt handler sets.
+    wire ip_normal = |((icu_status[0] & icu_enable[0]) | (icu_status[1] & icu_enable[1]) |
+                       (icu_status[2] & icu_enable[2]) | (icu_status[3] & icu_enable[3]) |
+                       (icu_status[4] & icu_enable[4]));
+    wire ip_high   = |(icu_status[5] & icu_enable[5]);
 
     // Registered, and on an enabled edge. Combinationally this is a
     // hundred and sixty bits of and-or feeding straight into the core's
@@ -162,7 +242,7 @@ module dr840_tx39 #(
     reg [5:0] irq_r;
     always @(posedge clk or negedge rst_n)
         if (!rst_n)   irq_r <= 6'd0;
-        else if (cen) irq_r <= {3'b000, ip4, 1'b0, ip2};  // [0]=IP2 [2]=IP4
+        else if (cen) irq_r <= {1'b0, ip_high, 1'b0, ip_normal, 2'b00};  // [2]=IP4 [4]=IP6
     assign irq_out = irq_r;
 
     // ------------------------------------------------------- RTC and timers
@@ -190,6 +270,8 @@ module dr840_tx39 #(
     reg [39:0] rtc_alarm;
     reg [31:0] t_ctrl, t_per;
     reg [39:0] per_last;
+    reg        stp_armed;
+    reg [39:0] stp_deadline;
 
     wire [15:0] per_val = t_per[15:0];
 
@@ -237,12 +319,14 @@ module dr840_tx39 #(
                 icu_enable[k] <= 32'd0;
             end
             ua_ctrl1 <= 32'd0; ua_ctrl2 <= 32'd0;
+            vid_ctrl1 <= 32'd0; vid_ctrl2 <= 32'd0; vid_ctrl3 <= 32'd0;
             ua_rx <= 8'd0; ua_rx_full <= 1'b0;
             tx_busy <= 1'b0; tx_hold_full <= 1'b0; tx_bit <= 4'd0; tx_cnt <= 20'd0;
             uart_txd <= 1'b1;
             rx_busy <= 1'b0; rx_bit <= 4'd0; rx_cnt <= 20'd0; rxd_sync <= 3'b111;
             rtc <= 40'd0; rtc_acc <= 32'd0; rtc_alarm <= 40'd0;
             t_ctrl <= 32'd0; t_per <= 32'd0; per_last <= 40'd0;
+            stp_armed <= 1'b0; stp_deadline <= 40'd0;
             served <= 1'b0;
             dbg_tx_bytes <= 32'd0; dbg_io_reads <= 32'd0;
             dbg_tx_stb <= 1'b0; dbg_tx_data <= 8'd0;
@@ -255,6 +339,9 @@ module dr840_tx39 #(
             if (!io_req)              served <= 1'b0;
             else if (!served && cen)  served <= 1'b1;
             else if (served && cen)   served <= 1'b0;
+
+            // ---------------------------------------------- INTRSTATUS1
+            icu_status[0] <= icu_status[0] | sib_set;
 
             // ---------------------------------------------- RTC
             if (!t_ctrl[6]) begin
@@ -276,6 +363,11 @@ module dr840_tx39 #(
                     icu_status[4] <= icu_status[4] | INT5_PERINT;
                 end
             end else per_last <= rtc;
+            // The stop timer.
+            if (stp_armed && rtc >= stp_deadline) begin
+                stp_armed     <= 1'b0;
+                icu_status[4] <= icu_status[4] | INT5_STPTIMERINT;
+            end
 
             // ---------------------------------------------- transmit
             if (tx_busy) begin
@@ -336,11 +428,23 @@ module dr840_tx39 #(
                 // just also do something about it.
                 // Input status comes from the bus, not from the command
                 // word; the ROM writes zero here when stopping the block.
-                rf[rf_idx] <= (off == MBUSCTRL) ? (io_wdata & ~MBUSCTRL_IN_HIGH)
-                                                : io_wdata;
+                rf[rf_idx] <= (off == MBUSCTRL)  ? (io_wdata & ~MBUSCTRL_IN_HIGH)
+                            : (off == POWERCTRL) ? (io_wdata & ~PWRCTRL_ONBUTN)
+                                                 : io_wdata;
+                if (off == 12'h028) vid_ctrl1 <= io_wdata;
+                if (off == 12'h02C) vid_ctrl2 <= io_wdata;
+                if (off == 12'h030) vid_ctrl3 <= io_wdata;
+                if (off == POWERCTRL) begin
+                    if ((io_wdata & PWRCTRL_ENSTPTIMER) != 32'd0 && !(rf_q[11])) begin
+                        stp_armed    <= 1'b1;
+                        stp_deadline <= rtc + {36'd0, io_wdata[15:12]} + 40'd1;
+                    end else if ((io_wdata & PWRCTRL_ENSTPTIMER) == 32'd0)
+                        stp_armed <= 1'b0;
+                end
                 if (off >= 12'h100 && off < 12'h118) begin
                     // Write-one-to-clear, banks 1..5.
-                    icu_status[off[4:2]] <= icu_status[off[4:2]] & ~io_wdata;
+                    icu_status[off[4:2]] <= (icu_status[off[4:2]] & ~io_wdata)
+                                          | ((off[4:2] == 3'd0) ? sib_set : 32'd0);
                 end else if (off >= 12'h118 && off < 12'h130) begin
                     icu_enable[en_idx] <= io_wdata;
                 end else if (off == UARTA_CTRL1) begin
@@ -411,11 +515,13 @@ module dr840_tx39 #(
     // synchronous read exists to avoid.
     reg [31:0] rd_live;
     always @(*) begin
-        if (!is_tx39) begin
-            // Nothing else is modelled. An undriven bus reads all-ones,
-            // which for the PC Card detect lines -- active low -- is the
-            // right answer for an empty slot.
+        if (is_glacier) begin
+            rd_live = gl_inreg ? {gl_rval, gl_rval} : 32'hFFFF_FFFF;
+        end else if (!is_tx39) begin
+            // Nothing else is modelled. An undriven bus reads all-ones.
             rd_live = 32'hFFFF_FFFF;
+        end else if (is_sib) begin
+            rd_live = sib_rdata;
         end else if (off == 12'h104) begin
             rd_live = icu_status[1] | INT2_MBUS_LEVEL;
         end else if (off >= 12'h100 && off < 12'h118) begin
@@ -448,25 +554,30 @@ module dr840_tx39 #(
         end
     end
 
-    localparam [1:0] RD_LIVE = 2'd0, RD_RF = 2'd1, RD_MBUS = 2'd2;
-    wire rd_is_rf = is_tx39 && !(off == 12'h104)
+    localparam [2:0] RD_LIVE = 3'd0, RD_RF = 3'd1, RD_MBUS = 3'd2, RD_IOCTRL = 3'd3,
+                     RD_POWER = 3'd4;
+    wire rd_is_rf = is_tx39 && !is_sib && !(off == 12'h104)
                  && !(off >= 12'h100 && off < 12'h130)
                  && off != T_RTCHI && off != T_RTCLO && off != T_ALMHI
                  && off != T_ALMLO && off != T_CTRL && off != T_PER
                  && off != UARTA_CTRL1 && off != UARTA_CTRL2 && off != UARTA_HOLD;
 
     reg [31:0] rd_q;
-    reg [1:0]  rd_src;
+    reg [2:0]  rd_src;
     always @(posedge clk) if (io_start) begin
         rd_q   <= rd_live;
         rd_src <= !rd_is_rf          ? RD_LIVE
                 : (off == MBUSCTRL)  ? RD_MBUS
+                : (off == IOCTRL)    ? RD_IOCTRL
+                : (off == POWERCTRL) ? RD_POWER
                                      : RD_RF;
     end
     // MBUS: never busy, and the bus reads high because nothing is pulling
     // it down.
     assign io_rdata = (rd_src == RD_RF)   ? rf_q
                     : (rd_src == RD_MBUS) ? ((rf_q & ~MBUSCTRL_BUSY) | MBUSCTRL_IN_HIGH)
+                    : (rd_src == RD_IOCTRL) ? ((rf_q & ~IOCTRL_PIN_MASK) | ioctrl_pins)
+                    : (rd_src == RD_POWER)  ? (rf_q | PWRCTRL_PWROK)
                                           : rd_q;
 
 endmodule

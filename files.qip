@@ -8,6 +8,8 @@ set_global_assignment -name SYSTEMVERILOG_FILE rtl/board/dr840_sdram.sv
 set_global_assignment -name SYSTEMVERILOG_FILE rtl/board/sdram.sv
 
 set_global_assignment -name SYSTEMVERILOG_FILE rtl/soc/dr840_tx39.sv
+set_global_assignment -name SYSTEMVERILOG_FILE rtl/soc/dr840_sib.sv
+set_global_assignment -name SYSTEMVERILOG_FILE rtl/soc/dr840_lcd.sv
 set_global_assignment -name SYSTEMVERILOG_FILE rtl/dr840_hud.sv
 set_global_assignment -name SYSTEMVERILOG_FILE rtl/dr840_machine.sv
 set_global_assignment -name SYSTEMVERILOG_FILE rtl/emu.sv

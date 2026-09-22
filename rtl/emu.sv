@@ -172,6 +172,11 @@ localparam CONF_STR = {
     // of that actually is, and .rom is what anyone would reach for.
     "F1,ROMIMABIN,Load DataRover ROM;",
     "-;",
+    // The option button, held at reset, takes the ROM to the IDT monitor
+    // instead of Magic Cap. Takes effect on the next reset.
+    "O[2],Boot,Magic Cap,IDT monitor;",
+    "O[3],Display,LCD,Debug;",
+    "-;",
     "T[0],Reset;",
     "R[0],Reset and close OSD;",
     "V,v",`BUILD_DATE
@@ -281,7 +286,7 @@ assign SDRAM_DQ = sdram_dq_oe ? sdram_dq_o : 16'bZ;
 assign sdram_dq_i = SDRAM_DQ;
 
 dr840_machine machine (
-    .clk(clk_sys), .rst_n(rst_n),
+    .clk(clk_sys), .rst_n(rst_n), .boot_monitor(status[2]),
     // Held in reset until there is a ROM to run. The loader owns the
     // memory while it is arriving, and before that there is nothing to do.
     .load_en(ioctl_download | load_busy | ~rom_ok),
@@ -298,15 +303,30 @@ dr840_machine machine (
     .obs_ihit(obs_ihit), .obs_imiss(obs_imiss),
     .obs_dhit(obs_dhit), .obs_dmiss(obs_dmiss), .obs_io(obs_io),
     .obs_uart_bytes(obs_uart),
-    .uart_txd(UART_TXD), .uart_rxd(UART_RXD)
+    .uart_txd(UART_TXD), .uart_rxd(UART_RXD),
+    .lcd_ce_pix(lcd_ce), .lcd_hs(lcd_hs), .lcd_vs(lcd_vs), .lcd_de(lcd_de),
+    .lcd_r(lcd_r), .lcd_g(lcd_g), .lcd_b(lcd_b)
 );
 
 assign CLK_VIDEO = clk_sys;
 
+// The machine's own screen, or the debug display over it. Both run the
+// same 640x480 raster from the same clock, so switching is a mux.
+wire       lcd_ce, lcd_hs, lcd_vs, lcd_de, hud_ce, hud_hs, hud_vs, hud_de;
+wire [7:0] lcd_r, lcd_g, lcd_b, hud_r, hud_g, hud_b;
+wire       show_hud = status[3];
+assign CE_PIXEL = show_hud ? hud_ce : lcd_ce;
+assign VGA_HS   = show_hud ? hud_hs : lcd_hs;
+assign VGA_VS   = show_hud ? hud_vs : lcd_vs;
+assign VGA_DE   = show_hud ? hud_de : lcd_de;
+assign VGA_R    = show_hud ? hud_r  : lcd_r;
+assign VGA_G    = show_hud ? hud_g  : lcd_g;
+assign VGA_B    = show_hud ? hud_b  : lcd_b;
+
 dr840_hud hud (
     .clk(clk_sys), .rst_n(rst_n),
-    .ce_pix(CE_PIXEL), .hs(VGA_HS), .vs(VGA_VS), .de(VGA_DE),
-    .r(VGA_R), .g(VGA_G), .b(VGA_B),
+    .ce_pix(hud_ce), .hs(hud_hs), .vs(hud_vs), .de(hud_de),
+    .r(hud_r), .g(hud_g), .b(hud_b),
     .v0(obs_pc), .v1(obs_insn), .v2(obs_retired), .v3(obs_ihit),
     .v4(obs_imiss), .v5(obs_dhit), .v6(obs_dmiss), .v7(obs_io),
     .v8(rom_words), .v9(obs_uart)

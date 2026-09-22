@@ -61,6 +61,13 @@ module dr840_mem #(
     output wire [31:0] dmem_rdata,
     output wire        dmem_err,
 
+    // ---- from the LCD controller: reads only, always bursts, physical
+    // addresses like the others, and last in line.
+    input  wire [31:0] vmem_addr,
+    input  wire        vmem_req,
+    output wire        vmem_ack,
+    output wire [31:0] vmem_rdata,
+
     // ---- to SDRAM
     output wire [24:0] ram_addr,
     output wire        ram_req,
@@ -125,8 +132,10 @@ module dr840_mem #(
 
     wire [26:0] i_dec = decode(imem_addr);
     wire [26:0] d_dec = decode(dmem_addr);
+    wire [26:0] v_dec = decode(vmem_addr);
     wire [1:0]  i_tgt = i_dec[26:25];
     wire [1:0]  d_tgt = d_dec[26:25];
+    wire [1:0]  v_tgt = v_dec[26:25];
 
     // ------------------------------------------------------------ arbiter
 
@@ -145,15 +154,20 @@ module dr840_mem #(
     // arbiter had moved on and be handed to the data side, which would take
     // it as the first word of its own line. Every word after that lands one
     // slot late and the line is quietly wrong.
-    localparam [1:0] A_FREE = 2'd0, A_DATA = 2'd1, A_INSN = 2'd2;
+    // The LCD comes after both: it asks for a line at a time, early, and
+    // has a whole raster line to get it.
+    localparam [1:0] A_FREE = 2'd0, A_DATA = 2'd1, A_INSN = 2'd2, A_LCD = 2'd3;
     reg [1:0] owner;
 
     wire d_wants_ram = dmem_req && (d_tgt == T_RAM);
     wire i_wants_ram = imem_req && (i_tgt == T_RAM);
+    wire v_wants_ram = vmem_req && (v_tgt == T_RAM);
 
     wire grant_d = (owner == A_DATA) || ((owner == A_FREE) && d_wants_ram);
     wire grant_i = (owner == A_INSN) ||
                    ((owner == A_FREE) && !d_wants_ram && i_wants_ram);
+    wire grant_v = (owner == A_LCD) ||
+                   ((owner == A_FREE) && !d_wants_ram && !i_wants_ram && v_wants_ram);
 
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n)
@@ -161,18 +175,23 @@ module dr840_mem #(
         else case (owner)
             A_FREE: if (d_wants_ram)      owner <= A_DATA;
                     else if (i_wants_ram) owner <= A_INSN;
+                    else if (v_wants_ram) owner <= A_LCD;
             A_DATA: if (!d_wants_ram && !ram_busy) owner <= A_FREE;
             A_INSN: if (!i_wants_ram && !ram_busy) owner <= A_FREE;
+            A_LCD:  if (!v_wants_ram && !ram_busy) owner <= A_FREE;
             default:                      owner <= A_FREE;
         endcase
     end
 
-    assign ram_req   = (grant_d & d_wants_ram) | (grant_i & i_wants_ram);
-    assign ram_addr  = grant_d ? d_dec[24:0] : i_dec[24:0];
-    assign ram_burst = grant_d ? dmem_burst  : imem_burst;
+    assign ram_req   = (grant_d & d_wants_ram) | (grant_i & i_wants_ram) | (grant_v & v_wants_ram);
+    assign ram_addr  = grant_d ? d_dec[24:0] : grant_i ? i_dec[24:0] : v_dec[24:0];
+    assign ram_burst = grant_d ? dmem_burst  : grant_i ? imem_burst  : 1'b1;
     assign ram_we    = grant_d ? dmem_we     : 1'b0;
     assign ram_be    = grant_d ? dmem_be     : 4'b1111;
     assign ram_wdata = dmem_wdata;
+
+    assign vmem_ack   = grant_v & v_wants_ram & ram_ack;
+    assign vmem_rdata = ram_rdata;
 
     // ------------------------------------------------- peripherals
 

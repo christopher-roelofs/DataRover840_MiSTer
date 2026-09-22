@@ -43,6 +43,16 @@ module dr840_machine (
     // ---- the debug serial port. UART A is where the monitor prints.
     output wire        uart_txd,
     input  wire        uart_rxd,
+    input  wire        boot_monitor,    // option button held at reset
+
+    // The panel, as a raster.
+    output wire        lcd_ce_pix,
+    output wire        lcd_hs,
+    output wire        lcd_vs,
+    output wire        lcd_de,
+    output wire [7:0]  lcd_r,
+    output wire [7:0]  lcd_g,
+    output wire [7:0]  lcd_b,
 
     // ---- what a debug display can show
     output wire [31:0] obs_pc,
@@ -100,6 +110,19 @@ module dr840_machine (
     wire        io_req, io_we, io_ack, io_err;
     wire [3:0]  io_be;
     wire [5:0]  soc_irq;
+    wire [31:0] vid_ctrl1, vid_ctrl2, vid_ctrl3;
+
+    // The LCD controller: scans the framebuffer out of the SDRAM through
+    // the board, onto a 640x480 raster.
+    wire [31:0] va, vrd;
+    wire        vreq, vack;
+    dr840_lcd lcd (
+        .clk(clk), .cen(cen), .rst_n(core_rst_n),
+        .ctrl1(vid_ctrl1), .ctrl2(vid_ctrl2), .ctrl3(vid_ctrl3),
+        .vmem_addr(va), .vmem_req(vreq), .vmem_burst(), .vmem_ack(vack), .vmem_rdata(vrd),
+        .ce_pix(lcd_ce_pix), .hs(lcd_hs), .vs(lcd_vs), .de(lcd_de),
+        .r(lcd_r), .g(lcd_g), .b(lcd_b)
+    );
 
     dr840_mem board (
         .clk(clk), .cen(cen), .rst_n(core_rst_n),
@@ -108,6 +131,7 @@ module dr840_machine (
         .dmem_addr(da), .dmem_req(dreq), .dmem_burst(dbur), .dmem_we(dwe),
         .dmem_be(dbe), .dmem_wdata(dwd), .dmem_ack(dack), .dmem_rdata(drd),
         .dmem_err(derr),
+        .vmem_addr(va), .vmem_req(vreq), .vmem_ack(vack), .vmem_rdata(vrd),
         .ram_addr(bram_addr), .ram_req(bram_req), .ram_burst(bram_burst),
         .ram_we(bram_we), .ram_be(bram_be), .ram_wdata(bram_wdata),
         .ram_ack(bram_ack), .ram_rdata(ram_rdata), .ram_busy(bram_busy),
@@ -125,8 +149,9 @@ module dr840_machine (
         .io_addr(io_addr), .io_req(io_req), .io_we(io_we), .io_be(io_be),
         .io_wdata(io_wdata), .io_ack(io_ack), .io_rdata(io_rdata),
         .io_err(io_err),
-        .uart_txd(uart_txd), .uart_rxd(uart_rxd),
+        .boot_monitor(boot_monitor), .uart_txd(uart_txd), .uart_rxd(uart_rxd),
         .irq_out(soc_irq),
+        .vid_ctrl1(vid_ctrl1), .vid_ctrl2(vid_ctrl2), .vid_ctrl3(vid_ctrl3),
         .dbg_tx_bytes(obs_uart_bytes), .dbg_io_reads(obs_io),
         .dbg_tx_stb(), .dbg_tx_data()
     );
