@@ -143,6 +143,7 @@ int main(int argc, char **argv) {
 
     Vtb_board *dut = new Vtb_board;
     dut->rst_n = 0; dut->irq_in = 0;
+    bool io_seen = false;
     dut->ram_ack = 0; dut->io_ack = 0; dut->io_err = 0;
     for (int i = 0; i < 8; i++) { dut->clk = 0; dut->eval(); dut->clk = 1; dut->eval(); }
     dut->rst_n = 1;
@@ -202,7 +203,10 @@ int main(int argc, char **argv) {
         // ---- peripherals, replayed in order
         dut->io_ack = 0; dut->io_err = 0;
         bool io_fire = false;
-        if (dut->io_req) {
+        bool req_now = dut->io_req;
+        // Answered the cycle after it is first seen, never the same one:
+        // the board picks which reply to hand back from a register.
+        if (dut->io_req && io_seen) {
             if (ioidx >= IO.size()) {
                 // Near the end the pipeline holds instructions past the last
                 // retire; let them finish rather than call it a failure.
@@ -254,6 +258,7 @@ int main(int argc, char **argv) {
 
         dut->eval();
         dut->clk = 1; dut->eval();
+        io_seen = req_now && !io_fire;
         if (ram_fire) ramacc++;
         if (io_fire)  ioidx++;
         dut->clk = 0; dut->eval();

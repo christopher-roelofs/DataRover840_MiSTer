@@ -59,7 +59,7 @@ module tb_board (
     );
 
     dr840_mem board (
-        .clk(clk), .rst_n(rst_n),
+        .clk(clk), .cen(1'b1), .rst_n(rst_n),
         .imem_addr(ia), .imem_req(ireq), .imem_burst(ibur),
         .imem_ack(iack), .imem_rdata(ird), .imem_err(ierr),
         .dmem_addr(da), .dmem_req(dreq), .dmem_burst(dbur), .dmem_we(dwe),

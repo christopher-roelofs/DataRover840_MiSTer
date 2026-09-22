@@ -106,7 +106,7 @@ module tb_sdram (
     wire        ram_busy;
 
     dr840_mem board (
-        .clk(clk), .rst_n(rst_n),
+        .clk(clk), .cen(cen), .rst_n(rst_n),
         .imem_addr(ia), .imem_req(ireq), .imem_burst(ibur),
         .imem_ack(iack), .imem_rdata(ird), .imem_err(ierr),
         .dmem_addr(da), .dmem_req(dreq), .dmem_burst(dbur), .dmem_we(dwe),
@@ -124,7 +124,7 @@ module tb_sdram (
     wire [31:0] t_rdata;
     wire [5:0]  t_irq;
 
-    dr840_tx39 #(.CLK_HZ(78_000_000)) tx39 (
+    dr840_tx39 #(.CLK_HZ(92_000_000)) tx39 (
         .clk(clk), .cen(cen), .rst_n(rst_n),
         .io_addr(io_addr), .io_req(io_req & tx39_en), .io_we(io_we),
         .io_be(io_be), .io_wdata(io_wdata),
@@ -181,7 +181,7 @@ module tb_sdram (
     wire        SDRAM_nRAS, SDRAM_nCAS, SDRAM_CKE, SDRAM_CLK;
 
     // 92 MHz: two periods of it is 21.7 ns, and the core needs 21.2.
-    sdram #(.CLK_MHZ(78)) ctl (
+    sdram #(.CLK_MHZ(92)) ctl (
         .init(~rst_n), .clk(clk),
         .SDRAM_DQ_O(ctl_dq_o), .SDRAM_DQ_OE(ctl_dq_oe), .SDRAM_DQ_I(dq_bus),
         .SDRAM_A(SDRAM_A),

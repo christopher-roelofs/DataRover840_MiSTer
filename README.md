@@ -42,7 +42,7 @@ On the DE10-Nano part, the core alone:
 With the clock enable and its multicycle constraints, the cached core closes
 at a **95 MHz clock** -- the SDRAM's rate, advancing every second edge -- with
 0.439 ns of slack. The whole machine, with the peripheral block, closes at
-78 MHz. See **Clocking**.
+92 MHz. See **Clocking**.
 
 ### What that is worth
 
@@ -257,12 +257,9 @@ quartus_sh --flow compile DataRover840     # output_files/DataRover840.rbf
 scripts/deploy                             # copies core and ROM to the MiSTer
 ```
 
-It builds and meets timing: 10,504 ALMs of 41,910, 65 of 553 M10K, with
-0.225 ns of setup slack and 0.253 ns of hold on the 78 MHz clock. Most of
+It builds and meets timing: 10,475 ALMs of 41,910, 65 of 553 M10K, with
+1.089 ns of setup slack and 0.240 ns of hold on the 92 MHz clock. Most of
 that area is the MiSTer framework; the core itself is 3,208 ALMs and 7 M10K.
-
-The clock is 78 MHz rather than the 95 the core closes at alone because of
-one path, and the story of it is in **Clocking**.
 
 `scripts/deploy` puts the core in `_Console`, the ROM in
 `games/DataRover840`, and a `.mgl` beside the core that names them both,
@@ -305,9 +302,9 @@ is held in reset until one is.
 
 ## Clocking
 
-One clock, one domain, nothing to cross. The SDRAM runs at 78 MHz and the
+One clock, one domain, nothing to cross. The SDRAM runs at 92 MHz and the
 core is the same clock gated down by a clock enable, so it advances every
-second edge -- an effective 39 MHz. Every register in the core and its
+second edge -- an effective 46 MHz. Every register in the core and its
 caches is enabled; the adapter and the controller are not. The peripheral
 block moves on the core's edges too.
 
@@ -352,19 +349,33 @@ With those, the core and caches close at 95 MHz with 0.439 ns to spare.
 Without them the same design fails by a factor of two, and the failure looks
 like the core being too slow rather than the constraints being wrong.
 
-**Why 78 and not 95.** The whole machine has one path longer than the rest:
-a cache's fill address, through the board's decode, into the acknowledge,
-up the stall network to the fetch redirect and down into the instruction
-cache's RAM address. Alone, the core closed at 95 with that path at 21.16
-ns; with the peripheral block placed alongside it the same path is 24.3 ns.
-Registering the decode looked like the obvious cure and made things worse
-by 10 ns, for a reason worth knowing: the path launches from wherever its
-first register is, and the new register was in the board, outside the group
-the `.sdc` gives two periods to. It did not shorten anything, it moved the
-starting line. The decode is combinational again and the clock is where two
-periods cover 24.3 ns with margin. The fetch lookahead does not have to
-wait on the data side's acknowledge to be correct, only to be fast, and
-cutting that dependency is how the clock comes back.
+**Where the clock went, and how it came back.** With the peripheral block
+in place the build stopped closing at 92 and ran at 78 for a day. The path
+was not the one it looked like. Read from the report node by node, it was:
+the data cache's fill state, through the board's decode, into the
+peripheral block's *live* read mux -- fifteen address compares and a
+select -- back through the cache as load data, forwarded straight into a
+branch compare in ID, and from there through `fpc_nxt` to the instruction
+cache's RAM address. 24.8 ns. A load-to-branch forward with a combinational
+peripheral at the front of it.
+
+Two registers fix it. The peripheral block decides its reply on the edge
+that carries the transaction out and holds it until the acknowledgement is
+taken; the board chooses whether to hand back the peripheral's reply or
+the memory's from a register that moves on the core's edges. Both replies
+are registered and neither can arrive on the first enabled edge after a
+request, so the choice is always made in time. The same chain now starts
+nine nanoseconds later. That left one path -- the UART's bit period, a
+multiplier feeding the bit counters' compare directly, 10.5 ns single-cycle
+-- and the product is a register now too, since the divisor changes once.
+
+Along the way, a lesson about where a register goes. The first attempt
+registered the board's decode, and made timing *worse* by 10 ns: the new
+register sat in the board, outside the group the `.sdc` gives two periods
+to, so the same path was launched from there and judged against one. A
+register does not shorten a path; it decides where the path starts, and
+the constraints have to know about it. The board's reply-select register
+is named in the `.sdc` for exactly that reason.
 
 Everything derived from the clock is a parameter -- the SDRAM's refresh
 interval, the UART's bit period, the RTC's 32.768 kHz tick -- so a retarget
@@ -493,18 +504,14 @@ sys/                 MiSTer framework
 
 ## Next
 
-1. Recover the clock. The dline -> decode -> ack -> stall -> redirect ->
-   I-cache RAM chain is 24.3 ns and sets the whole machine's period. The
-   fetch side's lookahead can be made independent of the data side's
-   acknowledge; that alone should return to 92-95 MHz.
-2. Recover the IPC lost to the handshakes on the core's edges: 0.719 at
+1. Recover the IPC lost to the handshakes on the core's edges: 0.719 at
    the core's rate over the banner path, against 0.75 before them.
-3. LCD controller to MiSTer video. 480x320 at 2 bpp, four pixels per byte,
+2. LCD controller to MiSTer video. 480x320 at 2 bpp, four pixels per byte,
    most significant bits first -- the same panel format every Magic Cap
    machine uses. That is what turns the debug display into the machine's
    own screen.
-4. SIB and the UCB1100: touchscreen ADC, the AD2/AD3 battery rails, the
+3. SIB and the UCB1100: touchscreen ADC, the AD2/AD3 battery rails, the
    periodic sound-in interrupt the boot path waits on.
-5. Empty PC Card slots with card-detect high, MBUS idle.
-6. An external interrupt test: the ICU is exercised by the ROM's own timer
+4. Empty PC Card slots with card-detect high, MBUS idle.
+5. An external interrupt test: the ICU is exercised by the ROM's own timer
    path but nothing yet drives an IP line from outside the block.

@@ -178,6 +178,10 @@ int main(int argc, char **argv) {
     dut->rst_n = 1;
 
     uint64_t idx = 0, ioidx = 0, cycles = 0;
+    // A request is answered on the core's edge after the one it was first
+    // seen on, never the same one: the board decides which reply to hand
+    // back from a register, and the real block cannot answer sooner either.
+    bool io_pending = false;
     std::map<uint32_t, uint64_t> pc_seen;
     int failures = 0, dbgn = 0;
     const uint64_t BUDGET = n_state * 200 + 100000;
@@ -195,13 +199,13 @@ int main(int argc, char **argv) {
         // be an acknowledgement the core never sees.
         if (tx39) {
             // The block answers for itself; nothing to do here.
-        } else if (stub && dut->io_req && dut->dbg_cen) {
+        } else if (stub && dut->io_req && dut->dbg_cen && io_pending) {
             bool tx39 = (dut->io_addr >= 0x10C00000u) && (dut->io_addr < 0x10C00400u);
             dut->io_rdata = tx39 ? 0u : 0xFFFFFFFFu;
             dut->io_err   = 0;
             dut->io_ack   = 1;
             ioidx++;
-        } else if (!stub && dut->io_req && dut->dbg_cen) {
+        } else if (!stub && dut->io_req && dut->dbg_cen && io_pending) {
             if (ioidx >= IO.size()) {
                 // Near the end the pipeline holds instructions past the last
                 // retire; let them finish rather than call it a failure.
@@ -254,9 +258,10 @@ int main(int argc, char **argv) {
         // The core only moves on an enabled edge, so its retire pulse
         // stands for a whole core period. Counting it per memory clock
         // would retire every instruction twice over at a divider of two.
-        bool cen_now = dut->dbg_cen;
+        bool cen_now = dut->dbg_cen, req_now = dut->io_req;
         dut->eval();
         dut->clk = 1; dut->eval();
+        if (cen_now) io_pending = req_now && !io_fire;
         if (io_fire)  ioidx++;
         dut->clk = 0; dut->eval();
         cycles++;

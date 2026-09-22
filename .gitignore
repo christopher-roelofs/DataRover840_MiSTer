@@ -15,3 +15,5 @@ output_files/
 *.qws
 *.rpt
 *.summary
+sim/cosim/obj_board/
+sim/sdram/obj_dir/

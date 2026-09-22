@@ -15,7 +15,7 @@
 `default_nettype none
 
 module dr840_machine (
-    input  wire        clk,          // 78 MHz: SDRAM, and the core halved
+    input  wire        clk,          // 92 MHz: SDRAM, and the core halved
     input  wire        rst_n,
 
     // ---- ROM load, from the HPS. Whole words, big-endian.
@@ -102,7 +102,7 @@ module dr840_machine (
     wire [5:0]  soc_irq;
 
     dr840_mem board (
-        .clk(clk), .rst_n(core_rst_n),
+        .clk(clk), .cen(cen), .rst_n(core_rst_n),
         .imem_addr(ia), .imem_req(ireq), .imem_burst(ibur),
         .imem_ack(iack), .imem_rdata(ird), .imem_err(ierr),
         .dmem_addr(da), .dmem_req(dreq), .dmem_burst(dbur), .dmem_we(dwe),
@@ -120,7 +120,7 @@ module dr840_machine (
     // in the block reads back what was written, which is what the ROM
     // needs; everything outside it reads all-ones, which is an empty PC
     // Card slot.
-    dr840_tx39 #(.CLK_HZ(78_000_000)) soc (
+    dr840_tx39 #(.CLK_HZ(92_000_000)) soc (
         .clk(clk), .cen(cen), .rst_n(core_rst_n),
         .io_addr(io_addr), .io_req(io_req), .io_we(io_we), .io_be(io_be),
         .io_wdata(io_wdata), .io_ack(io_ack), .io_rdata(io_rdata),
@@ -163,7 +163,7 @@ module dr840_machine (
         .ch2_req(ch2_req), .ch2_rnw(ch2_rnw), .ch2_ready(ch2_ready)
     );
 
-    sdram #(.CLK_MHZ(78)) ctl (
+    sdram #(.CLK_MHZ(92)) ctl (
         .init(~rst_n), .clk(clk),
         .SDRAM_DQ_O(SDRAM_DQ_O), .SDRAM_DQ_OE(SDRAM_DQ_OE),
         .SDRAM_DQ_I(SDRAM_DQ_I), .SDRAM_A(SDRAM_A),

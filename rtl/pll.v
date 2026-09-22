@@ -8,7 +8,7 @@
 module pll (
 		input  wire  refclk,   //  refclk.clk
 		input  wire  rst,      //   reset.reset
-		output wire  outclk_0, //  78 MHz: SDRAM, and the core at every second edge
+		output wire  outclk_0, //  92 MHz: SDRAM, and the core at every second edge
 		output wire  locked
 	);
 

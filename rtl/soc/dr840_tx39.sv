@@ -38,7 +38,7 @@ module dr840_tx39 #(
     input  wire [3:0]  io_be,
     input  wire [31:0] io_wdata,
     output wire        io_ack,
-    output reg  [31:0] io_rdata,
+    output wire [31:0] io_rdata,
     output wire        io_err,
 
     // The debug serial port. UART A is what the IDT monitor prints on.
@@ -206,8 +206,12 @@ module dr840_tx39 #(
 
     // One bit time, from the divisor. NetBSD's tx39uartreg.h: the UART runs
     // at 3.6864 MHz / (16 * (divisor + 1)).
+    // The product is a register: the divisor changes once, at boot, and
+    // a multiplier feeding the bit counters' compare directly was the last
+    // 10.5 ns path between the machine and 92 MHz.
     localparam [19:0] BIT_MUL = 20'((CLK_HZ * 16) / 3686400);
-    wire [19:0] bit_clocks = BIT_MUL * ({10'd0, ua_ctrl2[9:0]} + 20'd1);
+    reg [19:0] bit_clocks;
+    always @(posedge clk) bit_clocks <= BIT_MUL * ({10'd0, ua_ctrl2[9:0]} + 20'd1);
 
     // Transmit: a holding register and a shift register, which is the
     // distinction TXINT and EMPTYINT are about.
@@ -390,48 +394,80 @@ module dr840_tx39 #(
         end
     end
 
-    // Reads are combinational; the requester holds its address until acked.
+    // The reply is decided on the edge that carries the transaction out
+    // and held in a register until the acknowledgement is taken. Decided
+    // live, it was the longest path in the machine: the data cache's state
+    // into the board's decode, through this block's address compare and
+    // read mux, back into the cache, forwarded into a branch compare in
+    // ID, and from there to the fetch address -- 24.8 ns end to end, and
+    // the reason the whole design was clocked at 78 MHz. From a register
+    // the same chain starts nine nanoseconds later.
+    //
+    // The register file is the one source not captured here. Its read is
+    // already a register, refreshed every cycle from an address that is
+    // stable for the whole transaction; only which register it is gets
+    // remembered. Capturing its value too would need it read before the
+    // transaction edge, which is exactly the one-cycle address path the
+    // synchronous read exists to avoid.
+    reg [31:0] rd_live;
     always @(*) begin
         if (!is_tx39) begin
             // Nothing else is modelled. An undriven bus reads all-ones,
             // which for the PC Card detect lines -- active low -- is the
             // right answer for an empty slot.
-            io_rdata = 32'hFFFF_FFFF;
+            rd_live = 32'hFFFF_FFFF;
         end else if (off == 12'h104) begin
-            io_rdata = icu_status[1] | INT2_MBUS_LEVEL;
+            rd_live = icu_status[1] | INT2_MBUS_LEVEL;
         end else if (off >= 12'h100 && off < 12'h118) begin
-            io_rdata = icu_status[off[4:2]];
+            rd_live = icu_status[off[4:2]];
         end else if (off == T_RTCHI) begin
-            io_rdata = {24'd0, rtc[39:32]};
+            rd_live = {24'd0, rtc[39:32]};
         end else if (off == T_RTCLO) begin
-            io_rdata = rtc[31:0];
+            rd_live = rtc[31:0];
         end else if (off == T_ALMHI) begin
-            io_rdata = {24'd0, rtc_alarm[39:32]};
+            rd_live = {24'd0, rtc_alarm[39:32]};
         end else if (off == T_ALMLO) begin
-            io_rdata = rtc_alarm[31:0];
+            rd_live = rtc_alarm[31:0];
         end else if (off == T_CTRL) begin
-            io_rdata = t_ctrl;
+            rd_live = t_ctrl;
         end else if (off == T_PER) begin
-            io_rdata = t_per;
-        end else if (off == MBUSCTRL) begin
-            // Never busy, and the bus reads high because nothing is
-            // pulling it down.
-            io_rdata = (rf_q & ~MBUSCTRL_BUSY) | MBUSCTRL_IN_HIGH;
+            rd_live = t_per;
         end else if (off >= 12'h118 && off < 12'h130) begin
-            io_rdata = icu_enable[en_idx];
+            rd_live = icu_enable[en_idx];
         end else if (off == UARTA_CTRL1) begin
-            io_rdata = ua_ctrl1
-                     | (ua_ctrl1[0] ? CTRL1_UARTON : 32'd0)
-                     | (tx_busy ? 32'd0 : CTRL1_EMPTY)
-                     | (ua_rx_full ? CTRL1_RXFULL : 32'd0);
+            rd_live = ua_ctrl1
+                    | (ua_ctrl1[0] ? CTRL1_UARTON : 32'd0)
+                    | (tx_busy ? 32'd0 : CTRL1_EMPTY)
+                    | (ua_rx_full ? CTRL1_RXFULL : 32'd0);
         end else if (off == UARTA_CTRL2) begin
-            io_rdata = ua_ctrl2;
+            rd_live = ua_ctrl2;
         end else if (off == UARTA_HOLD) begin
-            io_rdata = {24'd0, ua_rx};
+            rd_live = {24'd0, ua_rx};
         end else begin
-            io_rdata = rf_q;
+            rd_live = 32'd0;              // the register file, chosen below
         end
     end
+
+    localparam [1:0] RD_LIVE = 2'd0, RD_RF = 2'd1, RD_MBUS = 2'd2;
+    wire rd_is_rf = is_tx39 && !(off == 12'h104)
+                 && !(off >= 12'h100 && off < 12'h130)
+                 && off != T_RTCHI && off != T_RTCLO && off != T_ALMHI
+                 && off != T_ALMLO && off != T_CTRL && off != T_PER
+                 && off != UARTA_CTRL1 && off != UARTA_CTRL2 && off != UARTA_HOLD;
+
+    reg [31:0] rd_q;
+    reg [1:0]  rd_src;
+    always @(posedge clk) if (io_start) begin
+        rd_q   <= rd_live;
+        rd_src <= !rd_is_rf          ? RD_LIVE
+                : (off == MBUSCTRL)  ? RD_MBUS
+                                     : RD_RF;
+    end
+    // MBUS: never busy, and the bus reads high because nothing is pulling
+    // it down.
+    assign io_rdata = (rd_src == RD_RF)   ? rf_q
+                    : (rd_src == RD_MBUS) ? ((rf_q & ~MBUSCTRL_BUSY) | MBUSCTRL_IN_HIGH)
+                                          : rd_q;
 
 endmodule
 

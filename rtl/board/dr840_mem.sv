@@ -40,6 +40,7 @@ module dr840_mem #(
     parameter [24:0] DRAM_BASE = 25'h080_0000    // 4 MB
 ) (
     input  wire        clk,
+    input  wire        cen,          // the requesters' clock enable
     input  wire        rst_n,
 
     // ---- from the caches
@@ -191,14 +192,24 @@ module dr840_mem #(
     assign dmem_ack   = (grant_d & d_wants_ram & ram_ack)
                       | (d_wants_io & io_ack)
                       | (dmem_req & (d_tgt == T_NONE));
-    assign dmem_rdata = d_wants_io ? io_rdata : ram_rdata;
+    // Which side's data to hand back is decided from the decode, but one
+    // edge late, from a register. Both replies come from registers and
+    // neither can arrive on the first enabled edge after a request, so the
+    // choice is always made in time -- and it takes the decode off the
+    // path from the memory's reply into the core.
+    reg d_from_io, i_from_io;
+    always @(posedge clk) if (cen) begin
+        d_from_io <= d_wants_io;
+        i_from_io <= i_wants_io & ~d_wants_io;
+    end
+    assign dmem_rdata = d_from_io ? io_rdata : ram_rdata;
     assign dmem_err   = (dmem_req & (d_tgt == T_NONE))
                       | (d_wants_io & io_ack & io_err);
 
     assign imem_ack   = (grant_i & i_wants_ram & ram_ack)
                       | (i_wants_io & ~d_wants_io & io_ack)
                       | (imem_req & (i_tgt == T_NONE));
-    assign imem_rdata = (i_wants_io & ~d_wants_io) ? io_rdata : ram_rdata;
+    assign imem_rdata = i_from_io ? io_rdata : ram_rdata;
     assign imem_err   = (imem_req & (i_tgt == T_NONE))
                       | (i_wants_io & ~d_wants_io & io_ack & io_err);
 
