@@ -57,7 +57,11 @@ module dr840_snd (
     reg        sel;                       // which half of the word
     reg        have;                      // a sample has arrived
     reg signed [15:0] x, xp;              // this sample and the last
-    reg signed [19:0] hp;                 // the DC blocker's state
+    // The DC blocker's state, with eight fractional bits: its leak is a
+    // shift by twelve, and without the fraction it was nothing at all once
+    // the state was under 4096, so a small residual sat on the output for
+    // ever after each sound where the reference's decays away.
+    reg signed [27:0] hp;
     reg        s2, s3;                    // the stages behind it
     reg signed [36:0] prod;
     // Signed, by name: a part-select is unsigned whatever it was cut from,
@@ -94,10 +98,10 @@ module dr840_snd (
                 if (have) begin
                     // y = (x - x') + 0.99975 y: unity at Nyquist, a pole
                     // near DC.
-                    hp <= (20'(x) - 20'(xp)) + hp - (hp >>> 12);
+                    hp <= ((28'(x) - 28'(xp)) <<< 8) + hp - (hp >>> 12);
                     xp <= x;
                 end
-                if (s2) prod <= hp * $signed({1'b0, gain(att)});
+                if (s2) prod <= (hp >>> 8) * $signed({1'b0, gain(att)});
                 if (s3) begin
                     if (mute)                         audio <= 16'sd0;
                     else if (pq > 21'sd32767)  audio <= 16'sd32767;
