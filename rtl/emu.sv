@@ -177,9 +177,9 @@ localparam CONF_STR = {
     // instead of Magic Cap. Takes effect on the next reset.
     "O[2],Boot,Magic Cap,IDT monitor;",
     "O[3],Display,LCD,Debug;",
-    // A Magic Bus AT keyboard, driven by the PS/2 keyboard. Off until it
-    // has been argued into agreement with the reference.
-    "O[4],Keyboard,Off,On;",
+    // A Magic Bus AT keyboard, driven by the PS/2 keyboard; its discovery
+    // by the ROM matches the reference's access for access.
+    "O[4],Keyboard,On,Off;",
     "-;",
     "T[0],Reset;",
     "R[0],Reset and close OSD;",
@@ -465,9 +465,13 @@ assign SDRAM_DQ = sdram_dq_oe ? sdram_dq_o : 16'bZ;
 assign sdram_dq_i = SDRAM_DQ;
 
 dr840_machine machine (
-    .clk(clk_sys), .rst_n(rst_n), .boot_monitor(status[2]),
+    // The option key: IOCTRL pin 3, low while held. The right mouse button
+    // is it, as in the reference's window -- held at reset it takes the ROM
+    // to the monitor, as the device's own button does, and held on the desk
+    // it is Magic Cap's option key. The OSD's Boot option holds it too.
+    .clk(clk_sys), .rst_n(rst_n), .boot_monitor(status[2] | ps2_mouse[1]),
     .pen_down(pen_down), .pen_px(pen_px), .pen_py(pen_py), .on_button(on_button),
-    .kbd_attached(status[4]), .key_tog(key_tog), .key_code(key_code), .key_ext(key_ext), .key_down(key_down),
+    .kbd_attached(~status[4]), .key_tog(key_tog), .key_code(key_code), .key_ext(key_ext), .key_down(key_down),
     // Held in reset until there is a ROM to run. The loader owns the
     // memory while it is arriving, and before that there is nothing to do.
     .load_en(ioctl_download | load_busy | ~rom_ok),
