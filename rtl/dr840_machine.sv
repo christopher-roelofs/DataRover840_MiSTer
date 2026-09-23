@@ -206,7 +206,6 @@ module dr840_machine (
         .clk(clk), .cen(cen), .rst_n(core_rst_n),
         .snd_tog(snd_tog), .snd_addr(snd_addr), .codec_b(codec_b),
         .amem_addr(aa), .amem_req(areq), .amem_ack(aack), .amem_rdata(ard),
-        .kmem_addr(ka), .kmem_req(kreq), .kmem_we(kwe), .kmem_wdata(kwd), .kmem_ack(kack),
         .audio(audio)
     );
     wire [31:0] vid_ctrl1, vid_ctrl2, vid_ctrl3;
@@ -241,6 +240,7 @@ module dr840_machine (
         .dmem_err(derr),
         .vmem_addr(va), .vmem_req(vreq), .vmem_ack(vack), .vmem_rdata(vrd),
         .amem_addr(aa), .amem_req(areq), .amem_ack(aack), .amem_rdata(ard),
+        .kmem_addr(ka), .kmem_req(kreq), .kmem_we(kwe), .kmem_wdata(kwd), .kmem_ack(kack),
         .ram_addr(bram_addr), .ram_req(bram_req), .ram_burst(bram_burst),
         .ram_we(bram_we), .ram_be(bram_be), .ram_wdata(bram_wdata),
         .ram_ack(bram_ack), .ram_rdata(ram_rdata), .ram_busy(bram_busy),
@@ -261,10 +261,10 @@ module dr840_machine (
         .boot_monitor(boot_monitor), .uart_txd(uart_txd), .uart_rxd(uart_rxd),
         .pen_down(pen_down), .pen_x(pen_x), .pen_y(pen_y),
         .on_button(on_button), .cpu_stop(cpu_stop),
-        .snd_tog(snd_tog), .snd_addr(snd_addr), .codec_b(codec_b),
         .kbd_attached(kbd_attached), .key_tog(key_tog), .key_code(key_code),
         .key_ext(key_ext), .key_down(key_down),
         .kmem_addr(ka), .kmem_req(kreq), .kmem_we(kwe), .kmem_wdata(kwd), .kmem_ack(kack),
+        .snd_tog(snd_tog), .snd_addr(snd_addr), .codec_b(codec_b),
         .irq_out(soc_irq), .dbg_pending(),
         .vid_ctrl1(vid_ctrl1), .vid_ctrl2(vid_ctrl2), .vid_ctrl3(vid_ctrl3),
         .dbg_tx_bytes(obs_uart_bytes), .dbg_io_reads(obs_io),
