@@ -201,6 +201,16 @@ always @(posedge clk_sys) begin
 end
 wire on_button = joystick_0[4] | f4_down;
 
+// Two seconds after reset, the mouse's right button is the option key.
+reg [27:0] opt_cnt; reg opt_ok;
+always @(posedge clk_sys or negedge rst_n) begin
+    if (!rst_n) begin opt_cnt <= 28'd0; opt_ok <= 1'b0; end
+    else if (!opt_ok) begin
+        opt_cnt <= opt_cnt + 28'd1;
+        if (opt_cnt == 28'd184_000_000) opt_ok <= 1'b1;
+    end
+end
+
 // The keyboard, on the Magic Bus. The framework's PS/2 keyboard already
 // speaks AT set 2: [7:0] the code, [8] extended, [9] pressed, [10] a
 // toggle per event.
@@ -466,10 +476,12 @@ assign sdram_dq_i = SDRAM_DQ;
 
 dr840_machine machine (
     // The option key: IOCTRL pin 3, low while held. The right mouse button
-    // is it, as in the reference's window -- held at reset it takes the ROM
-    // to the monitor, as the device's own button does, and held on the desk
-    // it is Magic Cap's option key. The OSD's Boot option holds it too.
-    .clk(clk_sys), .rst_n(rst_n), .boot_monitor(status[2] | ps2_mouse[1]),
+    // is it, as in the reference's window. On the device the same button
+    // held at power-on takes the ROM to the monitor; here that is the OSD's
+    // Boot option alone, so a mouse resting on its button across a reset
+    // cannot do it by accident: the button counts only once the ROM has
+    // been running for two seconds.
+    .clk(clk_sys), .rst_n(rst_n), .boot_monitor(status[2] | (ps2_mouse[1] & opt_ok)),
     .pen_down(pen_down), .pen_px(pen_px), .pen_py(pen_py), .on_button(on_button),
     .kbd_attached(~status[4]), .key_tog(key_tog), .key_code(key_code), .key_ext(key_ext), .key_down(key_down),
     // Held in reset until there is a ROM to run. The loader owns the
