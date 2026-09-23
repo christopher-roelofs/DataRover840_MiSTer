@@ -86,6 +86,8 @@ module tb_sdram #(
     output wire [31:0] dbg_r2, dbg_r4, dbg_r5, dbg_r16,
     output wire [31:0] dbg_stall_store, dbg_stall_load, dbg_stall_fetch,
     output wire        dbg_pending,
+    input  wire        on_button,
+    output wire        dbg_stop,
     output wire [5:0]  dbg_irq,
     output wire        dbg_exc_valid,
     output wire [4:0]  dbg_exc_code,
@@ -116,7 +118,7 @@ module tb_sdram #(
         .imem_ack(iack), .imem_rdata(ird), .imem_err(ierr),
         .dmem_addr(da), .dmem_req(dreq), .dmem_burst(dbur), .dmem_we(dwe),
         .dmem_be(dbe), .dmem_wdata(dwd), .dmem_ack(dack), .dmem_rdata(drd),
-        .dmem_err(derr), .irq_in(tx39_en ? t_irq : irq_in),
+        .dmem_err(derr), .irq_in(tx39_en ? t_irq : irq_in), .halt(tx39_en ? t_stop : 1'b0),
         .retire_valid(retire_valid), .retire_pc(retire_pc),
         .retire_insn(retire_insn), .retire_next_pc(retire_next_pc),
         .exc_valid(dbg_exc_valid), .exc_code(dbg_exc_code), .exc_epc(dbg_exc_epc),
@@ -152,6 +154,8 @@ module tb_sdram #(
     wire        t_ack, t_err;
     wire [31:0] t_rdata;
     wire [5:0]  t_irq;
+    wire        t_stop;
+    assign dbg_stop = t_stop;
     wire [31:0] vid_ctrl2;
     wire [31:0] va, vrd;
     wire        vreq, vack;
@@ -177,6 +181,7 @@ module tb_sdram #(
         .io_ack(t_ack), .io_rdata(t_rdata), .io_err(t_err),
         .boot_monitor(boot_monitor), .uart_txd(), .uart_rxd(1'b1), .irq_out(t_irq),
         .pen_down(pen_down), .pen_x(pen_x), .pen_y(pen_y), .dbg_pending(dbg_pending),
+        .on_button(on_button), .cpu_stop(t_stop),
         .vid_ctrl1(dbg_vid_ctrl1), .vid_ctrl2(vid_ctrl2), .vid_ctrl3(dbg_vid_ctrl3),
         .dbg_tx_bytes(dbg_tx_bytes), .dbg_io_reads(),
         .dbg_tx_stb(dbg_tx_stb), .dbg_tx_data(dbg_tx_data)

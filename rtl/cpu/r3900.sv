@@ -77,6 +77,9 @@ module r3900 #(
     input  wire        dbus_err,
 
     input  wire [5:0]  irq_in,          // IP2..IP7 into Cause.IP[7:2]
+    // Held: nothing leaves EX, so what is in MEM and WB -- the store that
+    // asked for this -- completes, and the next instruction waits.
+    input  wire        halt,
 
     // The CACHE instruction, passed out rather than acted on here. MIPS
     // hardware does not snoop: software that writes instructions is
@@ -360,7 +363,7 @@ module r3900 #(
     wire exc_flush;
 
     wire adv_mem = !stall_mem;
-    wire adv_ex  = !stall_mem && !stall_ex;
+    wire adv_ex  = !stall_mem && !stall_ex && !halt;
     wire id_hazard;
     wire adv_id  = adv_ex && !id_hazard;
 

@@ -141,6 +141,11 @@ int main(int argc, char **argv) {
     // `at` for `len` instructions, in the converter's counts on the
     // reference's calibration -- the same numbers its --tap-px produces.
     long tap_x = -1, tap_y = -1; uint64_t tap_at = 0, tap_len = 2000000;
+    // Several, separated by ';', for a sequence such as a calibration.
+    struct tap_t { long x, y; uint64_t at, len; };
+    std::vector<tap_t> taps;
+    // --button at,len: the ON button, held from instruction `at`.
+    uint64_t btn_at = 0, btn_len = 0;
     // --trace-after pc,hit,n: print n retired instructions from the hit-th
     // execution of pc, the reference's option of the same name.
     uint32_t ta_pc = 0; uint64_t ta_hit = 0, ta_hits = 0, ta_n = 0, ta_left = 0;
@@ -173,9 +178,16 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--watch-write") && i + 1 < argc) watch_write = strtol(argv[++i], nullptr, 16);
         else if (!strcmp(argv[i], "--dump-fb") && i + 1 < argc) dump_fb = argv[++i];
         else if (!strcmp(argv[i], "--tap") && i + 1 < argc) {
-            const char *a = argv[++i]; tap_x = strtol(a, nullptr, 10);
-            const char *c = strchr(a, ','); if (c) { tap_y = strtol(c + 1, nullptr, 10); c = strchr(c + 1, ',');
-            if (c) { tap_at = strtoull(c + 1, nullptr, 10); c = strchr(c + 1, ','); if (c) tap_len = strtoull(c + 1, nullptr, 10); } }
+            const char *a = argv[++i];
+            while (a && *a) {
+                tap_t t = {-1, -1, 0, 2000000};
+                t.x = strtol(a, nullptr, 10);
+                const char *c = strchr(a, ','); if (c) { t.y = strtol(c + 1, nullptr, 10); c = strchr(c + 1, ',');
+                if (c) { t.at = strtoull(c + 1, nullptr, 10); c = strchr(c + 1, ','); if (c) t.len = strtoull(c + 1, nullptr, 10); } }
+                taps.push_back(t);
+                a = strchr(a, ';'); if (a) a++;
+            }
+            tap_x = taps[0].x; tap_y = taps[0].y; tap_at = taps[0].at; tap_len = taps[0].len;
         }
         else if (!strcmp(argv[i], "--trace-from") && i + 1 < argc) {
             const char *a = argv[++i]; tf_from = strtoull(a, nullptr, 10);
@@ -189,6 +201,10 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--free")) stub = true;
         else if (!strcmp(argv[i], "--replay")) replay = true;
         else if (!strcmp(argv[i], "--check")) check = true;
+        else if (!strcmp(argv[i], "--button") && i + 1 < argc) {
+            const char *a = argv[++i]; btn_at = strtoull(a, nullptr, 10);
+            const char *c = strchr(a, ','); btn_len = c ? strtoull(c + 1, nullptr, 10) : 2000000;
+        }
         else if (!strcmp(argv[i], "--irq") && i + 1 < argc) irq_path = argv[++i];
         else if (!strcmp(argv[i], "--irq-lead") && i + 1 < argc) irq_lead = strtoull(argv[++i], nullptr, 10);
         else if (!strcmp(argv[i], "--record") && i + 1 < argc) {
@@ -545,8 +561,13 @@ int main(int argc, char **argv) {
             dbgn++;
         }
 
+        dut->on_button = btn_len && idx >= btn_at && idx < btn_at + btn_len;
         if (tap_x >= 0) {
-            bool down = idx >= tap_at && idx < tap_at + tap_len;
+            // The tap in progress, if any, is the one whose window holds idx;
+            // between taps the pen stays where it last was, up.
+            bool down = false;
+            for (const tap_t &t : taps)
+                if (idx >= t.at && idx < t.at + t.len) { down = true; tap_x = t.x; tap_y = t.y; }
             if (down != (bool)dut->pen_down) printf("[pen] %s at insn %" PRIu64 "\n", down ? "down" : "up", idx);
             dut->pen_down = down;
             dut->pen_x = 85 + (tap_x * 751 + 239) / 479;

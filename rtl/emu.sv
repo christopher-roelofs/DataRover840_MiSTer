@@ -185,6 +185,17 @@ localparam CONF_STR = {
 wire [127:0] status;
 wire   [1:0] buttons;
 wire  [24:0] ps2_mouse;
+wire  [10:0] ps2_key;
+wire  [31:0] joystick_0;
+
+// The ON button: the first joystick button, or F4 on the keyboard (the
+// key the reference uses). Magic Cap turns the machine off after it has
+// sat idle, and this is what turns it back on.
+reg f4_down;
+always @(posedge clk_sys) begin
+    if (ps2_key[7:0] == 8'h0C && !ps2_key[8]) f4_down <= ps2_key[9];
+end
+wire on_button = joystick_0[4] | f4_down;
 
 // The mouse is the pen. A mouse moves and a pen is somewhere, so the
 // movements are summed into a place on the panel, held inside it, and the
@@ -230,6 +241,8 @@ hps_io #(.CONF_STR(CONF_STR)) hps_io
     .buttons        (buttons),
     .status         (status),
     .ps2_mouse      (ps2_mouse),
+    .ps2_key        (ps2_key),
+    .joystick_0     (joystick_0),
     .ioctl_download (ioctl_download),
     .ioctl_wr       (ioctl_wr),
     .ioctl_addr     (ioctl_addr),
@@ -436,7 +449,7 @@ assign sdram_dq_i = SDRAM_DQ;
 
 dr840_machine machine (
     .clk(clk_sys), .rst_n(rst_n), .boot_monitor(status[2]),
-    .pen_down(pen_down), .pen_px(pen_px), .pen_py(pen_py),
+    .pen_down(pen_down), .pen_px(pen_px), .pen_py(pen_py), .on_button(on_button),
     // Held in reset until there is a ROM to run. The loader owns the
     // memory while it is arriving, and before that there is nothing to do.
     .load_en(ioctl_download | load_busy | ~rom_ok),

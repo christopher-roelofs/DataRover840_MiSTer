@@ -50,6 +50,7 @@ module dr840_machine (
 
     // The pen, in panel pixels; the pointer is drawn on the panel where
     // it is, and the codec sees it in its own counts.
+    input  wire        on_button,      // the ON button
     input  wire        pen_down,
     input  wire [8:0]  pen_px,          // 0..479
     input  wire [8:0]  pen_py,          // 0..319
@@ -96,7 +97,16 @@ module dr840_machine (
     wire cen = cdiv;
 
     // The core is held in reset until the ROM is in place.
-    wire core_rst_n = rst_n & ~load_en;
+    // Registered, twice: it is the asynchronous reset of everything below,
+    // and from the loader's flags through the AND it was a recovery path
+    // that lost by a sixth of a nanosecond once enough else was placed
+    // near it. Two flops make it a clean net from a flop, released two
+    // clocks late, which nothing notices.
+    reg [1:0] core_rst_q;
+    always @(posedge clk or negedge rst_n)
+        if (!rst_n) core_rst_q <= 2'b00;
+        else        core_rst_q <= {core_rst_q[0], ~load_en};
+    wire core_rst_n = core_rst_q[1];
 
     wire [31:0] ia, ird, da, dwd, drd;
     wire        ireq, ibur, iack, ierr, dreq, dbur, dwe, dack, derr;
@@ -115,7 +125,7 @@ module dr840_machine (
         .dmem_addr(da), .dmem_req(dreq), .dmem_burst(dbur), .dmem_we(dwe),
         .dmem_be(dbe), .dmem_wdata(dwd), .dmem_ack(dack), .dmem_rdata(drd),
         .dmem_err(derr),
-        .irq_in(soc_irq),
+        .irq_in(soc_irq), .halt(cpu_stop),
         .retire_valid(retire_valid), .retire_pc(obs_pc),
         .retire_insn(obs_insn), .retire_next_pc(),
         .exc_valid(exc_valid), .exc_code(exc_code), .exc_epc(exc_epc), .exc_ip(exc_ip), .exc_bad(exc_bad),
@@ -173,6 +183,7 @@ module dr840_machine (
     wire        io_req, io_we, io_ack, io_err;
     wire [3:0]  io_be;
     wire [5:0]  soc_irq;
+    wire        cpu_stop;
     wire [31:0] vid_ctrl1, vid_ctrl2, vid_ctrl3;
 
     // Pixel to converter count, on the reference's calibration of this
@@ -230,6 +241,7 @@ module dr840_machine (
         .io_err(io_err),
         .boot_monitor(boot_monitor), .uart_txd(uart_txd), .uart_rxd(uart_rxd),
         .pen_down(pen_down), .pen_x(pen_x), .pen_y(pen_y),
+        .on_button(on_button), .cpu_stop(cpu_stop),
         .irq_out(soc_irq), .dbg_pending(),
         .vid_ctrl1(vid_ctrl1), .vid_ctrl2(vid_ctrl2), .vid_ctrl3(vid_ctrl3),
         .dbg_tx_bytes(obs_uart_bytes), .dbg_io_reads(obs_io),

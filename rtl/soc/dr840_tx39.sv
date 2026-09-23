@@ -52,6 +52,19 @@ module dr840_tx39 #(
     // monitor instead of Magic Cap. It is IOCTRL's input pin 3.
     input  wire        boot_monitor,
 
+    // The ON button, and the core held for the power-off.
+    //
+    // Magic Cap's shutdown routine (ROM 13C3B180..13C3B248) clears VCCON
+    // and PWRCS together and expects the machine to go off: standby power
+    // keeps the RAM, and the ON button brings it back where it left off,
+    // PWRCS set again and its own interrupt raised -- which is what the
+    // reference models, and what this does. Without it the ROM ran on
+    // past its own power-off, into a loop that armed the stop timer ten
+    // thousand times a second and toggled the display as it went: the
+    // screen flashing after the machine had sat idle.
+    input  wire        on_button,
+    output wire        cpu_stop,
+
     // The pen, in the converter's counts.
     input  wire        pen_down,
     input  wire [9:0]  pen_x,
@@ -210,6 +223,14 @@ module dr840_tx39 #(
     localparam [31:0] PWRCTRL_ONBUTN    = 32'h8000_0000;
     localparam [31:0] PWRCTRL_PWROK     = 32'h2000_0000;
     localparam [31:0] PWRCTRL_ENSTPTIMER = 32'h0000_0800;
+    localparam [31:0] PWRCTRL_PWRCS     = 32'h0000_0002;
+    localparam [31:0] PWRCTRL_VCCON     = 32'h0000_0001;
+    localparam [31:0] INT5_POSONBUTNINT = 32'h0080_0000;
+    localparam [31:0] INT5_NEGONBUTNINT = 32'h0040_0000;
+    reg        pwr_stopped;           // off, until the button
+    reg        pwrcs_set;             // PWRCS the button set, until software writes
+    reg [1:0]  onbtn_q;               // the button, synchronised
+    assign cpu_stop = pwr_stopped;
     localparam [31:0] INT5_STPTIMERINT  = 32'h1000_0000;
 
     // The serial interface bus and the codec behind it: rtl/soc/dr840_sib.sv.
@@ -377,6 +398,7 @@ module dr840_tx39 #(
             rtc <= 40'd0; rtc_acc <= 32'd0; rtc_alarm <= 40'd0;
             t_ctrl <= 32'd0; t_per <= 32'd0; per_acc <= 40'd0;
             stp_armed <= 1'b0; stp_deadline <= 40'd0; alarm_armed <= 1'b0;
+            pwr_stopped <= 1'b0; pwrcs_set <= 1'b0; onbtn_q <= 2'b00;
             served <= 1'b0; irq_r <= 6'd0;
             dbg_tx_bytes <= 32'd0; dbg_io_reads <= 32'd0;
             dbg_tx_stb <= 1'b0; dbg_tx_data <= 8'd0;
@@ -397,6 +419,16 @@ module dr840_tx39 #(
 
             // ---------------------------------------------- INTRSTATUS1
             icu_set[0] = icu_set[0] | sib_set;
+
+            // ---------------------------------------------- the ON button
+            onbtn_q <= {onbtn_q[0], on_button};
+            if (onbtn_q == 2'b01) begin           // pressed
+                pwr_stopped <= 1'b0;
+                pwrcs_set   <= 1'b1;
+                icu_set[4] = icu_set[4] | INT5_POSONBUTNINT;
+            end
+            if (onbtn_q == 2'b10)                 // released
+                icu_set[4] = icu_set[4] | INT5_NEGONBUTNINT;
 
             // ---------------------------------------------- RTC
             if (!t_ctrl[6]) begin
@@ -505,6 +537,10 @@ module dr840_tx39 #(
                 if (off == 12'h02C) vid_ctrl2 <= io_wdata;
                 if (off == 12'h030) vid_ctrl3 <= io_wdata;
                 if (off == POWERCTRL) begin
+                    pwrcs_set <= 1'b0;
+                    if ((rf_q & (PWRCTRL_PWRCS | PWRCTRL_VCCON)) != 32'd0 &&
+                        (io_wdata & (PWRCTRL_PWRCS | PWRCTRL_VCCON)) == 32'd0)
+                        pwr_stopped <= 1'b1;
                     if ((io_wdata & PWRCTRL_ENSTPTIMER) != 32'd0 && !(rf_q[11])) begin
                         stp_armed    <= 1'b1;
                         stp_deadline <= rtc + {36'd0, io_wdata[15:12]} + 40'd1;
@@ -674,7 +710,9 @@ module dr840_tx39 #(
     assign io_rdata = (rd_src == RD_RF)   ? rf_q
                     : (rd_src == RD_MBUS) ? ((rf_q & ~MBUSCTRL_BUSY) | MBUSCTRL_IN_HIGH)
                     : (rd_src == RD_IOCTRL) ? ((rf_q & ~IOCTRL_PIN_MASK) | ioctrl_pins)
-                    : (rd_src == RD_POWER)  ? (rf_q | PWRCTRL_PWROK)
+                    : (rd_src == RD_POWER)  ? (rf_q | PWRCTRL_PWROK
+                                               | (onbtn_q[1] ? PWRCTRL_ONBUTN : 32'd0)
+                                               | (pwrcs_set  ? PWRCTRL_PWRCS  : 32'd0))
                                           : rd_q;
 
 endmodule
