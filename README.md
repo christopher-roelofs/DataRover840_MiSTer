@@ -17,7 +17,19 @@ one of the 2,146,801 data-bus accesses in that window, and the peripheral
 traffic of the whole Magic Cap boot -- every register, every value, in
 order -- matches the reference's through the splash.
 
-Nothing touches the screen yet: no pen, no keyboard. That is next.
+**And stays up.** For a while it booted, showed the splash, and a few
+seconds later restarted into "Cleaning up" -- five boots in twelve. That
+was an exception taken in a branch delay slot whose fetch had missed the
+cache: the core lost track that it was a delay slot, returned to the slot
+instead of the branch, and a taken branch fell through. Once in a few
+million instructions an interrupt landed on exactly such a slot. Fixed,
+twelve boots in twelve come up and stay, each with the same exception
+count to the instruction. Finding it took running the two machines in
+step *through* the interrupts, in both directions; see **How it is
+validated**.
+
+A mouse is the pen: it moves a crosshair over the panel, and its button is
+the touch. No keyboard yet.
 
 ```
 matched 10000000 of 10000000 instructions, 2146802 bus accesses,
@@ -108,6 +120,48 @@ the core and not wired into it, and the directed tests went on passing from
 binaries built before the change. A harness nobody runs is not a harness.
 
 Traces are not in git -- a million instructions is 144 MB.
+
+### In step through the interrupts
+
+The state trace stops being usable once the two machines' interrupts
+arrive at different instructions, which they do as soon as their clocks
+differ; and their peripherals are different implementations, so from then
+on every diff is timing. Two things cut through that.
+
+`sim/sdram/tb_sdram --replay --bus dev.bus --irq irq.bin` plays the
+reference's device answers and the *level* of its interrupt line (from its
+`--trace-bus-dev` and `--trace-irq`, run `--headless` -- it paces itself to
+the wall clock otherwise, and two runs differ) into this machine. Its
+devices are bypassed; its core, caches and memory run the reference's
+program, and the first device access that is not the reference's next one
+is where they part. With the fix above they do not: 180 million
+instructions and 1,641,474 device accesses, to the end of the trace.
+
+`--record prefix` does the reverse: this machine's own device answers,
+interrupt level and the instruction each interrupt was taken in front of,
+which the reference plays back (`--replay-dev`, `--replay-irq`,
+`--replay-take`). Then the reference runs *this* machine's boot, with the
+divergence reported as drift in the instruction count -- which is how a
+one-instruction difference at one interrupt in a few million became
+visible at all. `--trace-from N,count` on both lines the two up by
+instruction. With the fix, the reference runs 174 million instructions of
+this machine's recording to the end, in step.
+
+`--check` is the cheap version: this machine's own devices answer, and every
+access is compared against the reference's trace anyway. Where the value a
+register returns differs, it prints; where only the count of a poll
+differs, the collapsed streams (`ACC=1 --iolog`) diff clean.
+
+### What the hardware says
+
+On the board the status line does what the traces do in simulation. While
+the guest leaves UART A idle, `rtl/dr840_status.sv` borrows the pin and
+sends a line of hex every second at 38400: resets, exceptions, the ROM's
+checksum as sent and as read back, the last PC and retired count, the
+memory test's mismatches, and the first fault at a place other than the
+boot's one known BREAK -- code, EPC, BadVAddr. `scripts/soak N secs`
+reloads the core N times and collects the last line of each boot, so a
+fault on the hardware is something collected rather than described.
 
 ## What the core is
 
@@ -577,10 +631,10 @@ have come from anywhere else:
 
 ## Next
 
-1. The pen. The UCB1100's touch ADC has the plates and the cross-driven
-   pressure readings modelled for a resting panel; a MiSTer mouse or touch
-   input drives `pen_down`, `pen_x`, `pen_y` into it and the splash
-   answers. The codec's IRQ pin and SIBIRQPOSINT are already there.
+1. The pen on hardware. The mouse drives `pen_down`, `pen_x`, `pen_y` into
+   the UCB1100's touch ADC, whose plates and cross-driven pressure readings
+   match the reference's (`sim/sib`); in simulation a tap takes the splash
+   to calibration. The MiSTer's own touchpad, if it has one, is a pen too.
 2. The Magic Bus keyboard, on MBUS.
 3. Sound: the ring is consumed at the right rate with the half and wrap
    interrupts, but the samples go nowhere. The MiSTer's audio out is
