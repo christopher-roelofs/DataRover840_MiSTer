@@ -323,9 +323,21 @@ module dr840_mbus (
                         end
                         if ((wdata & (C_EN | C_DMA_TX | C_SLAVE | C_LONG)) == (C_EN | C_DMA_TX | C_LONG) &&
                             (ctrl & (C_EN | C_DMA_TX)) != (C_EN | C_DMA_TX)) begin
-                            // Transmit DMA: the packet goes unread.
+                            // Transmit DMA: the packet goes unread, but
+                            // its arrival ends the write it was selected
+                            // for -- the reset, the LEDs, the repeat rate
+                            // -- and the device is idle again. Left
+                            // selected for writing, the next read found
+                            // nothing to give, and the ROM's wait for it
+                            // ended in "a problem with an accessory":
+                            // Caps Lock, every time.
                             dmacount <= dmalen & DMA_MASK;
                             int2_set <= int2_set | I_TXBUFAVAIL | I_EMPTY | I_DMA_END;
+                            if (selection == 5'd5) begin
+                                selection <= 5'd0;
+                                if (count == 9'd0) notified <= 1'b0;
+                                req_line <= 1'b1;
+                            end
                         end
                     end
                 end

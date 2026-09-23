@@ -181,6 +181,18 @@ localparam CONF_STR = {
     // by the ROM matches the reference's access for access.
     "O[4],Keyboard,On,Off;",
     "-;",
+    // The RAM, kept. A DataRover's four megabytes are battery-backed and
+    // hold everything the user has; here they are an image on the card,
+    // read in before the core starts and written back when Magic Cap turns
+    // the machine off, or on request. The .mgl mounts it.
+    "S0,SAV,Mount RAM image;",
+    "T[5],Save RAM now;",
+    // Magic Cap turns the machine off after it has sat idle. A MiSTer has
+    // no battery to save, so by default the core presses the ON button
+    // for it once the RAM has been written: an autosave and a blink,
+    // rather than a dark screen.
+    "O[6],After idle power-off,Wake at once,Stay off;",
+    "-;",
     "T[0],Reset;",
     "R[0],Reset and close OSD;",
     "V,v",`BUILD_DATE
@@ -199,7 +211,6 @@ reg f4_down;
 always @(posedge clk_sys) begin
     if (ps2_key[7:0] == 8'h0C && !ps2_key[8]) f4_down <= ps2_key[9];
 end
-wire on_button = joystick_0[4] | f4_down;
 
 // Two seconds after reset, the mouse's right button is the option key.
 reg [27:0] opt_cnt; reg opt_ok;
@@ -218,8 +229,13 @@ reg key_tog, key_ext, key_down; reg [7:0] key_code; reg key_seen;
 always @(posedge clk_sys) begin
     if (ps2_key[10] != key_seen) begin
         key_seen <= ps2_key[10];
-        key_code <= ps2_key[7:0]; key_ext <= ps2_key[8]; key_down <= ps2_key[9];
-        key_tog  <= ~key_tog;
+        // F4 is the ON button, not a key the guest sees; F12 is the
+        // framework's and never arrives. Everything else is the guest's:
+        // its driver ignores what it does not know.
+        if (!(ps2_key[7:0] == 8'h0C && !ps2_key[8])) begin
+            key_code <= ps2_key[7:0]; key_ext <= ps2_key[8]; key_down <= ps2_key[9];
+            key_tog  <= ~key_tog;
+        end
     end
 end
 
@@ -256,6 +272,13 @@ function [8:0] clamp_y(input [8:0] p, input [8:0] d);
 endfunction
 wire pen_down = ps2_mouse[0];
 wire         ioctl_download, ioctl_wr;
+reg   [31:0] sd_lba;
+reg          sd_rd, sd_wr;
+wire         sd_ack, sd_buff_wr, img_mounted, img_readonly;
+wire  [13:0] sd_buff_addr;
+wire   [7:0] sd_buff_dout;
+wire   [7:0] sd_buff_din;
+wire  [63:0] img_size;
 wire  [24:0] ioctl_addr;
 wire   [7:0] ioctl_dout;
 wire         ioctl_wait;
@@ -273,7 +296,18 @@ hps_io #(.CONF_STR(CONF_STR)) hps_io
     .ioctl_wr       (ioctl_wr),
     .ioctl_addr     (ioctl_addr),
     .ioctl_dout     (ioctl_dout),
-    .ioctl_wait     (ioctl_wait)
+    .ioctl_wait     (ioctl_wait),
+    .sd_lba         ('{sd_lba}),
+    .sd_rd          (sd_rd),
+    .sd_wr          (sd_wr),
+    .sd_ack         (sd_ack),
+    .sd_buff_addr   (sd_buff_addr),
+    .sd_buff_dout   (sd_buff_dout),
+    .sd_buff_din    ('{sd_buff_din}),
+    .sd_buff_wr     (sd_buff_wr),
+    .img_mounted    (img_mounted),
+    .img_readonly   (img_readonly),
+    .img_size       (img_size)
 );
 
 wire clk_sys, pll_locked;
@@ -345,7 +379,58 @@ wire       rom_ok = rom_present & ~clr_run;
 // word at a time, read back with the same sixteen-byte bursts the caches
 // use, and every mismatch counted. The count and the first bad address
 // are on the status line. It costs half a second at boot.
-localparam [2:0] MT_WRITE = 3'd0, MT_READ = 3'd1, MT_ROM = 3'd2, MT_CLEAR = 3'd3;
+localparam [2:0] MT_WRITE = 3'd0, MT_READ = 3'd1, MT_ROM = 3'd2, MT_CLEAR = 3'd3,
+                 MT_LOAD = 3'd4, MT_SAVE = 3'd5;
+
+// The RAM image: 8192 sectors of 512 bytes through the framework's SD
+// interface, a sector at a time through a buffer here. Loading, the HPS
+// fills the byte buffer and the loader writes it out a word at a time;
+// saving, the loader reads the memory in the caches' bursts into a word
+// buffer and the HPS takes bytes from it.
+reg  [7:0]  secb [0:511];             // in: what the HPS wrote
+reg  [31:0] secw [0:127];             // out: what the memory holds
+reg  [7:0]  secb_q;
+reg  [31:0] secw_q;
+reg  [12:0] lba;                      // 0..8191
+reg  [6:0]  wi;                       // word within the sector
+reg  [1:0]  bi;                       // byte within the word
+reg  [2:0]  ss;                       // the sector's own state
+reg  [31:0] gather;
+reg         img_ok;                   // a four-megabyte image is mounted
+reg         img_d;
+reg         save_run;                 // the save walk, without a reset
+reg         halt_req;                 // hold the core for it
+reg  [1:0]  save_st;
+reg  [4:0]  idle_cnt;
+reg         stop_d, savebtn_d;
+wire        mem_idle, stopped;
+// The ON button pressed by the core itself, after a power-off it has
+// saved through: two seconds after the stop, or when the save is done.
+reg        wake_pend, wake;
+reg [27:0] wake_cnt;
+always @(posedge clk_sys or negedge rst_n) begin
+    if (!rst_n) begin wake_pend <= 1'b0; wake <= 1'b0; wake_cnt <= 28'd0; end
+    else begin
+        if (stopped && !stop_d && !status[6]) begin wake_pend <= 1'b1; wake_cnt <= 28'd0; end
+        if (wake_pend) begin
+            if (wake_cnt != 28'd184_000_000) wake_cnt <= wake_cnt + 28'd1;
+            else if (save_st == 2'd0 && !save_run) begin wake_pend <= 1'b0; wake <= 1'b1; wake_cnt <= 28'd0; end
+        end else if (wake) begin
+            wake_cnt <= wake_cnt + 28'd1;
+            if (wake_cnt == 28'd9_200_000) begin wake <= 1'b0; wake_cnt <= 28'd0; end   // held 100 ms
+        end
+    end
+end
+wire on_button = joystick_0[4] | f4_down | wake;
+always @(posedge clk_sys) begin
+    if (sd_buff_wr) secb[sd_buff_addr[8:0]] <= sd_buff_dout;
+    secb_q <= secb[{wi, bi}];
+    secw_q <= secw[sd_buff_addr[8:2]];
+end
+// Big-endian, as the memory is: byte 0 of the word is its top.
+assign sd_buff_din = (sd_buff_addr[1:0] == 2'd0) ? secw_q[31:24]
+                   : (sd_buff_addr[1:0] == 2'd1) ? secw_q[23:16]
+                   : (sd_buff_addr[1:0] == 2'd2) ? secw_q[15:8] : secw_q[7:0];
 reg  [2:0]  mt_phase;
 // The ROM read back out of the memory and summed again. `rom_sum` is what
 // the loader was given; this is what the machine will actually execute,
@@ -368,20 +453,25 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
         load_req <= 0; load_busy <= 0; dl_d <= 0; rst_d <= 0;
         rom_words <= 0; rom_present <= 0; clr_run <= 0; clr_addr <= 0; rom_sum <= 0;
         load_we <= 1; load_burst <= 0; mt_phase <= MT_WRITE; mt_beat <= 0; rom_back <= 0;
+        sd_lba <= 0; sd_rd <= 0; sd_wr <= 0; lba <= 0; wi <= 0; bi <= 0; ss <= 0; gather <= 0;
+        img_ok <= 0; img_d <= 0; save_run <= 0; halt_req <= 0; save_st <= 0; idle_cnt <= 0;
+        stop_d <= 0; savebtn_d <= 0;
         mt_errors <= 0; mt_first <= 32'hFFFF_FFFF;
     end else begin
         dl_d  <= ioctl_download;
         rst_d <= reset;
         if (load_busy) begin
             if (load_ack) begin
-                if (!clr_run) begin
+                if (!clr_run && !save_run) begin
                     load_req  <= 0;
                     load_busy <= 0;
                     rom_words <= rom_words + 32'd1;
                     rom_sum   <= rom_sum + load_data;
-                end else if (mt_phase == MT_READ || mt_phase == MT_ROM) begin
+                end else if (mt_phase == MT_READ || mt_phase == MT_ROM || mt_phase == MT_SAVE) begin
                     // Four beats to a burst; the request holds through them.
-                    if (mt_phase == MT_ROM) begin
+                    if (mt_phase == MT_SAVE) begin
+                        secw[{wi[6:2], mt_beat}] <= load_rdata;
+                    end else if (mt_phase == MT_ROM) begin
                         if (clr_addr + {mt_beat, 2'b00} < rom_end)
                             rom_back <= rom_back + load_rdata;
                     end else if (load_rdata != mt_pattern(clr_addr + {mt_beat, 2'b00})) begin
@@ -394,19 +484,78 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
                         load_req  <= 0;
                         load_busy <= 0;
                         clr_addr  <= clr_addr + 25'd16;
+                        wi        <= wi + 7'd4;
                     end
                 end else begin
                     load_req  <= 0;
                     load_busy <= 0;
                 end
             end
+        end else if (mt_phase == MT_LOAD && clr_run) begin
+            // A sector in from the image, then out to the memory.
+            case (ss)
+            3'd0: begin sd_lba <= {19'd0, lba}; sd_rd <= 1'b1; ss <= 3'd1; end
+            3'd1: if (sd_ack) begin sd_rd <= 1'b0; ss <= 3'd2; end
+            3'd2: if (!sd_ack) begin wi <= 7'd0; bi <= 2'd0; ss <= 3'd3; end
+            3'd3: ss <= 3'd4;                          // the byte's read is a cycle behind
+            3'd4: ss <= 3'd5;
+            3'd5: begin
+                gather <= {gather[23:0], secb_q};
+                bi <= bi + 2'd1;
+                ss <= (bi == 2'd3) ? 3'd6 : 3'd3;
+            end
+            3'd6: begin
+                load_addr  <= DRAM_BASE + {3'd0, lba, wi, 2'b00};
+                load_data  <= gather;
+                load_we    <= 1'b1;
+                load_burst <= 1'b0;
+                load_req   <= 1'b1;
+                load_busy  <= 1'b1;
+                wi <= wi + 7'd1;
+                if (wi == 7'd127) begin
+                    lba <= lba + 13'd1;
+                    ss  <= 3'd0;
+                    if (lba == 13'd8191) clr_run <= 1'b0;
+                end else ss <= 3'd3;
+            end
+            default: ss <= 3'd0;
+            endcase
+        end else if (mt_phase == MT_SAVE && save_run) begin
+            // A sector out of the memory in bursts, then away to the image.
+            case (ss)
+            3'd0: begin
+                // A burst of four words; after the last of the sector's
+                // thirty-two, the sector goes to the image.
+                load_addr  <= DRAM_BASE + {3'd0, lba, wi, 2'b00};
+                load_we    <= 1'b0;
+                load_burst <= 1'b1;
+                mt_beat    <= 2'd0;
+                load_req   <= 1'b1;
+                load_busy  <= 1'b1;
+                if (wi == 7'd124) ss <= 3'd7;
+            end
+            3'd7: begin sd_lba <= {19'd0, lba}; sd_wr <= 1'b1; ss <= 3'd1; end
+            3'd1: if (sd_ack) begin sd_wr <= 1'b0; ss <= 3'd2; end
+            3'd2: if (!sd_ack) begin
+                wi <= 7'd0;
+                lba <= lba + 13'd1;
+                ss  <= 3'd0;
+                if (lba == 13'd8191) save_run <= 1'b0;
+            end
+            default: ss <= 3'd0;
+            endcase
         end else if (clr_run) begin
             if (clr_addr == ((mt_phase == MT_ROM) ? ((rom_end + 25'd15) & ~25'd15)
                                                   : DRAM_END)) begin
                 case (mt_phase)
                 MT_WRITE: begin mt_phase <= MT_READ;  clr_addr <= DRAM_BASE; end
                 MT_READ:  begin mt_phase <= MT_ROM;   clr_addr <= 25'd0;     end
-                MT_ROM:   begin mt_phase <= MT_CLEAR; clr_addr <= DRAM_BASE; end
+                MT_ROM:   begin
+                    // What the memory held last time, if there is an image;
+                    // otherwise nothing.
+                    if (img_ok) begin mt_phase <= MT_LOAD; lba <= 13'd0; ss <= 3'd0; end
+                    else begin mt_phase <= MT_CLEAR; clr_addr <= DRAM_BASE; end
+                end
                 default:  clr_run <= 1'b0;
                 endcase
             end else begin
@@ -457,6 +606,35 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
         end
         // The loader's own writes are whole words, not bursts.
         if (ioctl_download) begin load_we <= 1'b1; load_burst <= 1'b0; end
+
+        // An image mounted: remembered, and if the machine is already
+        // running, loaded now -- which is a power cycle into it.
+        img_d <= img_mounted;
+        if (img_mounted && !img_d) begin
+            img_ok <= (img_size == 64'd4194304);
+            if (img_size == 64'd4194304 && rom_present && !ioctl_download && !clr_run && !save_run) begin
+                clr_run <= 1'b1; mt_phase <= MT_LOAD; lba <= 13'd0; ss <= 3'd0;
+            end
+        end
+
+        // A save: when the ROM turns the machine off, or on request. The
+        // core is held, the memory waited for, and then borrowed.
+        stop_d <= stopped; savebtn_d <= status[5];
+        case (save_st)
+        2'd0: if (img_ok && rom_ok && !clr_run &&
+                  ((stopped && !stop_d) || (status[5] && !savebtn_d))) begin
+                  halt_req <= 1'b1; idle_cnt <= 5'd0; save_st <= 2'd1;
+              end
+        2'd1: begin
+                  idle_cnt <= mem_idle ? idle_cnt + 5'd1 : 5'd0;
+                  if (idle_cnt == 5'd31) begin
+                      save_run <= 1'b1; mt_phase <= MT_SAVE; lba <= 13'd0; wi <= 7'd0;
+                      ss <= 3'd0; save_st <= 2'd2;
+                  end
+              end
+        2'd2: if (!save_run && !load_busy) begin halt_req <= 1'b0; save_st <= 2'd0; end
+        default: save_st <= 2'd0;
+        endcase
     end
 end
 
@@ -486,7 +664,8 @@ dr840_machine machine (
     .kbd_attached(~status[4]), .key_tog(key_tog), .key_code(key_code), .key_ext(key_ext), .key_down(key_down),
     // Held in reset until there is a ROM to run. The loader owns the
     // memory while it is arriving, and before that there is nothing to do.
-    .load_en(ioctl_download | load_busy | ~rom_ok),
+    .load_en(ioctl_download | (load_busy & ~save_run) | ~rom_ok),
+    .mem_borrow(save_run), .hold(halt_req), .mem_idle(mem_idle), .stopped(stopped),
     .load_addr(load_addr), .load_data(load_data),
     .load_we(load_we), .load_burst(load_burst), .load_rdata(load_rdata),
     .load_req(load_req), .load_ack(load_ack),

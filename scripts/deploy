@@ -34,6 +34,11 @@ sshpass -p "$PASS" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/nu
 sshpass -p "$PASS" scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
     "$ROM" "root@$HOST:/media/fat/games/DataRover840/$(basename "$ROM" .image).rom"
 
+# The RAM image, once: it is the user's machine, and is never overwritten.
+sshpass -p "$PASS" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+    "root@$HOST" "[ -f /media/fat/games/DataRover840/DataRover840.sav ] || \
+                  dd if=/dev/zero of=/media/fat/games/DataRover840/DataRover840.sav bs=1M count=4 2>/dev/null"
+
 # The .mgl names the core and the ROM together, so a load_core of it boots
 # straight into the monitor with nothing to pick from the OSD.
 sshpass -p "$PASS" scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \

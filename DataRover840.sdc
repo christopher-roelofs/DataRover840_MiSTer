@@ -138,3 +138,10 @@ set_multicycle_path -setup -end 2 -from [get_registers {*dr840_tx39:soc|*}] -to 
 set_multicycle_path -hold  -end 1 -from [get_registers {*dr840_tx39:soc|*}] -to [get_registers {*dr840_mem:board|*}]
 set_multicycle_path -setup -end 2 -from [get_registers {*dr840_mem:board|*}] -to [get_registers {*dr840_tx39:soc|*}]
 set_multicycle_path -hold  -end 1 -from [get_registers {*dr840_mem:board|*}] -to [get_registers {*dr840_tx39:soc|*}]
+
+# The DMA clients' addresses decode in the board's arbiter, whose grants
+# gate the peripheral block's own request: a path that leaves the block
+# (or the sound, or the LCD) and comes back into it through the board's
+# logic, register to register, on enabled edges at both ends.
+set_multicycle_path -setup -end 2 -from [get_registers {*dr840_mbus:mbus|* *dr840_snd:snd|* *dr840_lcd:lcd|*}] -to [get_registers {*dr840_tx39:soc|*}]
+set_multicycle_path -hold  -end 1 -from [get_registers {*dr840_mbus:mbus|* *dr840_snd:snd|* *dr840_lcd:lcd|*}] -to [get_registers {*dr840_tx39:soc|*}]

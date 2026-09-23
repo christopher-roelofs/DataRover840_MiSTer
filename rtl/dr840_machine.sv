@@ -20,6 +20,13 @@ module dr840_machine (
 
     // ---- ROM load, from the HPS. Whole words, big-endian.
     input  wire        load_en,      // the loader owns the memory
+    // Or borrows it: the same port, but the core is held rather than reset,
+    // and gets the memory back afterwards with everything as it was. For
+    // saving the RAM while the machine is off.
+    input  wire        mem_borrow,
+    input  wire        hold,         // and held beforehand, while the memory drains
+    output wire        mem_idle,     // nothing of the board's in the memory
+    output wire        stopped,      // the core, held by the ROM's power-off
     input  wire [24:0] load_addr,
     input  wire [31:0] load_data,
     input  wire        load_req,
@@ -117,7 +124,8 @@ module dr840_machine (
         if (!rst_n) core_rst_q <= 2'b00;
         else        core_rst_q <= {core_rst_q[0], ~load_en};
     wire core_rst_n = core_rst_q[1];
-    assign dbg_pen = {pen_down, 5'd0, pen_x, 6'd0, pen_y};
+    // Bit 31 the pen, bit 30 the option key as the block sees it.
+    assign dbg_pen = {pen_down, boot_monitor, 4'd0, pen_x, 6'd0, pen_y};
 
     wire [31:0] ia, ird, da, dwd, drd;
     wire        ireq, ibur, iack, ierr, dreq, dbur, dwe, dack, derr;
@@ -136,7 +144,7 @@ module dr840_machine (
         .dmem_addr(da), .dmem_req(dreq), .dmem_burst(dbur), .dmem_we(dwe),
         .dmem_be(dbe), .dmem_wdata(dwd), .dmem_ack(dack), .dmem_rdata(drd),
         .dmem_err(derr),
-        .irq_in(soc_irq), .halt(cpu_stop),
+        .irq_in(soc_irq), .halt(cpu_stop | mem_borrow | hold),
         .retire_valid(retire_valid), .retire_pc(obs_pc),
         .retire_insn(obs_insn), .retire_next_pc(),
         .exc_valid(exc_valid), .exc_code(exc_code), .exc_epc(exc_epc), .exc_ip(exc_ip), .exc_bad(exc_bad),
@@ -274,17 +282,20 @@ module dr840_machine (
     // The loader takes the memory while it is running; the board has it
     // otherwise. The core is in reset during a load, so the board is not
     // asking for anything.
-    wire [24:0] ram_addr  = load_en ? load_addr  : bram_addr;
-    wire        ram_req   = load_en ? load_req   : bram_req;
-    wire        ram_burst = load_en ? load_burst : bram_burst;
-    wire        ram_we    = load_en ? load_we    : bram_we;
-    wire [3:0]  ram_be    = load_en ? 4'b1111    : bram_be;
-    wire [31:0] ram_wdata = load_en ? load_data  : bram_wdata;
+    wire        lend      = load_en | mem_borrow;
+    wire [24:0] ram_addr  = lend ? load_addr  : bram_addr;
+    wire        ram_req   = lend ? load_req   : bram_req;
+    wire        ram_burst = lend ? load_burst : bram_burst;
+    wire        ram_we    = lend ? load_we    : bram_we;
+    wire [3:0]  ram_be    = lend ? 4'b1111    : bram_be;
+    wire [31:0] ram_wdata = lend ? load_data  : bram_wdata;
     wire        ram_ack, ram_busy;
 
-    assign bram_ack  = load_en ? 1'b0 : ram_ack;
+    assign bram_ack  = lend ? 1'b0 : ram_ack;
     assign bram_busy = ram_busy;
-    assign load_ack  = load_en ? ram_ack : 1'b0;
+    assign load_ack  = lend ? ram_ack : 1'b0;
+    assign mem_idle  = !ram_busy && !bram_req;
+    assign stopped   = cpu_stop;
     assign load_rdata = ram_rdata;
 
     wire [26:1] ch1_addr, ch2_addr;
@@ -293,7 +304,7 @@ module dr840_machine (
     wire        ch1_req, ch1_ready, ch2_req, ch2_rnw, ch2_ready;
 
     dr840_sdram adapter (
-        .clk(clk), .cen(load_en ? 1'b1 : cen), .rst_n(rst_n),
+        .clk(clk), .cen(lend ? 1'b1 : cen), .rst_n(rst_n),
         .ram_addr(ram_addr), .ram_req(ram_req), .ram_burst(ram_burst),
         .ram_we(ram_we), .ram_be(ram_be), .ram_wdata(ram_wdata),
         .ram_ack(ram_ack), .ram_rdata(ram_rdata), .ram_busy(ram_busy),
