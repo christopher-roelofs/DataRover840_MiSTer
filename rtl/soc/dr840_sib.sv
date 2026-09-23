@@ -55,8 +55,16 @@ module dr840_sib #(
     // The pen, in the converter's own counts: 0..1023 across each layer.
     input  wire        pen_down,
     input  wire [9:0]  pen_x,
-    input  wire [9:0]  pen_y
+    input  wire [9:0]  pen_y,
+
+    // The sound: toggles as each sample is consumed, with its address (the
+    // ring's base as written, plus the offset), and the codec's control
+    // register B for what to do with it. dr840_snd.sv fetches and plays.
+    output reg         snd_tog,
+    output reg  [31:0] snd_addr,
+    output wire [15:0] codec_b
 );
+    assign codec_b = ureg[4'd8];
     // ------------------------------------------------------------ registers
     localparam [11:0] SIBSIZE = 12'h060, SNDRXSTART = 12'h064, SNDTXSTART = 12'h068;
     localparam [11:0] TELRXSTART = 12'h06C, TELTXSTART = 12'h070, SIBCTRL = 12'h074;
@@ -233,7 +241,7 @@ module dr840_sib #(
             sf0stat <= 0; sf1stat <= 0; dmactrl <= 0;
             for (k = 0; k < 16; k = k + 1) ureg[k] <= 16'd0;
             irq_seen <= 1'b0; frame_cnt <= 20'd0; ring_off <= 14'd0;
-            int1_set <= 32'd0;
+            int1_set <= 32'd0; snd_tog <= 1'b0; snd_addr <= 32'd0;
         end else begin
             set_now = 32'd0;
 
@@ -257,6 +265,8 @@ module dr840_sib #(
                 frame_cnt <= 20'd0;
                 set_now = set_now | frame_bits;
                 if (ring_run) begin
+                    snd_tog  <= ~snd_tog;
+                    snd_addr <= sndtx + {18'd0, ring_off};
                     if (ring_off + 14'd2 >= ring_bytes) begin
                         ring_off <= 14'd0;
                         set_now  = set_now | INT1_SND1_0 | INT1_SNDDMACNT;

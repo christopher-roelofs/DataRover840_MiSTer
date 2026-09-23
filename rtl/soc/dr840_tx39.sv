@@ -65,6 +65,24 @@ module dr840_tx39 #(
     input  wire        on_button,
     output wire        cpu_stop,
 
+    // The sound, for dr840_snd.sv: see dr840_sib.sv.
+    output wire        snd_tog,
+    output wire [31:0] snd_addr,
+    output wire [15:0] codec_b,
+
+    // The Magic Bus keyboard: attached or not, and the keys.
+    input  wire        kbd_attached,
+    input  wire        key_tog,
+    input  wire [7:0]  key_code,
+    input  wire        key_ext,
+    input  wire        key_down,
+    // Its receive DMA writes memory through this.
+    output wire [31:0] kmem_addr,
+    output wire        kmem_req,
+    output wire        kmem_we,
+    output wire [31:0] kmem_wdata,
+    input  wire        kmem_ack,
+
     // The pen, in the converter's counts.
     input  wire        pen_down,
     input  wire [9:0]  pen_x,
@@ -235,13 +253,25 @@ module dr840_tx39 #(
 
     // The serial interface bus and the codec behind it: rtl/soc/dr840_sib.sv.
     wire        is_sib = (off >= 12'h060) && (off <= 12'h090);
+    // The Magic Bus controller and the keyboard: rtl/soc/dr840_mbus.sv.
+    wire        is_mbus = (off >= 12'h0E0) && (off <= 12'h0F8);
+    wire [31:0] mbus_rdata, mbus_set;
+    dr840_mbus mbus (
+        .clk(clk), .cen(cen), .rst_n(rst_n), .attached(kbd_attached),
+        .wr(io_start && is_tx39 && io_we && is_mbus), .off(off), .wdata(io_wdata),
+        .rdata(mbus_rdata), .int2_set(mbus_set),
+        .key_tog(key_tog), .key_code(key_code), .key_ext(key_ext), .key_down(key_down),
+        .kmem_addr(kmem_addr), .kmem_req(kmem_req), .kmem_we(kmem_we),
+        .kmem_wdata(kmem_wdata), .kmem_ack(kmem_ack)
+    );
     wire [31:0] sib_rdata;
     wire [31:0] sib_set;                // bits to raise in INTRSTATUS1
     dr840_sib #(.CLK_HZ(SIB_HZ)) sib (
         .clk(clk), .rst_n(rst_n),
         .wr(io_start && is_tx39 && io_we && is_sib), .off(off), .wdata(io_wdata),
         .rdata(sib_rdata), .int1_set(sib_set),
-        .pen_down(pen_down), .pen_x(pen_x), .pen_y(pen_y)
+        .pen_down(pen_down), .pen_x(pen_x), .pen_y(pen_y),
+        .snd_tog(snd_tog), .snd_addr(snd_addr), .codec_b(codec_b)
     );
 
     // The two Glacier PC Card controllers, at 0x10400000 and 0x10800000:
@@ -419,6 +449,7 @@ module dr840_tx39 #(
 
             // ---------------------------------------------- INTRSTATUS1
             icu_set[0] = icu_set[0] | sib_set;
+            icu_set[1] = icu_set[1] | mbus_set;
 
             // ---------------------------------------------- the ON button
             onbtn_q <= {onbtn_q[0], on_button};
@@ -653,6 +684,8 @@ module dr840_tx39 #(
             rd_live = 32'hFFFF_FFFF;
         end else if (is_sib) begin
             rd_live = sib_rdata;
+        end else if (is_mbus) begin
+            rd_live = mbus_rdata;
         end else if (off == 12'h104) begin
             rd_live = icu_status[1] | INT2_MBUS_LEVEL;
         end else if (off == 12'h114) begin
@@ -689,7 +722,7 @@ module dr840_tx39 #(
 
     localparam [2:0] RD_LIVE = 3'd0, RD_RF = 3'd1, RD_MBUS = 3'd2, RD_IOCTRL = 3'd3,
                      RD_POWER = 3'd4;
-    wire rd_is_rf = is_tx39 && !is_sib && !(off == 12'h104)
+    wire rd_is_rf = is_tx39 && !is_sib && !is_mbus && !(off == 12'h104)
                  && !(off >= 12'h100 && off < 12'h130)
                  && off != T_RTCHI && off != T_RTCLO && off != T_ALMHI
                  && off != T_ALMLO && off != T_CTRL && off != T_PER

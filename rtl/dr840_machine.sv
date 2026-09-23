@@ -51,6 +51,12 @@ module dr840_machine (
     // The pen, in panel pixels; the pointer is drawn on the panel where
     // it is, and the codec sees it in its own counts.
     input  wire        on_button,      // the ON button
+    // The Magic Bus keyboard.
+    input  wire        kbd_attached,
+    input  wire        key_tog,
+    input  wire [7:0]  key_code,
+    input  wire        key_ext,
+    input  wire        key_down,
     input  wire        pen_down,
     input  wire [8:0]  pen_px,          // 0..479
     input  wire [8:0]  pen_py,          // 0..319
@@ -89,7 +95,9 @@ module dr840_machine (
     output reg  [31:0] obs_last_epc,
     output reg  [31:0] obs_last_bad,
     // The pen as the codec is given it: down, and the raw counts.
-    output wire [31:0] dbg_pen
+    output wire [31:0] dbg_pen,
+    // The sound, signed 16-bit mono, a sample a frame.
+    output wire signed [15:0] audio
 );
 
     // The core's clock enable: every second edge of the memory's clock.
@@ -187,6 +195,20 @@ module dr840_machine (
     wire [3:0]  io_be;
     wire [5:0]  soc_irq;
     wire        cpu_stop;
+    wire        snd_tog;
+    wire [31:0] snd_addr;
+    wire [15:0] codec_b;
+    wire [31:0] ka, kwd;
+    wire        kreq, kwe, kack;
+    wire [31:0] aa, ard;
+    wire        areq, aack;
+    dr840_snd snd (
+        .clk(clk), .cen(cen), .rst_n(core_rst_n),
+        .snd_tog(snd_tog), .snd_addr(snd_addr), .codec_b(codec_b),
+        .amem_addr(aa), .amem_req(areq), .amem_ack(aack), .amem_rdata(ard),
+        .kmem_addr(ka), .kmem_req(kreq), .kmem_we(kwe), .kmem_wdata(kwd), .kmem_ack(kack),
+        .audio(audio)
+    );
     wire [31:0] vid_ctrl1, vid_ctrl2, vid_ctrl3;
 
     // Pixel to converter count, on the reference's calibration of this
@@ -218,6 +240,7 @@ module dr840_machine (
         .dmem_be(dbe), .dmem_wdata(dwd), .dmem_ack(dack), .dmem_rdata(drd),
         .dmem_err(derr),
         .vmem_addr(va), .vmem_req(vreq), .vmem_ack(vack), .vmem_rdata(vrd),
+        .amem_addr(aa), .amem_req(areq), .amem_ack(aack), .amem_rdata(ard),
         .ram_addr(bram_addr), .ram_req(bram_req), .ram_burst(bram_burst),
         .ram_we(bram_we), .ram_be(bram_be), .ram_wdata(bram_wdata),
         .ram_ack(bram_ack), .ram_rdata(ram_rdata), .ram_busy(bram_busy),
@@ -238,6 +261,10 @@ module dr840_machine (
         .boot_monitor(boot_monitor), .uart_txd(uart_txd), .uart_rxd(uart_rxd),
         .pen_down(pen_down), .pen_x(pen_x), .pen_y(pen_y),
         .on_button(on_button), .cpu_stop(cpu_stop),
+        .snd_tog(snd_tog), .snd_addr(snd_addr), .codec_b(codec_b),
+        .kbd_attached(kbd_attached), .key_tog(key_tog), .key_code(key_code),
+        .key_ext(key_ext), .key_down(key_down),
+        .kmem_addr(ka), .kmem_req(kreq), .kmem_we(kwe), .kmem_wdata(kwd), .kmem_ack(kack),
         .irq_out(soc_irq), .dbg_pending(),
         .vid_ctrl1(vid_ctrl1), .vid_ctrl2(vid_ctrl2), .vid_ctrl3(vid_ctrl3),
         .dbg_tx_bytes(obs_uart_bytes), .dbg_io_reads(obs_io),

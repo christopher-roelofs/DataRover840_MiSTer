@@ -115,9 +115,10 @@ assign HDMI_FREEZE = 0;
 assign HDMI_BLACKOUT = 0;
 assign HDMI_BOB_DEINT = 0;
 
-assign AUDIO_L   = 0;
-assign AUDIO_R   = 0;
-assign AUDIO_S   = 0;
+wire signed [15:0] audio;
+assign AUDIO_L   = audio;
+assign AUDIO_R   = audio;
+assign AUDIO_S   = 1;         // signed
 assign AUDIO_MIX = 0;
 
 assign LED_USER  = ioctl_download;
@@ -176,6 +177,9 @@ localparam CONF_STR = {
     // instead of Magic Cap. Takes effect on the next reset.
     "O[2],Boot,Magic Cap,IDT monitor;",
     "O[3],Display,LCD,Debug;",
+    // A Magic Bus AT keyboard, driven by the PS/2 keyboard. Off until it
+    // has been argued into agreement with the reference.
+    "O[4],Keyboard,Off,On;",
     "-;",
     "T[0],Reset;",
     "R[0],Reset and close OSD;",
@@ -196,6 +200,18 @@ always @(posedge clk_sys) begin
     if (ps2_key[7:0] == 8'h0C && !ps2_key[8]) f4_down <= ps2_key[9];
 end
 wire on_button = joystick_0[4] | f4_down;
+
+// The keyboard, on the Magic Bus. The framework's PS/2 keyboard already
+// speaks AT set 2: [7:0] the code, [8] extended, [9] pressed, [10] a
+// toggle per event.
+reg key_tog, key_ext, key_down; reg [7:0] key_code; reg key_seen;
+always @(posedge clk_sys) begin
+    if (ps2_key[10] != key_seen) begin
+        key_seen <= ps2_key[10];
+        key_code <= ps2_key[7:0]; key_ext <= ps2_key[8]; key_down <= ps2_key[9];
+        key_tog  <= ~key_tog;
+    end
+end
 
 // The mouse is the pen. A mouse moves and a pen is somewhere, so the
 // movements are summed into a place on the panel, held inside it, and the
@@ -451,6 +467,7 @@ assign sdram_dq_i = SDRAM_DQ;
 dr840_machine machine (
     .clk(clk_sys), .rst_n(rst_n), .boot_monitor(status[2]),
     .pen_down(pen_down), .pen_px(pen_px), .pen_py(pen_py), .on_button(on_button),
+    .kbd_attached(status[4]), .key_tog(key_tog), .key_code(key_code), .key_ext(key_ext), .key_down(key_down),
     // Held in reset until there is a ROM to run. The loader owns the
     // memory while it is arriving, and before that there is nothing to do.
     .load_en(ioctl_download | load_busy | ~rom_ok),
@@ -469,7 +486,7 @@ dr840_machine machine (
     .obs_dhit(obs_dhit), .obs_dmiss(obs_dmiss), .obs_io(obs_io),
     .obs_uart_bytes(obs_uart), .obs_resets(obs_resets), .obs_exc(obs_exc),
     .obs_faults(obs_faults), .obs_last_epc(obs_last_epc), .obs_last_bad(obs_last_bad),
-    .dbg_pen(dbg_pen),
+    .dbg_pen(dbg_pen), .audio(audio),
     .uart_txd(guest_txd), .uart_rxd(UART_RXD),
     .lcd_ce_pix(lcd_ce), .lcd_hs(lcd_hs), .lcd_vs(lcd_vs), .lcd_de(lcd_de),
     .lcd_r(lcd_r), .lcd_g(lcd_g), .lcd_b(lcd_b)

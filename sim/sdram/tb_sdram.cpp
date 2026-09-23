@@ -146,6 +146,14 @@ int main(int argc, char **argv) {
     std::vector<tap_t> taps;
     // --button at,len: the ON button, held from instruction `at`.
     uint64_t btn_at = 0, btn_len = 0;
+    // --wav path: the sound, a sample a frame, as a 16-bit mono WAV at the
+    // nominal 11025 Hz.
+    // --keyboard attaches one; --keys "code,ext,down,at;..." presses them
+    // (AT set 2 codes, hex), at those instruction counts.
+    bool kbd = false;
+    struct key_t { unsigned code; bool ext, down; uint64_t at; };
+    std::vector<key_t> keys; size_t keyidx = 0; int key_tog = 0;
+    const char *wav_path = nullptr; FILE *wav = nullptr; uint32_t wav_n = 0; int wav_tog = -1;
     // --trace-after pc,hit,n: print n retired instructions from the hit-th
     // execution of pc, the reference's option of the same name.
     uint32_t ta_pc = 0; uint64_t ta_hit = 0, ta_hits = 0, ta_n = 0, ta_left = 0;
@@ -201,6 +209,19 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--free")) stub = true;
         else if (!strcmp(argv[i], "--replay")) replay = true;
         else if (!strcmp(argv[i], "--check")) check = true;
+        else if (!strcmp(argv[i], "--wav") && i + 1 < argc) wav_path = argv[++i];
+        else if (!strcmp(argv[i], "--keyboard")) kbd = true;
+        else if (!strcmp(argv[i], "--keys") && i + 1 < argc) {
+            const char *a = argv[++i]; kbd = true;
+            while (a && *a) {
+                key_t k = {0, false, true, 0};
+                k.code = strtoul(a, nullptr, 16);
+                const char *c = strchr(a, ','); if (c) { k.ext = strtoul(c + 1, nullptr, 10) != 0; c = strchr(c + 1, ',');
+                if (c) { k.down = strtoul(c + 1, nullptr, 10) != 0; c = strchr(c + 1, ','); if (c) k.at = strtoull(c + 1, nullptr, 10); } }
+                keys.push_back(k);
+                a = strchr(a, ';'); if (a) a++;
+            }
+        }
         else if (!strcmp(argv[i], "--button") && i + 1 < argc) {
             const char *a = argv[++i]; btn_at = strtoull(a, nullptr, 10);
             const char *c = strchr(a, ','); btn_len = c ? strtoull(c + 1, nullptr, 10) : 2000000;
@@ -562,6 +583,17 @@ int main(int argc, char **argv) {
         }
 
         dut->on_button = btn_len && idx >= btn_at && idx < btn_at + btn_len;
+        dut->kbd_attached = kbd;
+        if (keyidx < keys.size() && idx >= keys[keyidx].at && cen_now) {
+            dut->key_code = keys[keyidx].code; dut->key_ext = keys[keyidx].ext;
+            dut->key_down = keys[keyidx].down; key_tog ^= 1; dut->key_tog = key_tog;
+            keyidx++;
+        }
+        if (wav_path && cen_now && (int)dut->dbg_snd_tog != wav_tog) {
+            if (!wav) { wav = fopen(wav_path, "wb"); uint8_t hdr[44] = {0}; fwrite(hdr, 1, 44, wav); }
+            wav_tog = dut->dbg_snd_tog;
+            int16_t v = (int16_t)dut->dbg_audio; fwrite(&v, 2, 1, wav); wav_n++;
+        }
         if (tap_x >= 0) {
             // The tap in progress, if any, is the one whose window holds idx;
             // between taps the pen stays where it last was, up.
@@ -629,6 +661,15 @@ int main(int argc, char **argv) {
     if (rec_dev) fclose(rec_dev);
     if (rec_irq) fclose(rec_irq);
     if (rec_take) fclose(rec_take);
+    if (wav) {
+        uint32_t rate = 11025, data = wav_n * 2, riff = 36 + data;
+        uint8_t h[44] = {'R','I','F','F',0,0,0,0,'W','A','V','E','f','m','t',' ',16,0,0,0,1,0,1,0,
+                         0,0,0,0, 0,0,0,0, 2,0,16,0, 'd','a','t','a',0,0,0,0};
+        memcpy(h + 4, &riff, 4); memcpy(h + 24, &rate, 4); uint32_t br = rate * 2; memcpy(h + 28, &br, 4);
+        memcpy(h + 40, &data, 4);
+        fseek(wav, 0, SEEK_SET); fwrite(h, 1, 44, wav); fclose(wav);
+        printf("wav: %u samples -> %s\n", wav_n, wav_path);
+    }
     printf("interrupts: %" PRIu64 " taken, %" PRIu64 " with nothing pending\n",
            exc_taken, exc_spurious);
     printf("stalls: %u waiting on a store, %u on a load, %u on an instruction"

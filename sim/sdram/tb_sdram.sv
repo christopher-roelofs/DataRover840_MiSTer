@@ -87,7 +87,14 @@ module tb_sdram #(
     output wire [31:0] dbg_stall_store, dbg_stall_load, dbg_stall_fetch,
     output wire        dbg_pending,
     input  wire        on_button,
+    input  wire        kbd_attached,
+    input  wire        key_tog,
+    input  wire [7:0]  key_code,
+    input  wire        key_ext,
+    input  wire        key_down,
     output wire        dbg_stop,
+    output wire signed [15:0] dbg_audio,
+    output wire        dbg_snd_tog,
     output wire [5:0]  dbg_irq,
     output wire        dbg_exc_valid,
     output wire [4:0]  dbg_exc_code,
@@ -143,6 +150,8 @@ module tb_sdram #(
         .dmem_be(dbe), .dmem_wdata(dwd), .dmem_ack(dack), .dmem_rdata(drd),
         .dmem_err(derr),
         .vmem_addr(va), .vmem_req(vreq), .vmem_ack(vack), .vmem_rdata(vrd),
+        .amem_addr(aa), .amem_req(areq), .amem_ack(aack), .amem_rdata(ard),
+        .kmem_addr(ka), .kmem_req(kreq), .kmem_we(kwe), .kmem_wdata(kwd), .kmem_ack(kack),
         .ram_addr(ram_addr), .ram_req(ram_req), .ram_burst(ram_burst),
         .ram_we(ram_we), .ram_be(ram_be), .ram_wdata(ram_wdata),
         .ram_ack(ram_ack), .ram_rdata(ram_rdata), .ram_busy(ram_busy),
@@ -157,6 +166,20 @@ module tb_sdram #(
     dr840_pen pen (.clk(clk), .pen_px(pen_px), .pen_py(pen_py), .pen_x(pen_x), .pen_y(pen_y));
     wire [5:0]  t_irq;
     wire        t_stop;
+    wire        snd_tog;
+    wire [31:0] snd_addr;
+    wire [15:0] codec_b;
+    wire [31:0] ka, kwd;
+    wire        kreq, kwe, kack;
+    wire [31:0] aa, ard;
+    wire        areq, aack;
+    dr840_snd snd (
+        .clk(clk), .cen(cen), .rst_n(rst_n),
+        .snd_tog(snd_tog), .snd_addr(snd_addr), .codec_b(codec_b),
+        .amem_addr(aa), .amem_req(areq), .amem_ack(aack), .amem_rdata(ard),
+        .audio(dbg_audio)
+    );
+    assign dbg_snd_tog = snd_tog;
     assign dbg_stop = t_stop;
     wire [31:0] vid_ctrl2;
     wire [31:0] va, vrd;
@@ -184,6 +207,10 @@ module tb_sdram #(
         .boot_monitor(boot_monitor), .uart_txd(), .uart_rxd(1'b1), .irq_out(t_irq),
         .pen_down(pen_down), .pen_x(pen_x), .pen_y(pen_y), .dbg_pending(dbg_pending),
         .on_button(on_button), .cpu_stop(t_stop),
+        .kbd_attached(kbd_attached), .key_tog(key_tog), .key_code(key_code),
+        .key_ext(key_ext), .key_down(key_down),
+        .kmem_addr(ka), .kmem_req(kreq), .kmem_we(kwe), .kmem_wdata(kwd), .kmem_ack(kack),
+        .snd_tog(snd_tog), .snd_addr(snd_addr), .codec_b(codec_b),
         .vid_ctrl1(dbg_vid_ctrl1), .vid_ctrl2(vid_ctrl2), .vid_ctrl3(dbg_vid_ctrl3),
         .dbg_tx_bytes(dbg_tx_bytes), .dbg_io_reads(),
         .dbg_tx_stb(dbg_tx_stb), .dbg_tx_data(dbg_tx_data)

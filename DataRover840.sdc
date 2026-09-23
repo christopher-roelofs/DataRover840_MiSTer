@@ -122,3 +122,19 @@ set_multicycle_path -setup -end 2 \
 set_multicycle_path -hold -end 1 \
     -from [get_registers {*dr840_lcd:lcd|*}] \
     -to   [get_registers {*r3900_cached:cpu|*}]
+
+# The sound (dr840_snd.sv) runs on the core's enabled edges like the LCD's
+# fetch engine, and talks to the board and the peripheral block, which
+# change on those edges too; so everything into and out of it has a whole
+# core period.
+set_multicycle_path -setup -end 2 -from [get_registers {*dr840_snd:snd|*}]
+set_multicycle_path -hold  -end 1 -from [get_registers {*dr840_snd:snd|*}]
+set_multicycle_path -setup -end 2 -to   [get_registers {*dr840_snd:snd|*}]
+set_multicycle_path -hold  -end 1 -to   [get_registers {*dr840_snd:snd|*}]
+
+# The peripheral block's Magic Bus DMA into the board, and the board's
+# acknowledgement back: both sides change on the core's enabled edges.
+set_multicycle_path -setup -end 2 -from [get_registers {*dr840_tx39:soc|*}] -to [get_registers {*dr840_mem:board|*}]
+set_multicycle_path -hold  -end 1 -from [get_registers {*dr840_tx39:soc|*}] -to [get_registers {*dr840_mem:board|*}]
+set_multicycle_path -setup -end 2 -from [get_registers {*dr840_mem:board|*}] -to [get_registers {*dr840_tx39:soc|*}]
+set_multicycle_path -hold  -end 1 -from [get_registers {*dr840_mem:board|*}] -to [get_registers {*dr840_tx39:soc|*}]

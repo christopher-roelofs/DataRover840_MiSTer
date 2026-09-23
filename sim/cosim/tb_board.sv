@@ -66,6 +66,8 @@ module tb_board (
         .dmem_be(dbe), .dmem_wdata(dwd), .dmem_ack(dack), .dmem_rdata(drd),
         .dmem_err(derr),
         .vmem_addr(32'd0), .vmem_req(1'b0), .vmem_ack(), .vmem_rdata(),
+        .amem_addr(32'd0), .amem_req(1'b0), .amem_ack(), .amem_rdata(),
+        .kmem_addr(32'd0), .kmem_req(1'b0), .kmem_we(1'b0), .kmem_wdata(32'd0), .kmem_ack(),
         .ram_addr(ram_addr), .ram_req(ram_req), .ram_burst(ram_burst),
         .ram_we(ram_we), .ram_be(ram_be), .ram_wdata(ram_wdata),
         .ram_ack(ram_ack), .ram_rdata(ram_rdata),

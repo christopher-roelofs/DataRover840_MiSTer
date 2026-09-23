@@ -23,8 +23,11 @@ NAME=DataRover840_$(date +%Y%m%d).rbf
 echo "deploy: $RBF -> $HOST:$DEST/$NAME"
 sshpass -p "$PASS" scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
     "$RBF" "root@$HOST:$DEST/$NAME"
+# The menu picks the newest of a dated name, so the older ones only take up
+# the card.
 sshpass -p "$PASS" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-    "root@$HOST" "mkdir -p /media/fat/games/DataRover840"
+    "root@$HOST" "mkdir -p /media/fat/games/DataRover840; \
+                  ls $DEST/DataRover840_*.rbf 2>/dev/null | grep -v $NAME | xargs -r rm -f"
 # Named .rom rather than .image: MiSTer parses the core's extension filter
 # in three-character chunks, so anything longer matches nothing and the file
 # browser comes up empty.
