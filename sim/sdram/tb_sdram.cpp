@@ -1,3 +1,4 @@
+#include <string>
 //
 // tb_sdram.cpp - the same lockstep comparison, one level further out.
 //
@@ -124,6 +125,14 @@ int main(int argc, char **argv) {
     const char *irq_path = nullptr;
     std::vector<std::pair<uint32_t,uint32_t>> IRQ;
     size_t irqidx = 0;
+    // The core takes an interrupt in ID, with instructions already behind
+    // it that will retire first; the reference takes it between two
+    // instructions. So the line goes up this many retirements early.
+    uint64_t irq_lead = 0;
+    // --record prefix: this machine's device answers and interrupt level,
+    // in the reference's trace format, for the reference to replay.
+    FILE *rec_dev = nullptr, *rec_irq = nullptr, *rec_take = nullptr;
+    uint32_t rec_last_irq = 0xFFFFFFFFu;
     bool io_req_d = false;
     int  iolog = 0, iolog_max = 0, iolog_rep = 0;
     long watch_write = -1;         // a physical address whose stores to report
@@ -135,6 +144,7 @@ int main(int argc, char **argv) {
     // --trace-after pc,hit,n: print n retired instructions from the hit-th
     // execution of pc, the reference's option of the same name.
     uint32_t ta_pc = 0; uint64_t ta_hit = 0, ta_hits = 0, ta_n = 0, ta_left = 0;
+    uint64_t tf_from = 0;          // --trace-from n,count: by instruction index
     uint32_t last_pc = 0;
     uint64_t exc_taken = 0, exc_last_report = 0, exc_spurious = 0;
     // The last instructions before a fault. A fault names the load that
@@ -167,6 +177,10 @@ int main(int argc, char **argv) {
             const char *c = strchr(a, ','); if (c) { tap_y = strtol(c + 1, nullptr, 10); c = strchr(c + 1, ',');
             if (c) { tap_at = strtoull(c + 1, nullptr, 10); c = strchr(c + 1, ','); if (c) tap_len = strtoull(c + 1, nullptr, 10); } }
         }
+        else if (!strcmp(argv[i], "--trace-from") && i + 1 < argc) {
+            const char *a = argv[++i]; tf_from = strtoull(a, nullptr, 10);
+            const char *c = strchr(a, ','); ta_n = c ? strtoull(c + 1, nullptr, 10) : 100;
+        }
         else if (!strcmp(argv[i], "--trace-after") && i + 1 < argc) {
             const char *a = argv[++i]; ta_pc = strtoul(a, nullptr, 16);
             const char *c = strchr(a, ','); if (c) { ta_hit = strtoull(c + 1, nullptr, 10); c = strchr(c + 1, ','); if (c) ta_n = strtoull(c + 1, nullptr, 10); }
@@ -176,6 +190,15 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--replay")) replay = true;
         else if (!strcmp(argv[i], "--check")) check = true;
         else if (!strcmp(argv[i], "--irq") && i + 1 < argc) irq_path = argv[++i];
+        else if (!strcmp(argv[i], "--irq-lead") && i + 1 < argc) irq_lead = strtoull(argv[++i], nullptr, 10);
+        else if (!strcmp(argv[i], "--record") && i + 1 < argc) {
+            std::string p = argv[++i];
+            rec_dev = fopen((p + ".bus").c_str(), "wb");
+            rec_irq = fopen((p + ".irq").c_str(), "wb");
+            rec_take = fopen((p + ".take").c_str(), "wb");
+            uint32_t hdr[4] = {0, 0, 0, 0};
+            fwrite(hdr, sizeof hdr, 1, rec_dev);
+        }
     }
     if (!state_path || !bus_path || !rom_path) {
         fprintf(stderr, "usage: Vtb_sdram --state F --bus F --rom F "
@@ -312,7 +335,7 @@ int main(int argc, char **argv) {
                             "instruction %" PRIu64 " (pc %08X), record %"
                             PRIu64 "\n    reference %s %u byte(s) at %08X\n"
                             "    board     %s at %08X be=%X\n",
-                            idx, S[idx].pc, ioidx, wr ? "write" : "read",
+                            idx, (idx < st.count ? S[idx].pc : last_pc), ioidx, wr ? "write" : "read",
                             size, b.addr, dut->io_we ? "write" : "read",
                             dut->io_addr, dut->io_be);
                     failures++; break;
@@ -326,7 +349,7 @@ int main(int argc, char **argv) {
                         fprintf(stderr, "\n*** device write diverged at "
                                 "instruction %" PRIu64 " (pc %08X): "
                                 "reference %08X, board %08X\n",
-                                idx, S[idx].pc, b.value, got);
+                                idx, (idx < st.count ? S[idx].pc : last_pc), b.value, got);
                         failures++; break;
                     }
                 } else {
@@ -346,11 +369,11 @@ int main(int argc, char **argv) {
         bool cen_now = dut->dbg_cen, req_now = dut->io_req;
         // Hold the line up from the instruction the reference took it on
         // until this machine has taken it too.
+        // The trace is the line's level each time it changed: follow it.
         if (!IRQ.empty()) {
-            if (irqidx < IRQ.size() && idx >= IRQ[irqidx].first)
-                dut->irq_in = (IRQ[irqidx].second >> 2) & 0x3F;
-            else
-                dut->irq_in = 0;
+            while (irqidx + 1 < IRQ.size() && idx + irq_lead >= IRQ[irqidx + 1].first)
+                irqidx++;
+            dut->irq_in = (IRQ[irqidx].second >> 2) & 0x3F;
         }
         dut->eval();
         dut->clk = 1; dut->eval();
@@ -364,6 +387,26 @@ int main(int argc, char **argv) {
         // Logged as the reference's --log-mmio prints it, so the two boots
         // diff directly. Taken at the acknowledgement, when a read's value
         // exists; a transaction is one acknowledgement.
+        if (rec_dev && dut->io_req && dut->dbg_io_ack && dut->dbg_cen) {
+            uint32_t a = dut->io_addr, be = dut->io_be;
+            unsigned size = (be == 0xF) ? 4 : ((be == 0xC || be == 0x3) ? 2 : 1);
+            uint32_t v = dut->io_we ? dut->io_wdata : dut->dbg_io_rdata;
+            if (size == 2) { v = (be == 0xC) ? (v >> 16) : (v & 0xFFFF); a += (be == 0xC) ? 0 : 2; }
+            else if (size == 1) { int lane = (be == 8) ? 0 : (be == 4) ? 1 : (be == 2) ? 2 : 3; v = (v >> (24 - lane * 8)) & 0xFF; a += lane; }
+            uint32_t r[4] = { (uint32_t)idx, a, v, size | (dut->io_we ? 0x100u : 0u) };
+            fwrite(r, sizeof r, 1, rec_dev);
+        }
+        // The level, shifted by the pipeline: this core takes an interrupt
+        // in ID, three instructions ahead of the one retiring, and the
+        // reference takes it before the instruction its count names.
+        if (rec_irq && cen_now) {
+            uint32_t lv = ((uint32_t)dut->dbg_irq << 2) & 0xFC;
+            if (lv != rec_last_irq) {
+                uint32_t r[2] = { (uint32_t)idx, lv };
+                fwrite(r, sizeof r, 1, rec_irq);
+                rec_last_irq = lv;
+            }
+        }
         if (check && dut->io_req && dut->dbg_io_ack && dut->dbg_cen && checked_bad < 12) {
             uint32_t a = dut->io_addr, be = dut->io_be;
             unsigned size = (be == 0xF) ? 4 : ((be == 0xC || be == 0x3) ? 2 : 1);
@@ -441,8 +484,15 @@ int main(int argc, char **argv) {
             last_pc = dut->retire_pc;
             if (last_pc == 0x80000080u || last_pc == 0xBFC00180u) {
                 exc_taken++;
-                if (!IRQ.empty() && irqidx < IRQ.size() && idx >= IRQ[irqidx].first)
-                    irqidx++;          // taken; wait for the reference's next
+                // The instruction this interrupt was taken in front of:
+                // idx is the count retired before the vector. Exact, where
+                // a lead guessed from the pipeline slipped by one in a few
+                // million.
+                if (rec_take && dut->dbg_exc_code == 0) {
+                    uint32_t t = (uint32_t)idx;
+                    fwrite(&t, sizeof t, 1, rec_take);
+                }
+
                 // An interrupt taken with nothing enabled and pending is
                 // one the guest cannot account for.
                 if (!dut->dbg_pending) exc_spurious++;
@@ -467,8 +517,9 @@ int main(int argc, char **argv) {
             printf("[exc] %" PRIu64 " taken by insn %" PRIu64 "\n", exc_taken, idx);
             exc_last_report = idx;
         }
-        if (ta_pc && dut->retire_valid && cen_now) {
-            if (dut->retire_pc == ta_pc && ++ta_hits == ta_hit) ta_left = ta_n;
+        if (tf_from && dut->retire_valid && cen_now && idx == tf_from) ta_left = ta_n;
+        if ((ta_pc || tf_from) && dut->retire_valid && cen_now) {
+            if (ta_pc && dut->retire_pc == ta_pc && ++ta_hits == ta_hit) ta_left = ta_n;
             if (ta_left) { printf("[trace] %08X %08X\n", dut->retire_pc, dut->retire_insn); ta_left--; }
         }
         if (getenv("DBG") && idx > 81280 && dut->dbg_start && dbgn < 30) {
@@ -554,6 +605,9 @@ int main(int argc, char **argv) {
     // and the memory's being faster is the whole point of the divider.
     uint64_t core_cycles = cycles / (clk_div < 1 ? 1 : clk_div);
     if (dump_fb) write_fb(dump_fb);
+    if (rec_dev) fclose(rec_dev);
+    if (rec_irq) fclose(rec_irq);
+    if (rec_take) fclose(rec_take);
     printf("interrupts: %" PRIu64 " taken, %" PRIu64 " with nothing pending\n",
            exc_taken, exc_spurious);
     printf("stalls: %u waiting on a store, %u on a load, %u on an instruction"

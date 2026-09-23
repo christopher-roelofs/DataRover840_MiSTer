@@ -154,6 +154,7 @@ module r3900 #(
     reg        id_v;
     reg [31:0] id_pc, id_insn;
     reg        id_ds;                 // sits in a branch delay slot
+    reg        ds_wait;               // a branch has left ID; its slot has not arrived
     reg [4:0]  id_exc_code;
     reg        id_exc_v;
     reg [31:0] id_exc_bad;
@@ -857,6 +858,7 @@ module r3900 #(
             id_v     <= 1'b0; ex_v <= 1'b0; me_v <= 1'b0; wb_v <= 1'b0;
             rt_v     <= 1'b0;
             id_ds    <= 1'b0;
+            ds_wait  <= 1'b0;
             id_exc_v <= 1'b0; ex_exc_v <= 1'b0; me_exc_v <= 1'b0;
             ex_exc_ret <= 1'b1; me_exc_ret <= 1'b1;
             me_phase <= 1'b0;
@@ -1023,10 +1025,26 @@ module r3900 #(
             // ------------------------------------------------ IF -> ID
             if (adv_id) begin
                 id_v <= fetch_ok && !exc_flush;
+                if (!fetch_ok && id_v) ds_wait <= is_branch(i_id);
                 if (fetch_ok) begin
                     id_pc        <= fpc;
                     id_insn      <= ibus_rdata;
-                    id_ds        <= id_v && is_branch(i_id) && id_taken;
+                    // Any branch's, taken or not: an exception in the
+                    // slot of a branch that fell through was returning to
+                    // the slot itself, which comes to the same thing
+                    // except that Cause.BD said no and the branch was not
+                    // executed again -- one instruction fewer than the
+                    // reference counts, each time, which is what kept the
+                    // two from being run in step through an interrupt.
+                    //
+                    // And remembered across a bubble: when the slot's
+                    // fetch misses, the branch has left ID by the time
+                    // the slot enters it, and reading the marker off
+                    // what ID holds said the slot was nobody's. An
+                    // exception there then returned to the slot, not the
+                    // branch -- a fall-through in place of a taken branch.
+                    id_ds        <= id_v ? is_branch(i_id) : ds_wait;
+                    ds_wait      <= 1'b0;
                     id_exc_v     <= ibus_err;
                     id_exc_code  <= EXC_IBE;
                     id_exc_bad   <= fpc;
@@ -1073,6 +1091,7 @@ module r3900 #(
                 a_next_pc <= exc_vector + 32'd4;
                 redir_v   <= 1'b0;
                 id_v      <= 1'b0;
+                ds_wait   <= 1'b0;
                 ex_v      <= 1'b0;
                 me_v      <= 1'b0;
                 id_ds     <= 1'b0;

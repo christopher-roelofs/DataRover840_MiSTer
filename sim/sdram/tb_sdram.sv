@@ -86,6 +86,7 @@ module tb_sdram #(
     output wire [31:0] dbg_r2, dbg_r4, dbg_r5, dbg_r16,
     output wire [31:0] dbg_stall_store, dbg_stall_load, dbg_stall_fetch,
     output wire        dbg_pending,
+    output wire [5:0]  dbg_irq,
     output wire        dbg_exc_valid,
     output wire [4:0]  dbg_exc_code,
     output wire [31:0] dbg_exc_epc,
@@ -183,6 +184,7 @@ module tb_sdram #(
 
     wire        io_ack_mux   = tx39_en ? t_ack   : io_ack;
     wire [31:0] io_rdata_mux = tx39_en ? t_rdata : io_rdata;
+    assign dbg_irq       = tx39_en ? t_irq : irq_in;
     assign dbg_ram_we    = ram_we;
     assign dbg_ram_be    = ram_be;
     assign dbg_ram_wdata = ram_wdata;
