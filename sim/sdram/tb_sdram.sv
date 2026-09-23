@@ -73,8 +73,8 @@ module tb_sdram #(
     input  wire        tx39_en,
     input  wire        boot_monitor,
     input  wire        pen_down,
-    input  wire [9:0]  pen_x,
-    input  wire [9:0]  pen_y,
+    input  wire [8:0]  pen_px,          // panel pixels, converted as the machine does
+    input  wire [8:0]  pen_py,
     output wire        dbg_tx_stb,
     output wire        dbg_ram_we,
     output wire [3:0]  dbg_ram_be,
@@ -153,6 +153,8 @@ module tb_sdram #(
 
     wire        t_ack, t_err;
     wire [31:0] t_rdata;
+    wire [9:0]  pen_x, pen_y;
+    dr840_pen pen (.clk(clk), .pen_px(pen_px), .pen_py(pen_py), .pen_x(pen_x), .pen_y(pen_y));
     wire [5:0]  t_irq;
     wire        t_stop;
     assign dbg_stop = t_stop;

@@ -265,7 +265,7 @@ int main(int argc, char **argv) {
     dut->clk_div = clk_div;
     dut->tx39_en = tx39;
     dut->boot_monitor = monitor;
-    dut->pen_down = 0; dut->pen_x = 0; dut->pen_y = 0;
+    dut->pen_down = 0; dut->pen_px = 0; dut->pen_py = 0;
     dut->rst_n = 0; dut->irq_in = 0;
     dut->io_ack = 0; dut->io_err = 0;
     for (int i = 0; i < 8; i++) { dut->clk = 0; dut->eval(); dut->clk = 1; dut->eval(); }
@@ -570,8 +570,8 @@ int main(int argc, char **argv) {
                 if (idx >= t.at && idx < t.at + t.len) { down = true; tap_x = t.x; tap_y = t.y; }
             if (down != (bool)dut->pen_down) printf("[pen] %s at insn %" PRIu64 "\n", down ? "down" : "up", idx);
             dut->pen_down = down;
-            dut->pen_x = 85 + (tap_x * 751 + 239) / 479;
-            dut->pen_y = 69 + (tap_y * 722 + 159) / 319;
+            dut->pen_px = tap_x;      // pixels; the machine's own converter makes counts
+            dut->pen_py = tap_y;
         }
         if (dump_fb && fb_every && idx >= fb_next) {
             char path[512]; snprintf(path, sizeof path, "%s.%04d.pgm", dump_fb, fb_n++);

@@ -101,3 +101,12 @@ set_multicycle_path -setup -end 2 \
 set_multicycle_path -hold -end 1 \
     -from [get_registers {*r3900_cached:cpu|*}] \
     -to   [get_registers {*dr840_tx39:soc|*}]
+
+# The pen's pixels-to-counts multiply (dr840_pen.sv). A pen moves at a
+# human's speed and the result is read thousands of clocks later, so the
+# multiply can have two periods; at one it misses by a nanosecond and a
+# half.
+set_multicycle_path -setup -end 2 \
+    -to [get_registers {*dr840_pen:pen|*}]
+set_multicycle_path -hold -end 1 \
+    -to [get_registers {*dr840_pen:pen|*}]

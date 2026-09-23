@@ -441,6 +441,7 @@ assign ioctl_wait = load_busy;
 wire [31:0] obs_pc, obs_insn, obs_retired;
 wire [31:0] obs_ihit, obs_imiss, obs_dhit, obs_dmiss, obs_io, obs_uart;
 wire [31:0] obs_resets, obs_exc, obs_faults, obs_last_epc, obs_last_bad;
+wire [31:0] dbg_pen;     // M on the status line: the pen, while the memory test stays clean
 wire [15:0] sdram_dq_o, sdram_dq_i;
 wire        sdram_dq_oe;
 
@@ -468,6 +469,7 @@ dr840_machine machine (
     .obs_dhit(obs_dhit), .obs_dmiss(obs_dmiss), .obs_io(obs_io),
     .obs_uart_bytes(obs_uart), .obs_resets(obs_resets), .obs_exc(obs_exc),
     .obs_faults(obs_faults), .obs_last_epc(obs_last_epc), .obs_last_bad(obs_last_bad),
+    .dbg_pen(dbg_pen),
     .uart_txd(guest_txd), .uart_rxd(UART_RXD),
     .lcd_ce_pix(lcd_ce), .lcd_hs(lcd_hs), .lcd_vs(lcd_vs), .lcd_de(lcd_de),
     .lcd_r(lcd_r), .lcd_g(lcd_g), .lcd_b(lcd_b)
@@ -481,7 +483,7 @@ dr840_status #(.CLK_HZ(92_000_000)) status_line (
     .clk(clk_sys), .rst_n(rst_n),
     .v0(obs_resets), .v1(obs_exc), .v2(rom_sum), .v3(obs_pc), .v4(obs_retired),
     .v5(obs_faults), .v6(obs_last_epc), .v7(obs_last_bad),
-    .v8(mt_errors), .v9(rom_back),
+    .v8(mt_errors != 32'd0 ? mt_errors : dbg_pen), .v9(rom_back),
     .txd(status_txd)
 );
 assign UART_TXD = status[2] ? guest_txd : status_txd;

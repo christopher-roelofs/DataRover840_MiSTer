@@ -87,7 +87,9 @@ module dr840_machine (
     // alike.
     output reg  [31:0] obs_faults,
     output reg  [31:0] obs_last_epc,
-    output reg  [31:0] obs_last_bad
+    output reg  [31:0] obs_last_bad,
+    // The pen as the codec is given it: down, and the raw counts.
+    output wire [31:0] dbg_pen
 );
 
     // The core's clock enable: every second edge of the memory's clock.
@@ -107,6 +109,7 @@ module dr840_machine (
         if (!rst_n) core_rst_q <= 2'b00;
         else        core_rst_q <= {core_rst_q[0], ~load_en};
     wire core_rst_n = core_rst_q[1];
+    assign dbg_pen = {pen_down, 5'd0, pen_x, 6'd0, pen_y};
 
     wire [31:0] ia, ird, da, dwd, drd;
     wire        ireq, ibur, iack, ierr, dreq, dbur, dwe, dack, derr;
@@ -190,16 +193,9 @@ module dr840_machine (
     // panel: 85..836 across the 480 and 69..791 down the 320. The ratios
     // are 751/479 and 722/319, as 401/256 and 579/256: a count out at the
     // far edge, and the OS calibrates anyway.
-    // Registered: a pen moves at a human's speed, and the multiply and
-    // the codec's arithmetic behind it were ten nanoseconds in one clock.
-    reg  [17:0] pen_xm, pen_ym;
-    reg  [9:0]  pen_x, pen_y;
-    always @(posedge clk) begin
-        pen_xm <= pen_px * 9'd401;
-        pen_ym <= pen_py * 9'd579;
-        pen_x  <= 10'd85 + pen_xm[17:8];
-        pen_y  <= 10'd69 + pen_ym[17:8];
-    end
+    // In the converter's counts; see dr840_pen.
+    wire [9:0] pen_x, pen_y;
+    dr840_pen pen (.clk(clk), .pen_px(pen_px), .pen_py(pen_py), .pen_x(pen_x), .pen_y(pen_y));
 
     // The LCD controller: scans the framebuffer out of the SDRAM through
     // the board, onto a 640x480 raster.
