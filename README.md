@@ -29,7 +29,10 @@ step *through* the interrupts, in both directions; see **How it is
 validated**.
 
 A mouse is the pen: it moves a crosshair over the panel, and its button is
-the touch. No keyboard yet.
+the touch. Calibration -- top-left, bottom-right, centre -- goes through.
+After the machine has sat idle Magic Cap turns it off; the first joystick
+button or F4 is the ON button, and it comes back where it left off. No
+keyboard yet.
 
 ```
 matched 10000000 of 10000000 instructions, 2146802 bus accesses,
@@ -158,8 +161,9 @@ On the board the status line does what the traces do in simulation. While
 the guest leaves UART A idle, `rtl/dr840_status.sv` borrows the pin and
 sends a line of hex every second at 38400: resets, exceptions, the ROM's
 checksum as sent and as read back, the last PC and retired count, the
-memory test's mismatches, and the first fault at a place other than the
-boot's one known BREAK -- code, EPC, BadVAddr. `scripts/soak N secs`
+memory test's mismatches (or, while those stay at zero, the pen: down,
+and the raw X and Y counts the codec is given), and the first fault at a
+place other than the boot's one known BREAK -- code, EPC, BadVAddr. `scripts/soak N secs`
 reloads the core N times and collects the last line of each boot, so a
 fault on the hardware is something collected rather than described.
 
@@ -631,15 +635,11 @@ have come from anywhere else:
 
 ## Next
 
-1. The pen on hardware. The mouse drives `pen_down`, `pen_x`, `pen_y` into
-   the UCB1100's touch ADC, whose plates and cross-driven pressure readings
-   match the reference's (`sim/sib`); in simulation a tap takes the splash
-   to calibration. The MiSTer's own touchpad, if it has one, is a pen too.
-2. The Magic Bus keyboard, on MBUS.
-3. Sound: the ring is consumed at the right rate with the half and wrap
+1. The Magic Bus keyboard, on MBUS.
+2. Sound: the ring is consumed at the right rate with the half and wrap
    interrupts, but the samples go nowhere. The MiSTer's audio out is
    waiting for them.
-4. Recover the IPC lost to the handshakes on the core's edges: 0.72 at
+3. Recover the IPC lost to the handshakes on the core's edges: 0.72 at
    the core's rate over the banner path, against 0.75 before them.
-5. An external interrupt test: the ICU is exercised by the ROM's own timer
+4. An external interrupt test: the ICU is exercised by the ROM's own timer
    path but nothing yet drives an IP line from outside the block.
