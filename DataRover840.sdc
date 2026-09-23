@@ -110,3 +110,15 @@ set_multicycle_path -setup -end 2 \
     -to [get_registers {*dr840_pen:pen|*}]
 set_multicycle_path -hold -end 1 \
     -to [get_registers {*dr840_pen:pen|*}]
+
+# The LCD's fetch engine runs on the core's enabled edges too, and its
+# address reaches the core's cache fill through the arbiter's logic in the
+# board -- register to register from the LCD to the core, which neither of
+# the groups above (LCD to board, board to core) names. It was closing on
+# placement luck and lost by 0.4 ns once the pen's multiplier moved in.
+set_multicycle_path -setup -end 2 \
+    -from [get_registers {*dr840_lcd:lcd|*}] \
+    -to   [get_registers {*r3900_cached:cpu|*}]
+set_multicycle_path -hold -end 1 \
+    -from [get_registers {*dr840_lcd:lcd|*}] \
+    -to   [get_registers {*r3900_cached:cpu|*}]
