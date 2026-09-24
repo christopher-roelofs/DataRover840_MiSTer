@@ -7,8 +7,11 @@
 // first, at physical 0x3F6A00 -- the top 38,400 bytes of the 4 MB. A set
 // bit is ink: the stored value is coverage, and INVVID flips it.
 //
-// The MiSTer wants a raster, so this is one: 640x480 at a quarter of the
-// system clock, the panel centred in it with a border round it. Each
+// The MiSTer wants a raster, so this is one: the panel's own 480x320 at
+// an eighth of the system clock, 3:2, for the framework's scaler to put
+// on the screen at whatever size its video settings ask; or, when asked,
+// 640x480 at a quarter of the clock with the panel centred in a border,
+// which is also what the debug display draws in. Each
 // panel line is fetched into a line buffer during the raster line before
 // it, eight 16-byte bursts through the board's arbiter -- the same bursts
 // the caches use, at the lowest priority, about three percent of the
@@ -45,6 +48,8 @@ module dr840_lcd (
     // mint-green backlight -- the reference's tints, each a light and a
     // dark the four levels sit between.
     input  wire [1:0]  tint,
+    // The raster: the panel's own 480x320 (1), or 640x480 with a bezel (0).
+    input  wire        native,
 
     // The memory port, physical addresses, bursts of four words.
     output reg  [31:0] vmem_addr,
@@ -75,23 +80,31 @@ module dr840_lcd (
     wire [10:0] line_bytes = {2'b00, horz} + 11'd1;
 
     // ------------------------------------------------------------ the raster
-    localparam H_ACT = 640, H_FP = 16, H_SY = 96, H_BP = 48;
-    localparam V_ACT = 480, V_FP = 10, V_SY = 2,  V_BP = 33;
-    localparam H_TOT = H_ACT + H_FP + H_SY + H_BP;   // 800
-    localparam V_TOT = V_ACT + V_FP + V_SY + V_BP;   // 525
+    // 640x480: VGA's 800x525 at 23 MHz, 54.8 Hz. 480x320: 592x324 at
+    // 11.5 MHz, 59.96 Hz. The framework's scaler takes either.
+    wire [9:0] H_ACT = native ? 10'd480 : 10'd640;
+    wire [9:0] H_FP  = 10'd16;
+    wire [9:0] H_SY  = native ? 10'd48  : 10'd96;
+    wire [9:0] V_ACT = native ? 10'd320 : 10'd480;
+    wire [9:0] V_FP  = native ? 10'd1   : 10'd10;
+    wire [9:0] V_SY  = 10'd2;
+    wire [9:0] H_TOT = native ? 10'd592 : 10'd800;
+    wire [9:0] V_TOT = native ? 10'd324 : 10'd525;
 
-    reg [1:0] pdiv;
+    reg [2:0] pdiv;
     reg [9:0] hc, vc;
+    // The pixel's last clock: the fourth, or the eighth.
+    wire      pix_last = native ? (pdiv == 3'd7) : (pdiv[1:0] == 2'd3);
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            pdiv <= 2'd0; hc <= 10'd0; vc <= 10'd0; ce_pix <= 1'b0;
+            pdiv <= 3'd0; hc <= 10'd0; vc <= 10'd0; ce_pix <= 1'b0;
         end else begin
-            pdiv   <= pdiv + 2'd1;
-            ce_pix <= (pdiv == 2'd3);
-            if (pdiv == 2'd3) begin
-                if (hc == H_TOT - 1) begin
+            pdiv   <= pix_last ? 3'd0 : pdiv + 3'd1;
+            ce_pix <= pix_last;
+            if (pix_last) begin
+                if (hc == H_TOT - 10'd1) begin
                     hc <= 10'd0;
-                    vc <= (vc == V_TOT - 1) ? 10'd0 : vc + 10'd1;
+                    vc <= (vc == V_TOT - 10'd1) ? 10'd0 : vc + 10'd1;
                 end else hc <= hc + 10'd1;
             end
         end
@@ -103,10 +116,10 @@ module dr840_lcd (
     reg [10:0] pw_c, ph_c;
     reg [9:0]  x0, y0;
     always @(posedge clk) begin
-        pw_c <= (pw > 11'd640) ? 11'd640 : pw;
-        ph_c <= (ph > 11'd480) ? 11'd480 : ph;
-        x0   <= 10'((11'd640 - pw_c) >> 1);
-        y0   <= 10'((11'd480 - ph_c) >> 1);
+        pw_c <= (pw > {1'b0, H_ACT}) ? {1'b0, H_ACT} : pw;
+        ph_c <= (ph > {1'b0, V_ACT}) ? {1'b0, V_ACT} : ph;
+        x0   <= 10'(({1'b0, H_ACT} - pw_c) >> 1);
+        y0   <= 10'(({1'b0, V_ACT} - ph_c) >> 1);
     end
     wire [9:0] px_w = hc - x0;                         // pixel within the panel
     wire [9:0] py_w = vc - y0;
@@ -200,14 +213,18 @@ module dr840_lcd (
     // *next* raster line will show, into the other bank. Line -1 (the one
     // before the panel starts) fetches line 0.
     assign vmem_burst = 1'b1;
-    wire [9:0]  next_py   = vc + 10'd1 - y0;
-    wire        next_in   = (vc + 10'd1 >= y0) && ({1'b0, next_py} < ph_c);
+    // The raster line after this one -- the first, after the last -- so
+    // that a panel at the top of the raster gets its line 0 fetched
+    // during the frame's last line.
+    wire [9:0]  next_vc   = (vc == V_TOT - 10'd1) ? 10'd0 : vc + 10'd1;
+    wire [9:0]  next_py   = next_vc - y0;
+    wire        next_in   = (next_vc >= y0) && ({1'b0, next_py} < ph_c);
     reg  [9:0]  fetch_line;
     reg  [3:0]  burst;                                 // 0..7
     reg  [1:0]  beat;
     reg         fetching;
     reg         pend;                                  // a line is due
-    wire        line_start = (hc == 10'd0) && (pdiv == 2'd3);
+    wire        line_start = (hc == 10'd0) && pix_last;
     // Where the line starts, which is not where its first burst starts.
     reg  [31:0] line_base;
     // Line base = fb + line * line_bytes. A multiply, once per line, so it

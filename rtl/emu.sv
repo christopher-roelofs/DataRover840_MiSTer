@@ -161,8 +161,10 @@ assign FB_PAL_DIN = 0; assign FB_PAL_WR = 0;
 
 assign DBG_BUS_OUT = 0;
 
-assign VIDEO_ARX = 4;
-assign VIDEO_ARY = 3;
+// The panel is 3:2; the bezel raster and the debug display are 4:3.
+wire native = ~status[14] & ~status[3];
+assign VIDEO_ARX = native ? 13'd3 : 13'd4;
+assign VIDEO_ARY = native ? 13'd2 : 13'd3;
 
 localparam CONF_STR = {
     "DataRover840;;",
@@ -181,6 +183,10 @@ localparam CONF_STR = {
     "O[2],Boot,Magic Cap,IDT monitor;",
     "O[3],Display,LCD,Debug;",
     "O[9:8],Panel,Off,Grey,Green;",
+    // The panel's own 480x320 for the framework's scaler -- its video
+    // settings choose the size, and shadow_masks/ has the LCD grid for
+    // 3x and 4x -- or the old 640x480 with the panel in a bezel.
+    "O[14],Screen,480x320 (3:2),640x480 with bezel;",
     // A Magic Bus AT keyboard, driven by the PS/2 keyboard; its discovery
     // by the ROM matches the reference's access for access.
     "O[4],Keyboard,On,Off;",
@@ -202,6 +208,10 @@ localparam CONF_STR = {
     // request, for another RAM image.
     "F2,PKG,Install package;",
     "T[11],Offer package again;",
+    // The device's UART runs the link at 19200 baud, which a real PC
+    // could not change either; this link is not a wire, and can hand the
+    // bytes over as fast as Magic Cap reads them.
+    "O[13:12],Package link speed,19200 as the device,4x,16x,As fast as read;",
     "T[5],Save RAM now;",
     // Magic Cap turns the machine off after it has sat idle. A MiSTer has
     // no battery to save, so by default the core presses the ON button
@@ -836,9 +846,9 @@ dr840_machine machine (
     // Held in reset until there is a ROM to run. The loader owns the
     // memory while it is arriving, and before that there is nothing to do.
     .load_en(rom_dl | (load_busy & ~save_run) | ~rom_ok),
-    .pkg_go_tog(pkg_go_tog), .pkg_len(pkg_len), .pkg_waddr(pkg_waddr), .pkg_wdata(pkg_wdata),
+    .pkg_go_tog(pkg_go_tog), .pkg_speed(status[13:12]), .pkg_len(pkg_len), .pkg_waddr(pkg_waddr), .pkg_wdata(pkg_wdata),
     .pkg_wreq(pkg_wreq), .pkg_wack(pkg_wack), .pkg_state(pkg_state), .pkg_sent(pkg_sent),
-    .mem_borrow(save_run), .hold(halt_req), .blank(save_run | halt_req), .tint(status[9:8]),
+    .mem_borrow(save_run), .hold(halt_req), .blank(save_run | halt_req), .tint(status[9:8]), .native(native),
     .mem_idle(mem_idle), .stopped(stopped), .ram_written(ram_written), .card_written(card_written),
     .load_addr(load_addr), .load_data(load_data),
     .load_we(load_we), .load_burst(load_burst), .load_rdata(load_rdata),

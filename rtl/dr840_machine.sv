@@ -27,6 +27,7 @@ module dr840_machine (
     input  wire        hold,         // and held beforehand, while the memory drains
     input  wire        blank,        // the panel shown off meanwhile
     input  wire [1:0]  tint,         // the panel's colour: off, grey, green
+    input  wire        native,       // the raster: 480x320, or 640x480 with a bezel
     // The PC Cards in the two slots: present, and the size as log2.
     input  wire [1:0]  card_present,
     input  wire [4:0]  card_log2_0,
@@ -67,6 +68,7 @@ module dr840_machine (
     // Magic Cap installs packages from. The package is written into the
     // SDRAM a word at a time, and offered by a flip of pkg_go_tog.
     input  wire        pkg_go_tog,
+    input  wire [1:0]  pkg_speed,
     input  wire [24:0] pkg_len,
     input  wire [24:0] pkg_waddr,
     input  wire [31:0] pkg_wdata,
@@ -243,7 +245,7 @@ module dr840_machine (
         .wr_addr(pkg_waddr), .wr_data(pkg_wdata), .wr_req(pkg_wreq), .wr_ack(pkg_wack),
         .pmem_addr(pa), .pmem_req(preq), .pmem_we(pwe), .pmem_wdata(pwd), .pmem_ack(pack), .pmem_rdata(prd),
         .gtx_tog(u_tx_tog), .gtx_data(u_tx_data), .grx_tog(u_rx_tog), .grx_data(u_rx_data),
-        .grx_full(u_rx_full), .uart_on(u_on), .bit_clocks(u_bit_clocks),
+        .grx_full(u_rx_full), .uart_on(u_on), .bit_clocks(u_bit_clocks), .speed(pkg_speed),
         .state(pkg_state), .sent(pkg_sent)
     );
     dr840_snd snd (
@@ -269,7 +271,7 @@ module dr840_machine (
     dr840_lcd lcd (
         .clk(clk), .cen(cen), .rst_n(core_rst_n),
         .ctrl1(vid_ctrl1), .ctrl2(vid_ctrl2), .ctrl3(vid_ctrl3),
-        .cur_x(pen_px), .cur_y(pen_py), .cur_down(pen_down), .blank(blank), .tint(tint),
+        .cur_x(pen_px), .cur_y(pen_py), .cur_down(pen_down), .blank(blank), .tint(tint), .native(native),
         .vmem_addr(va), .vmem_req(vreq), .vmem_burst(), .vmem_ack(vack), .vmem_rdata(vrd),
         .ce_pix(lcd_ce_pix), .hs(lcd_hs), .vs(lcd_vs), .de(lcd_de),
         .r(lcd_r), .g(lcd_g), .b(lcd_b)

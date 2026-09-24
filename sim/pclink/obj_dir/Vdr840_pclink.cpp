@@ -24,6 +24,7 @@ Vdr840_pclink::Vdr840_pclink(VerilatedContext* _vcontextp__, const char* _vcname
     , grx_data{vlSymsp->TOP.grx_data}
     , grx_full{vlSymsp->TOP.grx_full}
     , uart_on{vlSymsp->TOP.uart_on}
+    , speed{vlSymsp->TOP.speed}
     , state{vlSymsp->TOP.state}
     , pkg_len{vlSymsp->TOP.pkg_len}
     , wr_addr{vlSymsp->TOP.wr_addr}

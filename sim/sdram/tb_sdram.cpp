@@ -158,7 +158,7 @@ int main(int argc, char **argv) {
     // --card path: a memory card in slot 2, its image put into the SDRAM's
     // card region as the loader will; --card-out path writes it back.
     const char *card_path = nullptr, *card_out = nullptr; uint32_t card_size = 0;
-    const char *ram_path = nullptr, *pkg_path = nullptr; uint32_t pkg_size = 0;
+    const char *ram_path = nullptr, *pkg_path = nullptr; uint32_t pkg_size = 0; int pkg_speed = 0;
     const uint32_t PKG_BASE = 0x1000000;
     const uint32_t CARD2_BASE = 0x0E00000;
     const char *wav_path = nullptr; FILE *wav = nullptr; uint32_t wav_n = 0; int wav_tog = -1;
@@ -225,6 +225,7 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--card") && i + 1 < argc) card_path = argv[++i];
         else if (!strcmp(argv[i], "--ram") && i + 1 < argc) ram_path = argv[++i];
         else if (!strcmp(argv[i], "--install") && i + 1 < argc) pkg_path = argv[++i];
+        else if (!strcmp(argv[i], "--link-speed") && i + 1 < argc) pkg_speed = atoi(argv[++i]);   // 0 device, 1 4x, 2 16x, 3 unpaced
         else if (!strcmp(argv[i], "--card-out") && i + 1 < argc) card_out = argv[++i];
         else if (!strcmp(argv[i], "--keys") && i + 1 < argc) {
             const char *a = argv[++i]; kbd = true;
@@ -339,7 +340,7 @@ int main(int argc, char **argv) {
     dut->boot_monitor = monitor;
     dut->pen_down = 0; dut->pen_px = 0; dut->pen_py = 0;
     dut->rst_n = 0; dut->irq_in = 0;
-    dut->pkg_go_tog = 0; dut->pkg_len = pkg_size;
+    dut->pkg_go_tog = 0; dut->pkg_len = pkg_size; dut->pkg_speed = pkg_speed;
     dut->io_ack = 0; dut->io_err = 0;
     for (int i = 0; i < 8; i++) { dut->clk = 0; dut->eval(); dut->clk = 1; dut->eval(); }
     dut->rst_n = 1;

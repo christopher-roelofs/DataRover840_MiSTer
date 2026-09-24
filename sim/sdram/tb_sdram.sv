@@ -111,6 +111,7 @@ module tb_sdram #(
     // offered by a flip of pkg_go_tog.
     input  wire        pkg_go_tog,
     input  wire [24:0] pkg_len,
+    input  wire [1:0]  pkg_speed,
     output wire [2:0]  dbg_pkg_state,
     output wire [24:0] dbg_pkg_sent
 );
@@ -197,7 +198,7 @@ module tb_sdram #(
         .wr_addr(25'd0), .wr_data(32'd0), .wr_req(1'b0), .wr_ack(),
         .pmem_addr(pa), .pmem_req(preq), .pmem_we(pwe), .pmem_wdata(pwd), .pmem_ack(pack), .pmem_rdata(prd),
         .gtx_tog(u_tx_tog), .gtx_data(dbg_tx_data), .grx_tog(u_rx_tog), .grx_data(u_rx_data),
-        .grx_full(u_rx_full), .uart_on(u_on), .bit_clocks(u_bit_clocks),
+        .grx_full(u_rx_full), .uart_on(u_on), .bit_clocks(u_bit_clocks), .speed(pkg_speed),
         .state(dbg_pkg_state), .sent(dbg_pkg_sent)
     );
     dr840_snd snd (
@@ -219,7 +220,7 @@ module tb_sdram #(
     dr840_lcd lcd (
         .clk(clk), .cen(cen), .rst_n(rst_n),
         .ctrl1(dbg_vid_ctrl1), .ctrl2(vid_ctrl2), .ctrl3(dbg_vid_ctrl3),
-        .cur_x(9'd0), .cur_y(9'd0), .cur_down(1'b0), .blank(1'b0), .tint(2'd0),
+        .cur_x(9'd0), .cur_y(9'd0), .cur_down(1'b0), .blank(1'b0), .tint(2'd0), .native(1'b0),
         .vmem_addr(va), .vmem_req(vreq), .vmem_burst(), .vmem_ack(vack), .vmem_rdata(vrd),
         .ce_pix(), .hs(), .vs(), .de(), .r(), .g(), .b()
     );

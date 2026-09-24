@@ -23,7 +23,7 @@
 #include "verilated.h"
 
 static const unsigned PANEL_W = 480, PANEL_H = 320;
-static const unsigned RAST_W = 640, RAST_H = 480;
+static unsigned RAST_W = 640, RAST_H = 480;      // or the panel's own, with --native
 static const uint32_t FB_PA = 0x3F6A00;      // where Magic Cap puts it
 
 int main(int argc, char **argv) {
@@ -58,7 +58,11 @@ int main(int argc, char **argv) {
             put(x, y, v);
         }
 
+    bool native = false;
+    for (int i = 1; i < argc; i++) if (!strcmp(argv[i], "--native")) native = true;
+    if (native) { RAST_W = PANEL_W; RAST_H = PANEL_H; }
     Vtb_lcd *dut = new Vtb_lcd;
+    dut->native = native;
     dut->ctrl1 = 0x00035A4B;                       // ENVID, 2bpp, as the ROM writes
     dut->ctrl2 = ((PANEL_W / 4 - 1) << 12) | (PANEL_H - 1);
     dut->ctrl3 = ((FB_PA >> 20) << 20) | (((FB_PA >> 4) & 0xFFFF) << 4);
@@ -79,7 +83,7 @@ int main(int argc, char **argv) {
     bool req_d = false;
     uint64_t served = 0, stall_clocks = 0;
 
-    const uint64_t BUDGET = (uint64_t)840 * 525 * 4 * 3;   // three frames
+    const uint64_t BUDGET = (uint64_t)840 * 525 * 8 * 3;   // three frames, at either pixel rate
     for (uint64_t c = 0; c < BUDGET && frames < 3; c++) {
         dut->clk = 0; dut->eval();
 

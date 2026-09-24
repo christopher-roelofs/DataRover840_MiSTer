@@ -31,6 +31,7 @@ class alignas(VL_CACHE_LINE_BYTES) Vdr840_pclink___024root final : public Verila
         VL_OUT8(grx_data,7,0);
         VL_IN8(grx_full,0,0);
         VL_IN8(uart_on,0,0);
+        VL_IN8(speed,1,0);
         VL_OUT8(state,2,0);
         CData/*0:0*/ dr840_pclink__DOT__gtx_q;
         CData/*0:0*/ dr840_pclink__DOT__rx_v;
@@ -79,9 +80,9 @@ class alignas(VL_CACHE_LINE_BYTES) Vdr840_pclink___024root final : public Verila
         CData/*0:0*/ __VactContinue;
         SData/*15:0*/ dr840_pclink__DOT__rx_rem;
         SData/*8:0*/ dr840_pclink__DOT__at;
-        SData/*8:0*/ dr840_pclink__DOT__ridx;
     };
     struct {
+        SData/*8:0*/ dr840_pclink__DOT__ridx;
         SData/*15:0*/ dr840_pclink__DOT__idle_cnt;
         SData/*15:0*/ __Vdly__dr840_pclink__DOT__rx_rem;
         SData/*8:0*/ __Vdly__dr840_pclink__DOT__at;
@@ -98,6 +99,7 @@ class alignas(VL_CACHE_LINE_BYTES) Vdr840_pclink___024root final : public Verila
         IData/*31:0*/ dr840_pclink__DOT__crc8__Vstatic__x;
         IData/*22:0*/ dr840_pclink__DOT__frame_cen;
         IData/*22:0*/ dr840_pclink__DOT__pace;
+        IData/*22:0*/ dr840_pclink__DOT__byte_cen;
         IData/*31:0*/ dr840_pclink__DOT__gshift;
         IData/*31:0*/ dr840_pclink__DOT__cmd_tag;
         IData/*31:0*/ dr840_pclink__DOT__cmd_rem;

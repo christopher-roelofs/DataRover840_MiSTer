@@ -650,7 +650,7 @@ VL_INLINE_OPT void Vdr840_pclink___024root___nba_sequent__TOP__2(Vdr840_pclink__
                                                (~ (IData)(vlSelf->grx_tog)));
                     vlSelf->grx_data = (0xffU & vlSelf->dr840_pclink__DOT__crc);
                     vlSelf->__Vdly__dr840_pclink__DOT__pace 
-                        = vlSelf->dr840_pclink__DOT__frame_cen;
+                        = vlSelf->dr840_pclink__DOT__byte_cen;
                     if ((vlSelf->dr840_pclink__DOT__mi 
                          == vlSelf->dr840_pclink__DOT__msg_len)) {
                         vlSelf->__Vdly__dr840_pclink__DOT__tx_st = 0U;
@@ -670,7 +670,7 @@ VL_INLINE_OPT void Vdr840_pclink___024root___nba_sequent__TOP__2(Vdr840_pclink__
                                                 & (vlSelf->dr840_pclink__DOT__crc 
                                                    >> 8U));
                             vlSelf->__Vdly__dr840_pclink__DOT__pace 
-                                = vlSelf->dr840_pclink__DOT__frame_cen;
+                                = vlSelf->dr840_pclink__DOT__byte_cen;
                             vlSelf->__Vdly__dr840_pclink__DOT__tx_st = 8U;
                         }
                     } else if (vlSelf->dr840_pclink__DOT__can_send) {
@@ -680,7 +680,7 @@ VL_INLINE_OPT void Vdr840_pclink___024root___nba_sequent__TOP__2(Vdr840_pclink__
                                             (vlSelf->dr840_pclink__DOT__crc 
                                              >> 0x10U));
                         vlSelf->__Vdly__dr840_pclink__DOT__pace 
-                            = vlSelf->dr840_pclink__DOT__frame_cen;
+                            = vlSelf->dr840_pclink__DOT__byte_cen;
                         vlSelf->__Vdly__dr840_pclink__DOT__tx_st = 7U;
                     }
                 } else if ((1U & (IData)(vlSelf->dr840_pclink__DOT__tx_st))) {
@@ -690,7 +690,7 @@ VL_INLINE_OPT void Vdr840_pclink___024root___nba_sequent__TOP__2(Vdr840_pclink__
                         vlSelf->grx_data = (vlSelf->dr840_pclink__DOT__crc 
                                             >> 0x18U);
                         vlSelf->__Vdly__dr840_pclink__DOT__pace 
-                            = vlSelf->dr840_pclink__DOT__frame_cen;
+                            = vlSelf->dr840_pclink__DOT__byte_cen;
                         vlSelf->__Vdly__dr840_pclink__DOT__tx_st = 6U;
                     }
                 } else if (vlSelf->dr840_pclink__DOT__can_send) {
@@ -700,7 +700,7 @@ VL_INLINE_OPT void Vdr840_pclink___024root___nba_sequent__TOP__2(Vdr840_pclink__
                                                (~ (IData)(vlSelf->grx_tog)));
                     vlSelf->grx_data = vlSelf->dr840_pclink__DOT__blk_q;
                     vlSelf->__Vdly__dr840_pclink__DOT__pace 
-                        = vlSelf->dr840_pclink__DOT__frame_cen;
+                        = vlSelf->dr840_pclink__DOT__byte_cen;
                     if (((0x1ffU & ((IData)(1U) + (IData)(vlSelf->dr840_pclink__DOT__ridx))) 
                          == (IData)(vlSelf->dr840_pclink__DOT__at))) {
                         vlSelf->__Vdly__dr840_pclink__DOT__tx_st = 5U;
@@ -713,7 +713,7 @@ VL_INLINE_OPT void Vdr840_pclink___024root___nba_sequent__TOP__2(Vdr840_pclink__
                                                    & (~ (IData)(vlSelf->grx_tog)));
                         vlSelf->grx_data = (0xffU & (IData)(vlSelf->dr840_pclink__DOT__at));
                         vlSelf->__Vdly__dr840_pclink__DOT__pace 
-                            = vlSelf->dr840_pclink__DOT__frame_cen;
+                            = vlSelf->dr840_pclink__DOT__byte_cen;
                         vlSelf->__Vdly__dr840_pclink__DOT__tx_st = 4U;
                     }
                 } else if (vlSelf->dr840_pclink__DOT__can_send) {
@@ -722,7 +722,7 @@ VL_INLINE_OPT void Vdr840_pclink___024root___nba_sequent__TOP__2(Vdr840_pclink__
                     vlSelf->grx_data = (1U & ((IData)(vlSelf->dr840_pclink__DOT__at) 
                                               >> 8U));
                     vlSelf->__Vdly__dr840_pclink__DOT__pace 
-                        = vlSelf->dr840_pclink__DOT__frame_cen;
+                        = vlSelf->dr840_pclink__DOT__byte_cen;
                     vlSelf->__Vdly__dr840_pclink__DOT__idle_cnt = 0U;
                     vlSelf->__Vdly__dr840_pclink__DOT__tx_st = 3U;
                 }
@@ -1340,12 +1340,30 @@ VL_INLINE_OPT void Vdr840_pclink___024root___nba_sequent__TOP__3(Vdr840_pclink__
     VL_DEBUG_IF(VL_DBG_MSGF("+    Vdr840_pclink___024root___nba_sequent__TOP__3\n"); );
     // Body
     if (vlSelf->cen) {
+        vlSelf->dr840_pclink__DOT__blk_q = vlSelf->dr840_pclink__DOT__blk
+            [(0xffU & (IData)(vlSelf->dr840_pclink__DOT__ridx))];
+        vlSelf->dr840_pclink__DOT__byte_cen = ((0U 
+                                                == (IData)(vlSelf->speed))
+                                                ? vlSelf->dr840_pclink__DOT__frame_cen
+                                                : (
+                                                   (1U 
+                                                    == (IData)(vlSelf->speed))
+                                                    ? 
+                                                   (0x1fffffU 
+                                                    & (vlSelf->dr840_pclink__DOT__frame_cen 
+                                                       >> 2U))
+                                                    : 
+                                                   ((2U 
+                                                     == (IData)(vlSelf->speed))
+                                                     ? 
+                                                    (0x7ffffU 
+                                                     & (vlSelf->dr840_pclink__DOT__frame_cen 
+                                                        >> 4U))
+                                                     : 1U)));
         vlSelf->dr840_pclink__DOT__frame_cen = (0x7fffffU 
                                                 & ((vlSelf->bit_clocks 
                                                     << 2U) 
                                                    + vlSelf->bit_clocks));
-        vlSelf->dr840_pclink__DOT__blk_q = vlSelf->dr840_pclink__DOT__blk
-            [(0xffU & (IData)(vlSelf->dr840_pclink__DOT__ridx))];
     }
     if (vlSelf->__Vdlyvset__dr840_pclink__DOT__blk__v0) {
         vlSelf->dr840_pclink__DOT__blk[vlSelf->__Vdlyvdim0__dr840_pclink__DOT__blk__v0] 
@@ -1518,5 +1536,7 @@ void Vdr840_pclink___024root___eval_debug_assertions(Vdr840_pclink___024root* vl
         Verilated::overWidthError("uart_on");}
     if (VL_UNLIKELY((vlSelf->bit_clocks & 0xfff00000U))) {
         Verilated::overWidthError("bit_clocks");}
+    if (VL_UNLIKELY((vlSelf->speed & 0xfcU))) {
+        Verilated::overWidthError("speed");}
 }
 #endif  // VL_DEBUG

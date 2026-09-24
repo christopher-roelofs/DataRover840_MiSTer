@@ -39,6 +39,7 @@ class alignas(VL_CACHE_LINE_BYTES) Vdr840_pclink VL_NOT_FINAL : public Verilated
     VL_OUT8(&grx_data,7,0);
     VL_IN8(&grx_full,0,0);
     VL_IN8(&uart_on,0,0);
+    VL_IN8(&speed,1,0);
     VL_OUT8(&state,2,0);
     VL_IN(&pkg_len,24,0);
     VL_IN(&wr_addr,24,0);

@@ -67,6 +67,9 @@ module dr840_pclink #(
     input  wire        grx_full,      // its holding register is full
     input  wire        uart_on,       // and the UART is enabled at all
     input  wire [19:0] bit_clocks,    // one bit time, in clocks
+    // How fast the bytes go: a frame time each, as the wire would have
+    // it; or 4 or 16 times that; or as fast as the guest reads them.
+    input  wire [1:0]  speed,
 
     output reg  [2:0]  state,         // see below
     output reg  [24:0] sent           // package bytes handed over so far
@@ -98,8 +101,16 @@ module dr840_pclink #(
 
     // ------------------------------------------------------------ pacing
     // A frame is ten bits; on the enabled edges that is five bit times.
-    reg [22:0] frame_cen, pace;
-    always @(posedge clk) if (cen) frame_cen <= {bit_clocks, 2'b00} + {3'd0, bit_clocks};
+    reg [22:0] frame_cen, pace, byte_cen;
+    always @(posedge clk) if (cen) begin
+        frame_cen <= {bit_clocks, 2'b00} + {3'd0, bit_clocks};
+        case (speed)
+        2'd0: byte_cen <= frame_cen;
+        2'd1: byte_cen <= {2'd0, frame_cen[22:2]};
+        2'd2: byte_cen <= {4'd0, frame_cen[22:4]};
+        default: byte_cen <= 23'd1;
+        endcase
+    end
 
     // ------------------------------------------------- from the guest
     reg        gtx_q;
@@ -340,29 +351,29 @@ module dr840_pclink #(
                 end
             end
             T_HDR0: if (can_send) begin
-                grx_data <= {7'd0, at[8]}; grx_tog <= ~grx_tog; pace <= frame_cen; idle_cnt <= 16'd0;
+                grx_data <= {7'd0, at[8]}; grx_tog <= ~grx_tog; pace <= byte_cen; idle_cnt <= 16'd0;
                 tx_st <= T_HDR1;
             end
             T_HDR1: if (can_send) begin
-                grx_data <= at[7:0]; grx_tog <= ~grx_tog; pace <= frame_cen;
+                grx_data <= at[7:0]; grx_tog <= ~grx_tog; pace <= byte_cen;
                 tx_st <= T_BODY;
             end
             T_BODY: if (can_send) begin
-                grx_data <= blk_q; grx_tog <= ~grx_tog; pace <= frame_cen;
+                grx_data <= blk_q; grx_tog <= ~grx_tog; pace <= byte_cen;
                 ridx <= ridx + 9'd1;
                 if (ridx + 9'd1 == at) tx_st <= T_CRC0;
             end
             T_CRC0: if (can_send) begin
-                grx_data <= crc[31:24]; grx_tog <= ~grx_tog; pace <= frame_cen; tx_st <= T_CRC1;
+                grx_data <= crc[31:24]; grx_tog <= ~grx_tog; pace <= byte_cen; tx_st <= T_CRC1;
             end
             T_CRC1: if (can_send) begin
-                grx_data <= crc[23:16]; grx_tog <= ~grx_tog; pace <= frame_cen; tx_st <= T_CRC2;
+                grx_data <= crc[23:16]; grx_tog <= ~grx_tog; pace <= byte_cen; tx_st <= T_CRC2;
             end
             T_CRC2: if (can_send) begin
-                grx_data <= crc[15:8]; grx_tog <= ~grx_tog; pace <= frame_cen; tx_st <= T_CRC3;
+                grx_data <= crc[15:8]; grx_tog <= ~grx_tog; pace <= byte_cen; tx_st <= T_CRC3;
             end
             T_CRC3: if (can_send) begin
-                grx_data <= crc[7:0]; grx_tog <= ~grx_tog; pace <= frame_cen;
+                grx_data <= crc[7:0]; grx_tog <= ~grx_tog; pace <= byte_cen;
                 if (mi == msg_len) tx_st <= T_IDLE;
                 else begin at <= 9'd0; crc <= 32'hFFFF_FFFF; tx_st <= T_FILL; end
             end

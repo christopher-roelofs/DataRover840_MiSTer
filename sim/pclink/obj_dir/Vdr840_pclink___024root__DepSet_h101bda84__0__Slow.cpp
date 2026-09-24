@@ -554,11 +554,13 @@ VL_ATTR_COLD void Vdr840_pclink___024root___ctor_var_reset(Vdr840_pclink___024ro
     vlSelf->grx_full = VL_RAND_RESET_I(1);
     vlSelf->uart_on = VL_RAND_RESET_I(1);
     vlSelf->bit_clocks = VL_RAND_RESET_I(20);
+    vlSelf->speed = VL_RAND_RESET_I(2);
     vlSelf->state = VL_RAND_RESET_I(3);
     vlSelf->sent = VL_RAND_RESET_I(25);
     vlSelf->dr840_pclink__DOT__crc8__Vstatic__x = VL_RAND_RESET_I(32);
     vlSelf->dr840_pclink__DOT__frame_cen = VL_RAND_RESET_I(23);
     vlSelf->dr840_pclink__DOT__pace = VL_RAND_RESET_I(23);
+    vlSelf->dr840_pclink__DOT__byte_cen = VL_RAND_RESET_I(23);
     vlSelf->dr840_pclink__DOT__gtx_q = VL_RAND_RESET_I(1);
     vlSelf->dr840_pclink__DOT__rx_v = VL_RAND_RESET_I(1);
     vlSelf->dr840_pclink__DOT__greeted = VL_RAND_RESET_I(1);

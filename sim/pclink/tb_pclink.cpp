@@ -111,6 +111,7 @@ int main(int argc, char **argv)
     dut->wr_addr = 0; dut->wr_data = 0; dut->wr_req = 0;
     dut->pmem_ack = 0; dut->pmem_rdata = 0;
     dut->gtx_tog = 0; dut->gtx_data = 0; dut->grx_full = 0; dut->uart_on = 1; dut->bit_clocks = bit_clocks;
+    dut->speed = argc > 3 ? atoi(argv[3]) : 0;
     for (int i = 0; i < 4; i++) { dut->clk = 0; dut->eval(); dut->clk = 1; dut->eval(); }
     dut->rst_n = 1;
 
