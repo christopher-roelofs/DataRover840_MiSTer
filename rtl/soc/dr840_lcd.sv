@@ -37,6 +37,11 @@ module dr840_lcd (
     input  wire [8:0]  cur_y,
     input  wire        cur_down,
 
+    // Shown as the panel switched off: while the memory is lent to a save
+    // and the lines cannot be fetched, rather than whatever was in the
+    // buffers -- a second of stale lines looked like something broken.
+    input  wire        blank,
+
     // The memory port, physical addresses, bursts of four words.
     output reg  [31:0] vmem_addr,
     output reg         vmem_req,
@@ -165,7 +170,7 @@ module dr840_lcd (
         vs <= vs_p;
         de <= active;
         if (!active)          {r, g, b} <= 24'd0;
-        else if (!envid)      {r, g, b} <= 24'h50_50_50;          // panel off
+        else if (!envid || blank) {r, g, b} <= 24'h50_50_50;      // panel off
         else if (in_panel)    {r, g, b} <= {gray_c, gray_c, gray_c};
         else                  {r, g, b} <= 24'h30_30_30;          // the bezel
     end

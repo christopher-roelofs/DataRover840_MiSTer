@@ -300,6 +300,7 @@ hps_io #(.CONF_STR(CONF_STR)) hps_io
     .ioctl_dout     (ioctl_dout),
     .ioctl_wait     (ioctl_wait),
     .sd_lba         ('{sd_lba}),
+    .sd_blk_cnt     ('{6'd31}),            // 16 KB a request: 256 of them for the image
     .sd_rd          (sd_rd),
     .sd_wr          (sd_wr),
     .sd_ack         (sd_ack),
@@ -389,12 +390,15 @@ localparam [2:0] MT_WRITE = 3'd0, MT_READ = 3'd1, MT_ROM = 3'd2, MT_CLEAR = 3'd3
 // fills the byte buffer and the loader writes it out a word at a time;
 // saving, the loader reads the memory in the caches' bursts into a word
 // buffer and the HPS takes bytes from it.
-reg  [7:0]  secb [0:511];             // in: what the HPS wrote
-reg  [31:0] secw [0:127];             // out: what the memory holds
+// In 16 KB chunks -- thirty-two sectors a request -- because a request is
+// a round trip through the HPS, and one a sector made a save take
+// twenty-seven seconds with the core held.
+reg  [7:0]  secb [0:16383];           // in: what the HPS wrote
+reg  [31:0] secw [0:4095];            // out: what the memory holds
 reg  [7:0]  secb_q;
 reg  [31:0] secw_q;
-reg  [12:0] lba;                      // 0..8191
-reg  [6:0]  wi;                       // word within the sector
+reg  [7:0]  chunk;                    // 0..255, of 16 KB
+reg  [11:0] wi;                       // word within the chunk
 reg  [1:0]  bi;                       // byte within the word
 reg  [2:0]  ss;                       // the sector's own state
 reg  [31:0] gather;
@@ -428,9 +432,9 @@ always @(posedge clk_sys or negedge rst_n) begin
 end
 wire on_button = joystick_0[4] | f4_down | wake;
 always @(posedge clk_sys) begin
-    if (sd_buff_wr) secb[sd_buff_addr[8:0]] <= sd_buff_dout;
+    if (sd_buff_wr) secb[sd_buff_addr[13:0]] <= sd_buff_dout;
     secb_q <= secb[{wi, bi}];
-    secw_q <= secw[sd_buff_addr[8:2]];
+    secw_q <= secw[sd_buff_addr[13:2]];
 end
 // Big-endian, as the memory is: byte 0 of the word is its top.
 assign sd_buff_din = (sd_buff_addr[1:0] == 2'd0) ? secw_q[31:24]
@@ -458,7 +462,7 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
         load_req <= 0; load_busy <= 0; dl_d <= 0; rst_d <= 0;
         rom_words <= 0; rom_present <= 0; clr_run <= 0; clr_addr <= 0; rom_sum <= 0;
         load_we <= 1; load_burst <= 0; mt_phase <= MT_WRITE; mt_beat <= 0; rom_back <= 0;
-        sd_lba <= 0; sd_rd <= 0; sd_wr <= 0; lba <= 0; wi <= 0; bi <= 0; ss <= 0; gather <= 0;
+        sd_lba <= 0; sd_rd <= 0; sd_wr <= 0; chunk <= 0; wi <= 0; bi <= 0; ss <= 0; gather <= 0;
         img_ok <= 0; img_d <= 0; save_run <= 0; halt_req <= 0; save_st <= 0; idle_cnt <= 0;
         sd_wait <= 0; img_ro <= 0; save_fail <= 0;
         stop_d <= 0; savebtn_d <= 0;
@@ -476,7 +480,7 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
                 end else if (mt_phase == MT_READ || mt_phase == MT_ROM || mt_phase == MT_SAVE) begin
                     // Four beats to a burst; the request holds through them.
                     if (mt_phase == MT_SAVE) begin
-                        secw[{wi[6:2], mt_beat}] <= load_rdata;
+                        secw[{wi[11:2], mt_beat}] <= load_rdata;
                     end else if (mt_phase == MT_ROM) begin
                         if (clr_addr + {mt_beat, 2'b00} < rom_end)
                             rom_back <= rom_back + load_rdata;
@@ -490,7 +494,7 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
                         load_req  <= 0;
                         load_busy <= 0;
                         clr_addr  <= clr_addr + 25'd16;
-                        wi        <= wi + 7'd4;
+                        wi        <= wi + 12'd4;
                     end
                 end else begin
                     load_req  <= 0;
@@ -500,7 +504,7 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
         end else if (mt_phase == MT_LOAD && clr_run) begin
             // A sector in from the image, then out to the memory.
             case (ss)
-            3'd0: begin sd_lba <= {19'd0, lba}; sd_rd <= 1'b1; sd_wait <= 28'd0; ss <= 3'd1; end
+            3'd0: begin sd_lba <= {19'd0, chunk, 5'd0}; sd_rd <= 1'b1; sd_wait <= 28'd0; ss <= 3'd1; end
             3'd1: if (sd_ack) begin sd_rd <= 1'b0; ss <= 3'd2; end
                   else if (sd_wait == 28'd92_000_000) begin
                       // A second without the card answering: nothing to
@@ -509,7 +513,7 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
                       sd_rd <= 1'b0; img_ok <= 1'b0;
                       mt_phase <= MT_CLEAR; clr_addr <= DRAM_BASE;
                   end else sd_wait <= sd_wait + 28'd1;
-            3'd2: if (!sd_ack) begin wi <= 7'd0; bi <= 2'd0; ss <= 3'd3; end
+            3'd2: if (!sd_ack) begin wi <= 12'd0; bi <= 2'd0; ss <= 3'd3; end
             3'd3: ss <= 3'd4;                          // the byte's read is a cycle behind
             3'd4: ss <= 3'd5;
             3'd5: begin
@@ -518,17 +522,17 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
                 ss <= (bi == 2'd3) ? 3'd6 : 3'd3;
             end
             3'd6: begin
-                load_addr  <= DRAM_BASE + {3'd0, lba, wi, 2'b00};
+                load_addr  <= DRAM_BASE + {3'd0, chunk, wi, 2'b00};
                 load_data  <= gather;
                 load_we    <= 1'b1;
                 load_burst <= 1'b0;
                 load_req   <= 1'b1;
                 load_busy  <= 1'b1;
-                wi <= wi + 7'd1;
-                if (wi == 7'd127) begin
-                    lba <= lba + 13'd1;
-                    ss  <= 3'd0;
-                    if (lba == 13'd8191) clr_run <= 1'b0;
+                wi <= wi + 12'd1;
+                if (wi == 12'd4095) begin
+                    chunk <= chunk + 8'd1;
+                    ss    <= 3'd0;
+                    if (chunk == 8'd255) clr_run <= 1'b0;
                 end else ss <= 3'd3;
             end
             default: ss <= 3'd0;
@@ -539,25 +543,25 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
             3'd0: begin
                 // A burst of four words; after the last of the sector's
                 // thirty-two, the sector goes to the image.
-                load_addr  <= DRAM_BASE + {3'd0, lba, wi, 2'b00};
+                load_addr  <= DRAM_BASE + {3'd0, chunk, wi, 2'b00};
                 load_we    <= 1'b0;
                 load_burst <= 1'b1;
                 mt_beat    <= 2'd0;
                 load_req   <= 1'b1;
                 load_busy  <= 1'b1;
-                if (wi == 7'd124) ss <= 3'd7;
+                if (wi == 12'd4092) ss <= 3'd7;
             end
-            3'd7: begin sd_lba <= {19'd0, lba}; sd_wr <= 1'b1; sd_wait <= 28'd0; ss <= 3'd1; end
+            3'd7: begin sd_lba <= {19'd0, chunk, 5'd0}; sd_wr <= 1'b1; sd_wait <= 28'd0; ss <= 3'd1; end
             3'd1: if (sd_ack) begin sd_wr <= 1'b0; ss <= 3'd2; end
                   else if (sd_wait == 28'd92_000_000) begin
                       // The card is not taking it: give the machine back.
                       sd_wr <= 1'b0; save_run <= 1'b0; save_fail <= save_fail + 8'd1;
                   end else sd_wait <= sd_wait + 28'd1;
             3'd2: if (!sd_ack) begin
-                wi <= 7'd0;
-                lba <= lba + 13'd1;
+                wi <= 12'd0;
+                chunk <= chunk + 8'd1;
                 ss  <= 3'd0;
-                if (lba == 13'd8191) save_run <= 1'b0;
+                if (chunk == 8'd255) save_run <= 1'b0;
             end
             default: ss <= 3'd0;
             endcase
@@ -570,7 +574,7 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
                 MT_ROM:   begin
                     // What the memory held last time, if there is an image;
                     // otherwise nothing.
-                    if (img_ok) begin mt_phase <= MT_LOAD; lba <= 13'd0; ss <= 3'd0; end
+                    if (img_ok) begin mt_phase <= MT_LOAD; chunk <= 8'd0; ss <= 3'd0; end
                     else begin mt_phase <= MT_CLEAR; clr_addr <= DRAM_BASE; end
                 end
                 default:  clr_run <= 1'b0;
@@ -620,7 +624,7 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
             clr_addr <= DRAM_BASE;
             mt_phase <= MT_WRITE;
             save_run <= 1'b0; halt_req <= 1'b0; save_st <= 2'd0;
-            sd_rd <= 1'b0; sd_wr <= 1'b0; ss <= 3'd0; lba <= 13'd0; wi <= 7'd0;
+            sd_rd <= 1'b0; sd_wr <= 1'b0; ss <= 3'd0; chunk <= 8'd0; wi <= 12'd0;
             mt_errors <= 32'd0; mt_first <= 32'hFFFF_FFFF; rom_back <= 32'd0;
         end
         // The loader's own writes are whole words, not bursts.
@@ -633,7 +637,7 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
             img_ok <= (img_size == 64'd4194304);
             img_ro <= img_readonly;
             if (img_size == 64'd4194304 && rom_present && !ioctl_download && !clr_run && !save_run) begin
-                clr_run <= 1'b1; mt_phase <= MT_LOAD; lba <= 13'd0; ss <= 3'd0;
+                clr_run <= 1'b1; mt_phase <= MT_LOAD; chunk <= 8'd0; ss <= 3'd0;
             end
         end
 
@@ -648,7 +652,7 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
         2'd1: begin
                   idle_cnt <= mem_idle ? idle_cnt + 5'd1 : 5'd0;
                   if (idle_cnt == 5'd31) begin
-                      save_run <= 1'b1; mt_phase <= MT_SAVE; lba <= 13'd0; wi <= 7'd0;
+                      save_run <= 1'b1; mt_phase <= MT_SAVE; chunk <= 8'd0; wi <= 12'd0;
                       ss <= 3'd0; save_st <= 2'd2;
                   end
               end
@@ -685,7 +689,8 @@ dr840_machine machine (
     // Held in reset until there is a ROM to run. The loader owns the
     // memory while it is arriving, and before that there is nothing to do.
     .load_en(ioctl_download | (load_busy & ~save_run) | ~rom_ok),
-    .mem_borrow(save_run), .hold(halt_req), .mem_idle(mem_idle), .stopped(stopped),
+    .mem_borrow(save_run), .hold(halt_req), .blank(save_run | halt_req),
+    .mem_idle(mem_idle), .stopped(stopped),
     .load_addr(load_addr), .load_data(load_data),
     .load_we(load_we), .load_burst(load_burst), .load_rdata(load_rdata),
     .load_req(load_req), .load_ack(load_ack),
@@ -718,7 +723,7 @@ dr840_status #(.CLK_HZ(92_000_000)) status_line (
     .v8(mt_errors != 32'd0 ? mt_errors : dbg_pen),
     // A: the RAM image's state -- mounted, read-only, the walk's phase and
     // sector state, the card handshake, saves that failed, and the sector.
-    .v9({img_ok, img_ro, clr_run, save_run, halt_req, save_st, mt_phase[2:0], ss, sd_rd, sd_wr, sd_ack, save_fail[2:0], lba}),
+    .v9({img_ok, img_ro, clr_run, save_run, halt_req, save_st, mt_phase[2:0], ss, sd_rd, sd_wr, sd_ack, save_fail[2:0], 5'd0, chunk}),
     .txd(status_txd)
 );
 assign UART_TXD = status[2] ? guest_txd : status_txd;
