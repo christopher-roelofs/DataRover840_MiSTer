@@ -162,14 +162,16 @@ module dr840_lcd (
     wire [7:0]  gray  = 8'd255 - {level, level, level, level};   // 0,85,170,255
 
     // The four colours of each tint, between the reference's dark and
-    // light ends (dark + (light - dark) * k / 3): grey 20221E..C8CCC0,
-    // green 103A28..6EDC9A. Darkest for the fullest ink.
+    // light ends (dark + (light - dark) * k / 3): grey 20221E..C8CCC0 from
+    // the reference, green 013306..67E6AE as sampled from a photograph of a
+    // PIC-2000's lit panel, which is the look wanted. Darkest for the
+    // fullest ink.
     function [23:0] tinted(input [1:0] t, input [1:0] lv);   // lv 0 = darkest ink
         case ({t, lv})
         4'b0100: tinted = 24'h20221E; 4'b0101: tinted = 24'h585B54;
         4'b0110: tinted = 24'h90938A; 4'b0111: tinted = 24'hC8CCC0;
-        4'b1000: tinted = 24'h103A28; 4'b1001: tinted = 24'h2F704E;
-        4'b1010: tinted = 24'h4FA674; 4'b1011: tinted = 24'h6EDC9A;
+        4'b1000: tinted = 24'h013306; 4'b1001: tinted = 24'h236F3E;
+        4'b1010: tinted = 24'h45AA76; 4'b1011: tinted = 24'h67E6AE;
         default: tinted = {gray, gray, gray};
         endcase
     endfunction
