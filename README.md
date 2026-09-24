@@ -63,9 +63,12 @@ runs, and is offered on UART A by the PC's half of the link
 in Magic Cap, walk to the Storeroom and tap the computer, and "Receiving
 Package" fills its bar. The engine's every byte -- the blocks, the
 quoting, the CRCs, the offer record -- is checked against a port of the
-reference's PC side (`sim/pclink/`), and the whole thing runs in
-simulation from a warm RAM image through the taps to the computer.
-"Offer package again" holds the same package out for another RAM image.
+reference's PC side (`sim/pclink/`), and the whole thing has run in
+simulation from a warm RAM image through the nine taps to the computer:
+the link came up at 535M instructions, the package was taken at 794M,
+and the Storeroom's shelf then holds "DvorakKeyboard 21K" -- the same
+screen the reference emulator ends on. "Offer package again" holds the
+same package out for another RAM image.
 
 ```
 matched 10000000 of 10000000 instructions, 2146802 bus accesses,
