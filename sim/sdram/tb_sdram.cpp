@@ -225,7 +225,7 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--card") && i + 1 < argc) card_path = argv[++i];
         else if (!strcmp(argv[i], "--ram") && i + 1 < argc) ram_path = argv[++i];
         else if (!strcmp(argv[i], "--install") && i + 1 < argc) pkg_path = argv[++i];
-        else if (!strcmp(argv[i], "--link-speed") && i + 1 < argc) pkg_speed = atoi(argv[++i]);   // 0 device, 1 4x, 2 16x, 3 unpaced
+        else if (!strcmp(argv[i], "--link-speed") && i + 1 < argc) pkg_speed = atoi(argv[++i]);   // 0 4x (the default), 1 2x, 2 the device's 19200
         else if (!strcmp(argv[i], "--card-out") && i + 1 < argc) card_out = argv[++i];
         else if (!strcmp(argv[i], "--keys") && i + 1 < argc) {
             const char *a = argv[++i]; kbd = true;

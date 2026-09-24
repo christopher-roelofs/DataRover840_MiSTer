@@ -67,8 +67,10 @@ module dr840_pclink #(
     input  wire        grx_full,      // its holding register is full
     input  wire        uart_on,       // and the UART is enabled at all
     input  wire [19:0] bit_clocks,    // one bit time, in clocks
-    // How fast the bytes go: a frame time each, as the wire would have
-    // it; or 4 or 16 times that; or as fast as the guest reads them.
+    // How fast the bytes go: 0 four times the device's rate, 1 twice it,
+    // 2 a frame time a byte as the wire would have it. Four times is as
+    // fast as Magic Cap keeps up: at sixteen it loses data ("Part of the
+    // data was lost on the way"), and unpaced it never links at all.
     input  wire [1:0]  speed,
 
     output reg  [2:0]  state,         // see below
@@ -105,10 +107,9 @@ module dr840_pclink #(
     always @(posedge clk) if (cen) begin
         frame_cen <= {bit_clocks, 2'b00} + {3'd0, bit_clocks};
         case (speed)
-        2'd0: byte_cen <= frame_cen;
-        2'd1: byte_cen <= {2'd0, frame_cen[22:2]};
-        2'd2: byte_cen <= {4'd0, frame_cen[22:4]};
-        default: byte_cen <= 23'd1;
+        2'd1:    byte_cen <= {1'd0, frame_cen[22:1]};
+        2'd2:    byte_cen <= frame_cen;
+        default: byte_cen <= {2'd0, frame_cen[22:2]};
         endcase
     end
 

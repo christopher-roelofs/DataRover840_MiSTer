@@ -63,6 +63,10 @@ int main(int argc, char **argv) {
     if (native) { RAST_W = PANEL_W; RAST_H = PANEL_H; }
     Vtb_lcd *dut = new Vtb_lcd;
     dut->native = native;
+    dut->blank = 0; dut->progress = 0;
+    int bar = -1;
+    for (int i = 1; i < argc; i++) if (!strcmp(argv[i], "--bar") && i + 1 < argc) bar = atoi(argv[i + 1]);
+    if (bar >= 0) { dut->blank = 1; dut->progress = bar; }
     dut->ctrl1 = 0x00035A4B;                       // ENVID, 2bpp, as the ROM writes
     dut->ctrl2 = ((PANEL_W / 4 - 1) << 12) | (PANEL_H - 1);
     dut->ctrl3 = ((FB_PA >> 20) << 20) | (((FB_PA >> 4) & 0xFFFF) << 4);

@@ -220,7 +220,7 @@ module tb_sdram #(
     dr840_lcd lcd (
         .clk(clk), .cen(cen), .rst_n(rst_n),
         .ctrl1(dbg_vid_ctrl1), .ctrl2(vid_ctrl2), .ctrl3(dbg_vid_ctrl3),
-        .cur_x(9'd0), .cur_y(9'd0), .cur_down(1'b0), .blank(1'b0), .tint(2'd0), .native(1'b0),
+        .cur_x(9'd0), .cur_y(9'd0), .cur_down(1'b0), .blank(1'b0), .progress(8'd0), .tint(2'd0), .native(1'b0),
         .vmem_addr(va), .vmem_req(vreq), .vmem_burst(), .vmem_ack(vack), .vmem_rdata(vrd),
         .ce_pix(), .hs(), .vs(), .de(), .r(), .g(), .b()
     );

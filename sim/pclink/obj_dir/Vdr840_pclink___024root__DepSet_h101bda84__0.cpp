@@ -1342,24 +1342,19 @@ VL_INLINE_OPT void Vdr840_pclink___024root___nba_sequent__TOP__3(Vdr840_pclink__
     if (vlSelf->cen) {
         vlSelf->dr840_pclink__DOT__blk_q = vlSelf->dr840_pclink__DOT__blk
             [(0xffU & (IData)(vlSelf->dr840_pclink__DOT__ridx))];
-        vlSelf->dr840_pclink__DOT__byte_cen = ((0U 
+        vlSelf->dr840_pclink__DOT__byte_cen = ((1U 
                                                 == (IData)(vlSelf->speed))
-                                                ? vlSelf->dr840_pclink__DOT__frame_cen
+                                                ? (0x3fffffU 
+                                                   & (vlSelf->dr840_pclink__DOT__frame_cen 
+                                                      >> 1U))
                                                 : (
-                                                   (1U 
+                                                   (2U 
                                                     == (IData)(vlSelf->speed))
-                                                    ? 
+                                                    ? vlSelf->dr840_pclink__DOT__frame_cen
+                                                    : 
                                                    (0x1fffffU 
                                                     & (vlSelf->dr840_pclink__DOT__frame_cen 
-                                                       >> 2U))
-                                                    : 
-                                                   ((2U 
-                                                     == (IData)(vlSelf->speed))
-                                                     ? 
-                                                    (0x7ffffU 
-                                                     & (vlSelf->dr840_pclink__DOT__frame_cen 
-                                                        >> 4U))
-                                                     : 1U)));
+                                                       >> 2U))));
         vlSelf->dr840_pclink__DOT__frame_cen = (0x7fffffU 
                                                 & ((vlSelf->bit_clocks 
                                                     << 2U) 

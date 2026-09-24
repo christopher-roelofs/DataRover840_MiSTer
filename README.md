@@ -41,7 +41,10 @@ save), and F4 or the joystick's ON button is that button.
 are a MiSTer save file, `saves/DataRover840/<rom>.sav`, written when Magic
 Cap turns the machine off, on "Save RAM now", or (off by default) when the
 OSD opens, and read back when the core starts: the ROM finds its own
-world, says "Cleaning up", and carries on where it was. The USA, Japanese
+world, says "Cleaning up", and carries on where it was. A save or load
+holds the machine for about two seconds, and the panel shows a bar
+filling meanwhile. "Start fresh" resets into cleared RAM instead, leaving
+the file to be replaced by the next save. The USA, Japanese
 and Rosemary SDK ROMs are three menu entries, each with its own save. The
 panel can be shown in black and white, as a grey STN or in the green of a
 PIC-2000's lit panel, and `shadow_masks/` holds the LCD grid for the
@@ -72,8 +75,11 @@ and the Storeroom's shelf then holds "DvorakKeyboard 21K" -- the same
 screen the reference emulator ends on. "Offer package again" holds the
 same package out for another RAM image. The device runs the link at 19200
 baud and a real PC could not change that; this link is not a wire, and by
-default hands bytes over as fast as Magic Cap reads them, with the slower
-paces as OSD choices.
+default hands bytes over four times as fast, with 2x and the device's own
+rate as OSD choices. Four times is as fast as Magic Cap keeps up: in
+simulation, sixteen times loses data ("Part of the data was lost on the
+way") and unpaced never links. The guest's own work dominates a transfer,
+so 4x is about 1.6 times quicker overall, not four.
 
 ```
 matched 10000000 of 10000000 instructions, 2146802 bus accesses,
@@ -682,10 +688,9 @@ have come from anywhere else:
 
 ## Next
 
-1. Sound in: the codec's microphone path, and the telecom channel.
-2. Recover the IPC lost to the handshakes on the core's edges: 0.72 at
+1. Recover the IPC lost to the handshakes on the core's edges: 0.72 at
    the core's rate over the banner path, against 0.75 before them.
-3. An external interrupt test: the ICU is exercised by the ROM's own timer
+2. An external interrupt test: the ICU is exercised by the ROM's own timer
    path but nothing yet drives an IP line from outside the block.
-4. A network: the ROM speaks PPP to a modem, so a modem PC Card with a
+3. A network: the ROM speaks PPP to a modem, so a modem PC Card with a
    16550 is the path, prototyped in the reference emulator first.

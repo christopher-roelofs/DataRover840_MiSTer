@@ -209,10 +209,14 @@ localparam CONF_STR = {
     "F2,PKG,Install package;",
     "T[11],Offer package again;",
     // The device's UART runs the link at 19200 baud, which a real PC
-    // could not change either; this link is not a wire, and can hand the
-    // bytes over as fast as Magic Cap reads them.
-    "O[13:12],Package link speed,19200 as the device,4x,16x,As fast as read;",
+    // could not change either; this link is not a wire, and hands the
+    // bytes over four times as fast, which is as fast as Magic Cap keeps
+    // up with (dr840_pclink.sv). Slower, if a package ever needs it.
+    "O[13:12],Package link speed,4x,2x,19200 as the device;",
     "T[5],Save RAM now;",
+    // A reset that ignores the save: the RAM cleared, Magic Cap set up
+    // from nothing. The save is overwritten by the next one.
+    "T[15],Start fresh (clear RAM);",
     // Magic Cap turns the machine off after it has sat idle. A MiSTer has
     // no battery to save, so by default the core presses the ON button
     // for it once the RAM has been written: an autosave and a blink,
@@ -376,7 +380,10 @@ hps_io #(.CONF_STR(CONF_STR), .VDNUM(2)) hps_io
 wire clk_sys, pll_locked;
 pll pll (.refclk(CLK_50M), .rst(1'b0), .outclk_0(clk_sys), .locked(pll_locked));
 
-wire reset = RESET | status[0] | buttons[1] | ~pll_locked | DBG_FORCE_RESET;
+// "Start fresh": a reset into cleared RAM, the save left unread. It is
+// the machine's next save that replaces the file.
+reg  fresh_pulse;
+wire reset = RESET | status[0] | buttons[1] | ~pll_locked | DBG_FORCE_RESET | fresh_pulse;
 wire rst_n = ~reset;
 
 ////////////////////////////////////////////////////////////////////////////
@@ -458,6 +465,8 @@ reg  [31:0] secw [0:4095];            // out: what the memory holds
 reg  [7:0]  secb_q;
 reg  [31:0] secw_q;
 reg  [7:0]  chunk;                    // 0..255, of 16 KB
+reg         fresh, fresh_d;
+reg  [3:0]  fresh_cnt;
 // Which image the sector machine is moving: 0 the RAM, 1 the card; where
 // it lives in the SDRAM; and how many chunks it is.
 reg         cur;
@@ -540,6 +549,11 @@ wire hard_rst_n = pll_locked & ~RESET;
 // to be reset -- and is then offered.
 wire pkg_dl = ioctl_download && (ioctl_index[5:0] == 6'd2);
 wire rom_dl = ioctl_download && !pkg_dl;
+// For the machine's load gate, a clock later: from the framework's index
+// through this decode into the core's cache was a clock with nothing to
+// spare. A ROM's first word is several clocks behind the download's start.
+reg  rom_dl_q;
+always @(posedge clk_sys) rom_dl_q <= rom_dl;
 reg         pdl_d, pkg_wreq, pkg_go_tog;
 reg  [24:0] pkg_waddr, pkg_len;
 reg  [31:0] pkg_wdata, pkg_sum;
@@ -594,10 +608,15 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
         img_ok <= 0; img_new <= 0; img_d <= 0; save_run <= 0; halt_req <= 0; save_st <= 0; idle_cnt <= 0;
         sd_wait <= 0; img_ro <= 0; save_fail <= 0; osd_d <= 0; ram_dirty <= 0; cimg_d <= 0; reins_d <= 0;
         stop_d <= 0; savebtn_d <= 0;
+        fresh <= 0; fresh_d <= 0; fresh_cnt <= 0; fresh_pulse <= 0;
         mt_errors <= 0; mt_first <= 32'hFFFF_FFFF;
     end else begin
         dl_d  <= rom_dl;
         rst_d <= reset;
+        fresh_d <= status[15];
+        if (status[15] && !fresh_d && rom_present) begin fresh <= 1'b1; fresh_cnt <= 4'd15; end
+        fresh_pulse <= (fresh_cnt != 4'd0);
+        if (fresh_cnt != 4'd0) fresh_cnt <= fresh_cnt - 4'd1;
         if (load_busy) begin
             if (load_ack) begin
                 if (!clr_run && !save_run) begin
@@ -707,8 +726,9 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
                 MT_ROM:   begin
                     // What the memory held last time, if there is an image;
                     // otherwise nothing.
-                    if (img_ok) begin mt_phase <= MT_LOAD; cur <= 1'b0; chunk <= 8'd0; ss <= 3'd0; end
+                    if (img_ok && !fresh) begin mt_phase <= MT_LOAD; cur <= 1'b0; chunk <= 8'd0; ss <= 3'd0; end
                     else begin mt_phase <= MT_CLEAR; clr_addr <= DRAM_BASE; end
+                    fresh <= 1'b0;
                 end
                 default:  clr_run <= 1'b0;
                 endcase
@@ -855,6 +875,10 @@ wire        sdram_dq_oe;
 assign SDRAM_DQ = sdram_dq_oe ? sdram_dq_o : 16'bZ;
 assign sdram_dq_i = SDRAM_DQ;
 
+// How far a save or load has got, for the bar the panel shows meanwhile:
+// the RAM is 256 chunks of 16 KB, a card 2^(log2 - 14) of them.
+wire [7:0] xfer_prog = !save_run ? 8'd0 : !cur ? chunk : (chunk << (5'd22 - card_log2));
+
 dr840_machine machine (
     // The option key: IOCTRL pin 3, low while held. The right mouse button
     // is it, as in the reference's window. On the device the same button
@@ -868,10 +892,10 @@ dr840_machine machine (
     .card_present({card_in, 1'b0}), .card_log2_0(5'd21), .card_log2_1(card_log2), .key_tog(key_tog), .key_code(key_code), .key_ext(key_ext), .key_down(key_down),
     // Held in reset until there is a ROM to run. The loader owns the
     // memory while it is arriving, and before that there is nothing to do.
-    .load_en(rom_dl | (load_busy & ~save_run) | ~rom_ok),
+    .load_en(rom_dl_q | (load_busy & ~save_run) | ~rom_ok),
     .pkg_go_tog(pkg_go_tog), .pkg_speed(status[13:12]), .pkg_len(pkg_len), .pkg_waddr(pkg_waddr), .pkg_wdata(pkg_wdata),
     .pkg_wreq(pkg_wreq), .pkg_wack(pkg_wack), .pkg_state(pkg_state), .pkg_sent(pkg_sent),
-    .mem_borrow(save_run), .hold(halt_req), .blank(save_run | halt_req), .tint(status[9:8]), .native(native),
+    .mem_borrow(save_run), .hold(halt_req), .blank(save_run | halt_req), .progress(xfer_prog), .tint(status[9:8]), .native(native),
     .mem_idle(mem_idle), .stopped(stopped), .ram_written(ram_written), .card_written(card_written),
     .load_addr(load_addr), .load_data(load_data),
     .load_we(load_we), .load_burst(load_burst), .load_rdata(load_rdata),

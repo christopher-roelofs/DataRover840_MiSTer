@@ -44,6 +44,10 @@ module dr840_lcd (
     // and the lines cannot be fetched, rather than whatever was in the
     // buffers -- a second of stale lines looked like something broken.
     input  wire        blank,
+    // How far the save or load that blanked it has got, 0..255: drawn as
+    // a bar across the middle, so two seconds of grey do not look like a
+    // machine that has stopped.
+    input  wire [7:0]  progress,
     // The panel's colour: 0 its own black and white, 1 a grey STN, 2 the
     // mint-green backlight -- the reference's tints, each a light and a
     // dark the four levels sit between.
@@ -80,16 +84,17 @@ module dr840_lcd (
     wire [10:0] line_bytes = {2'b00, horz} + 11'd1;
 
     // ------------------------------------------------------------ the raster
-    // 640x480: VGA's 800x525 at 23 MHz, 54.8 Hz. 480x320: 592x324 at
-    // 11.5 MHz, 59.96 Hz. The framework's scaler takes either.
+    // 640x480: VGA's 800x525 at 23 MHz, 54.8 Hz. 480x320: 572x336 at
+    // 11.5 MHz, 59.8 Hz, with sixteen lines of vertical blanking -- four
+    // were too few for the framework's scaler. It takes either.
     wire [9:0] H_ACT = native ? 10'd480 : 10'd640;
     wire [9:0] H_FP  = 10'd16;
-    wire [9:0] H_SY  = native ? 10'd48  : 10'd96;
+    wire [9:0] H_SY  = native ? 10'd32  : 10'd96;
     wire [9:0] V_ACT = native ? 10'd320 : 10'd480;
-    wire [9:0] V_FP  = native ? 10'd1   : 10'd10;
-    wire [9:0] V_SY  = 10'd2;
-    wire [9:0] H_TOT = native ? 10'd592 : 10'd800;
-    wire [9:0] V_TOT = native ? 10'd324 : 10'd525;
+    wire [9:0] V_FP  = native ? 10'd4   : 10'd10;
+    wire [9:0] V_SY  = native ? 10'd4   : 10'd2;
+    wire [9:0] H_TOT = native ? 10'd572 : 10'd800;
+    wire [9:0] V_TOT = native ? 10'd336 : 10'd525;
 
     reg [2:0] pdiv;
     reg [9:0] hc, vc;
@@ -198,11 +203,19 @@ module dr840_lcd (
                    || (cur_down && cdx <= 10'd1 && cdy <= 10'd1);
     wire [7:0] gray_c = on_cursor ? ~gray : gray;
 
+    // The bar: 258x14 in the middle of the 480x320 panel, a light edge
+    // and a light fill as far as `progress` has got.
+    wire in_bar   = in_panel && px >= 10'd111 && px <= 10'd368 && py >= 10'd153 && py <= 10'd166;
+    wire bar_edge = px == 10'd111 || px == 10'd368 || py == 10'd153 || py == 10'd166;
+    wire bar_fill = (px - 10'd112) <= {2'd0, progress} && py >= 10'd155 && py <= 10'd164
+                    && px >= 10'd113 && px <= 10'd366;
+
     always @(posedge clk) begin
         hs <= hs_p;
         vs <= vs_p;
         de <= active;
         if (!active)          {r, g, b} <= 24'd0;
+        else if (blank && in_bar) {r, g, b} <= (bar_edge || bar_fill) ? 24'hC8_C8_C8 : 24'h30_30_30;
         else if (!envid || blank) {r, g, b} <= 24'h50_50_50;      // panel off
         else if (in_panel)    {r, g, b} <= on_cursor ? ~rgb_c : rgb_c;
         else                  {r, g, b} <= 24'h30_30_30;          // the bezel

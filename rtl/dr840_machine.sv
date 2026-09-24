@@ -26,6 +26,7 @@ module dr840_machine (
     input  wire        mem_borrow,
     input  wire        hold,         // and held beforehand, while the memory drains
     input  wire        blank,        // the panel shown off meanwhile
+    input  wire [7:0]  progress,     // with a bar for how far it has got
     input  wire [1:0]  tint,         // the panel's colour: off, grey, green
     input  wire        native,       // the raster: 480x320, or 640x480 with a bezel
     // The PC Cards in the two slots: present, and the size as log2.
@@ -271,7 +272,7 @@ module dr840_machine (
     dr840_lcd lcd (
         .clk(clk), .cen(cen), .rst_n(core_rst_n),
         .ctrl1(vid_ctrl1), .ctrl2(vid_ctrl2), .ctrl3(vid_ctrl3),
-        .cur_x(pen_px), .cur_y(pen_py), .cur_down(pen_down), .blank(blank), .tint(tint), .native(native),
+        .cur_x(pen_px), .cur_y(pen_py), .cur_down(pen_down), .blank(blank), .progress(progress), .tint(tint), .native(native),
         .vmem_addr(va), .vmem_req(vreq), .vmem_burst(), .vmem_ack(vack), .vmem_rdata(vrd),
         .ce_pix(lcd_ce_pix), .hs(lcd_hs), .vs(lcd_vs), .de(lcd_de),
         .r(lcd_r), .g(lcd_g), .b(lcd_b)
