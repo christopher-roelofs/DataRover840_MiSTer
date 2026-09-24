@@ -55,6 +55,9 @@ def screenshot(which, out):
                     "-o", "UserKnownHostsFile=/dev/null",
                     "root@%s:/media/fat/screenshots/DataRover840/%s" % (HOST, name), out],
                    capture_output=True)
+    # Fetched, so gone from the card: these are for looking at here, and a
+    # card full of them is not what anyone asked for.
+    ssh("rm -f '/media/fat/screenshots/DataRover840/%s'" % name)
     try:
         from PIL import Image
     except ImportError:
