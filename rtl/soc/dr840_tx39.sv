@@ -65,6 +65,12 @@ module dr840_tx39 #(
     input  wire        on_button,
     output wire        cpu_stop,
 
+    // The PC Cards: which slots hold a memory card, and its size as a
+    // power of two (log2 of the bytes: 16 for 64 KiB, 21 for 2 MiB).
+    input  wire [1:0]  card_present,
+    input  wire [4:0]  card_log2_0,
+    input  wire [4:0]  card_log2_1,
+
     // The sound, for dr840_snd.sv: see dr840_sib.sv.
     output wire        snd_tog,
     output wire [31:0] snd_addr,
@@ -227,7 +233,11 @@ module dr840_tx39 #(
     // periods the .sdc gives them. Straight through, it missed by 2.8 ns.
     reg boot_monitor_q;
     always @(posedge clk) if (cen) boot_monitor_q <= boot_monitor;
-    wire [31:0] ioctrl_pins = boot_monitor_q ? 32'd0 : 32'h0000_0008;
+    // Pin 3 the option key; pins 1 and 0 the card battery inputs of slots
+    // 1 and 2, high with a healthy SRAM card in the slot (ROM 13C346CC).
+    wire [31:0] ioctrl_pins = (boot_monitor_q ? 32'd0 : 32'h0000_0008)
+                            | (cp_q[0] ? 32'h2 : 32'd0)
+                            | (cp_q[1] ? 32'h1 : 32'd0);
 
     // POWERCTRL. PWROK says the supply rails are good, which on a machine
     // that is evidently running they are: it reads as set whatever was
@@ -284,11 +294,101 @@ module dr840_tx39 #(
     // yet since nothing is ever inserted. Reads above the register file
     // return all-ones, an undriven bus.
     wire        is_glacier = (io_addr >= 32'h1040_0000) && (io_addr < 32'h10C0_0000);
-    wire        gl_slot    = io_addr[22];             // 0x10800000 is slot 1
+    // 0x10400000 is slot 1 and 0x10800000 slot 2; bit 22 is set for the
+    // first, so the index is its inverse. Wrong, both controllers answered
+    // alike while the slots were empty, and the card in slot 2 appeared in
+    // slot 1 the moment there was one.
+    wire        gl_slot    = ~io_addr[22];            // 0 slot 1, 1 slot 2
     wire        gl_inreg   = (io_addr[21:6] == 16'd0);
     wire [5:0]  gl_idx     = {gl_slot, io_addr[5:1]};
     localparam [15:0] GL_CD_MASK = 16'h0C00, GL_INPUTS = 16'h0C0E;
     reg  [15:0] glr [0:63];
+    // What the card itself drives, per slot. STATUS's card-detect bits are
+    // high with no card and the ready and battery-good bits high with an
+    // SRAM card (write-protect never); their changes land in the pending
+    // registers -- the detect lines' fall on insertion, their rise on
+    // removal, and the inputs' the other way about -- which software
+    // clears by writing ones. Pending registers live here rather than in
+    // the file, so the card and the ROM can both write them; the enables
+    // are shadowed for the interrupt, which is raised on its rising edge
+    // into INTRSTATUS4 as the reference does.
+    reg  [1:0]  card_q;
+    reg  [15:0] gl_pend [0:7];          // {slot, rise lo, rise hi, fall lo, fall hi}
+    reg  [15:0] gl_en   [0:7];
+    reg  [1:0]  gl_irq_q;
+    // Registered on the core's edges: from the top level's registers,
+    // which no timing group covers.
+    reg  [1:0]  cp_q; reg [4:0] cl0_q, cl1_q;
+    always @(posedge clk) if (cen) begin cp_q <= card_present; cl0_q <= card_log2_0; cl1_q <= card_log2_1; end
+    wire [15:0] gl_in0 = (cp_q[0] ? 16'h0006 : GL_CD_MASK);
+    wire [15:0] gl_in1 = (cp_q[1] ? 16'h0006 : GL_CD_MASK);
+    wire        gl_irq0 = |((gl_en[0] & gl_pend[0]) | (gl_en[1] & gl_pend[1]) | (gl_en[2] & gl_pend[2]) | (gl_en[3] & gl_pend[3]));
+    wire        gl_irq1 = |((gl_en[4] & gl_pend[4]) | (gl_en[5] & gl_pend[5]) | (gl_en[6] & gl_pend[6]) | (gl_en[7] & gl_pend[7]));
+    integer gk;
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            card_q <= 2'b00; gl_irq_q <= 2'b00;
+            for (gk = 0; gk < 8; gk = gk + 1) begin gl_pend[gk] <= 16'd0; gl_en[gk] <= 16'd0; end
+        end else begin
+            card_q   <= cp_q;
+            gl_irq_q <= {gl_irq1, gl_irq0};
+            // The ROM's writes: enables kept, pending cleared by ones.
+            if (io_start && is_glacier && gl_inreg && io_we) begin
+                if (io_addr[5:1] >= 5'd8 && io_addr[5:1] <= 5'd11)
+                    gl_en[{gl_slot, io_addr[2:1]}] <= gl_wval;
+                if (io_addr[5:1] >= 5'd12 && io_addr[5:1] <= 5'd15)
+                    gl_pend[{gl_slot, io_addr[2:1]}] <= gl_pend[{gl_slot, io_addr[2:1]}] & ~gl_wval;
+            end
+            // The card's arrivals and departures.
+            if (cp_q[0] && !card_q[0]) begin gl_pend[2] <= gl_pend[2] | GL_CD_MASK; gl_pend[0] <= gl_pend[0] | 16'h0006; end
+            if (!cp_q[0] && card_q[0]) begin gl_pend[0] <= gl_pend[0] | GL_CD_MASK; gl_pend[2] <= gl_pend[2] | 16'h0006; end
+            if (cp_q[1] && !card_q[1]) begin gl_pend[6] <= gl_pend[6] | GL_CD_MASK; gl_pend[4] <= gl_pend[4] | 16'h0006; end
+            if (!cp_q[1] && card_q[1]) begin gl_pend[4] <= gl_pend[4] | GL_CD_MASK; gl_pend[6] <= gl_pend[6] | 16'h0006; end
+        end
+    end
+    wire gl_irq_rise = (gl_irq0 && !gl_irq_q[0]) || (gl_irq1 && !gl_irq_q[1]);
+
+    // The CIS an SRAM card presents in window A, at its even bytes: a
+    // DEVICE tuple (type 6, SRAM, 250 ns) with the size in units, the
+    // reference's vendor string, FUNCID memory, and NO_LINK.
+    function [7:0] cis_size(input [4:0] log2);
+        case (log2)
+        5'd16: cis_size = 8'hF9;
+        5'd17: cis_size = 8'h7A;
+        5'd18: cis_size = 8'hFA;
+        5'd19: cis_size = 8'h7B;
+        5'd20: cis_size = 8'hFB;
+        5'd21: cis_size = 8'h7C;
+        5'd22: cis_size = 8'hFC;
+        default: cis_size = 8'h7C;                   // 2 MiB
+        endcase
+    endfunction
+    function [7:0] cis_byte(input [7:0] i, input [4:0] log2);
+        case (i)
+        8'd0: cis_byte = 8'h01; 8'd1: cis_byte = 8'h03; 8'd2: cis_byte = 8'h61;
+        8'd3: cis_byte = cis_size(log2); 8'd4: cis_byte = 8'hFF;
+        8'd5: cis_byte = 8'h15; 8'd6: cis_byte = 8'd13; 8'd7: cis_byte = 8'h04; 8'd8: cis_byte = 8'h01;
+        8'd9: cis_byte = "M"; 8'd10: cis_byte = "R"; 8'd11: cis_byte = "C"; 8'd12: cis_byte = 8'h00;
+        8'd13: cis_byte = "S"; 8'd14: cis_byte = "R"; 8'd15: cis_byte = "A"; 8'd16: cis_byte = "M";
+        8'd17: cis_byte = 8'h00; 8'd18: cis_byte = 8'h00; 8'd19: cis_byte = 8'hFF;
+        8'd20: cis_byte = 8'h21; 8'd21: cis_byte = 8'h02; 8'd22: cis_byte = 8'h01; 8'd23: cis_byte = 8'h00;
+        8'd24: cis_byte = 8'h14; 8'd25: cis_byte = 8'h00;
+        8'd26: cis_byte = 8'hFF; 8'd27: cis_byte = 8'h00;
+        default: cis_byte = 8'hFF;
+        endcase
+    endfunction
+    // Window A of either slot: attribute bytes at even addresses, all-ones
+    // at odd ones (and beyond the CIS). Four bytes of it for a word read.
+    wire        is_cardA  = (io_addr >= 32'h0800_0000) && (io_addr < 32'h1000_0000);
+    wire        cardA_slot = io_addr[26];
+    wire [4:0]  cardA_log2 = cardA_slot ? cl1_q : cl0_q;
+    function [7:0] attr_byte(input [25:0] a, input [4:0] log2);
+        attr_byte = (a[0] || a[25:1] > 26'd27) ? 8'hFF : cis_byte(a[8:1], log2);
+    endfunction
+    wire [31:0] cardA_rdata = cp_q[cardA_slot]
+        ? {attr_byte({io_addr[25:2], 2'd0}, cardA_log2), attr_byte({io_addr[25:2], 2'd1}, cardA_log2),
+           attr_byte({io_addr[25:2], 2'd2}, cardA_log2), attr_byte({io_addr[25:2], 2'd3}, cardA_log2)}
+        : 32'hFFFF_FFFF;
     initial begin : glr_init
         integer gi;
         for (gi = 0; gi < 64; gi = gi + 1) glr[gi] = 16'd0;
@@ -296,7 +396,9 @@ module dr840_tx39 #(
     reg  [15:0] glr_q;
     always @(posedge clk) glr_q <= glr[gl_idx];
     wire [15:0] gl_wval = io_be[3] ? io_wdata[31:16] : io_wdata[15:0];
-    wire [15:0] gl_rval = (io_addr[5:1] == 5'd6) ? ((glr_q & ~GL_CD_MASK) | GL_CD_MASK) : glr_q;
+    wire [15:0] gl_rval = (io_addr[5:1] == 5'd6) ? ((glr_q & ~GL_INPUTS) | (gl_slot ? gl_in1 : gl_in0))
+                        : (io_addr[5:1] >= 5'd12 && io_addr[5:1] <= 5'd15) ? gl_pend[{gl_slot, io_addr[2:1]}]
+                        : glr_q;
     always @(posedge clk) if (io_start && is_glacier && gl_inreg && io_we) begin
         if (io_addr[5:1] >= 5'd12 && io_addr[5:1] <= 5'd15)
             glr[gl_idx] <= glr_q & ~gl_wval;                       // pending: W1C
@@ -450,6 +552,7 @@ module dr840_tx39 #(
             // ---------------------------------------------- INTRSTATUS1
             icu_set[0] = icu_set[0] | sib_set;
             icu_set[1] = icu_set[1] | mbus_set;
+            if (gl_irq_rise) icu_set[3] = icu_set[3] | 32'h0000_0004;   // the card controllers
 
             // ---------------------------------------------- the ON button
             onbtn_q <= {onbtn_q[0], on_button};
@@ -679,6 +782,8 @@ module dr840_tx39 #(
     always @(*) begin
         if (is_glacier) begin
             rd_live = gl_inreg ? {gl_rval, gl_rval} : 32'hFFFF_FFFF;
+        end else if (is_cardA) begin
+            rd_live = cardA_rdata;
         end else if (!is_tx39) begin
             // Nothing else is modelled. An undriven bus reads all-ones.
             rd_live = 32'hFFFF_FFFF;

@@ -43,7 +43,7 @@ def listen(secs):
 def decode_a(a):
     return dict(img_ok=a >> 31 & 1, ro=a >> 30 & 1, clr=a >> 29 & 1, save=a >> 28 & 1,
                 halt=a >> 27 & 1, st=a >> 25 & 3, phase=a >> 22 & 7, fail=a >> 13 & 7,
-                rom_bad=a >> 12 & 1, chunk=a & 0xFF)
+                rom_bad=a >> 12 & 1, card=a >> 11 & 1, card_dirty=a >> 10 & 1, chunk=a & 0xFF)
 
 def screenshot(which, out):
     """The framework's own capture of the core's output, fetched to `out`;
@@ -91,6 +91,7 @@ def check(which, wait_save):
     say(running, "running: %d instructions in the window" % (lines[-1]["N"] - lines[0]["N"]))
     phase = {3: "cold (cleared)", 4: "warm (loaded from the save)"}.get(a["phase"], str(a["phase"]))
     say(a["img_ok"] and a["phase"] == 4 or (not a["img_ok"]), "RAM image: %s, mounted=%d" % (phase, a["img_ok"]))
+    print("   card in slot 2: %s%s" % ("yes" if a["card"] else "no", ", written to" if a["card_dirty"] else ""))
     if "--shot" in sys.argv:
         print("   shot:", screenshot(which, "/tmp/verify-%s.png" % which))
     if wait_save:

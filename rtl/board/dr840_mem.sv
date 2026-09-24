@@ -81,6 +81,15 @@ module dr840_mem #(
     input  wire [31:0] kmem_wdata,
     output wire        kmem_ack,
 
+    // The PC Cards: a memory card in a slot puts its common memory in
+    // that slot's window B, which is then RAM -- a region of the SDRAM
+    // above the DRAM, mirrored through the window by the card's size.
+    // Window A, the attribute space, stays with the peripheral block,
+    // which answers with the card's CIS.
+    input  wire [1:0]  card_present,
+    input  wire [21:0] card_mask0,       // size - 1 of the card in slot 1
+    input  wire [21:0] card_mask1,       // and in slot 2
+
     // ---- to SDRAM
     output wire [24:0] ram_addr,
     output wire        ram_req,
@@ -143,8 +152,27 @@ module dr840_mem #(
         end
     endfunction
 
-    wire [26:0] i_dec = decode(imem_addr);
-    wire [26:0] d_dec = decode(dmem_addr);
+    // A card's memory, when the address is in its window and it is there.
+    // The card's presence and size are registered here, on the core's
+    // edges: they come from the top level's registers, which no timing
+    // group covers, and straight into the decode they cost two nanoseconds.
+    localparam [24:0] CARD1_BASE = 25'h0C0_0000, CARD2_BASE = 25'h0E0_0000;
+    reg  [1:0]  cp_q;
+    reg  [21:0] cm0_q, cm1_q;
+    always @(posedge clk) if (cen) begin cp_q <= card_present; cm0_q <= card_mask0; cm1_q <= card_mask1; end
+    function [26:0] decode_card(input [31:0] pa);
+        reg [26:0] d;
+        begin
+            d = decode(pa);
+            if (pa >= 32'h2400_0000 && pa < 32'h2800_0000 && cp_q[0])
+                d = {T_RAM, CARD1_BASE | {3'd0, pa[21:0] & cm0_q}};
+            else if (pa >= 32'h2800_0000 && pa < 32'h2C00_0000 && cp_q[1])
+                d = {T_RAM, CARD2_BASE | {3'd0, pa[21:0] & cm1_q}};
+            decode_card = d;
+        end
+    endfunction
+    wire [26:0] i_dec = decode_card(imem_addr);
+    wire [26:0] d_dec = decode_card(dmem_addr);
     wire [26:0] v_dec = decode(vmem_addr);
     wire [26:0] a_dec = decode(amem_addr);
     wire [1:0]  a_tgt = a_dec[26:25];

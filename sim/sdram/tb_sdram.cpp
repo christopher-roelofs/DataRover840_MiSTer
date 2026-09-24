@@ -1,3 +1,5 @@
+#include <fstream>
+#include <iterator>
 #include <string>
 //
 // tb_sdram.cpp - the same lockstep comparison, one level further out.
@@ -153,6 +155,10 @@ int main(int argc, char **argv) {
     bool kbd = false;
     struct key_t { unsigned code; bool ext, down; uint64_t at; };
     std::vector<key_t> keys; size_t keyidx = 0; int key_tog = 0;
+    // --card path: a memory card in slot 2, its image put into the SDRAM's
+    // card region as the loader will; --card-out path writes it back.
+    const char *card_path = nullptr, *card_out = nullptr; uint32_t card_size = 0;
+    const uint32_t CARD2_BASE = 0x0E00000;
     const char *wav_path = nullptr; FILE *wav = nullptr; uint32_t wav_n = 0; int wav_tog = -1;
     // --trace-after pc,hit,n: print n retired instructions from the hit-th
     // execution of pc, the reference's option of the same name.
@@ -211,6 +217,8 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--check")) check = true;
         else if (!strcmp(argv[i], "--wav") && i + 1 < argc) wav_path = argv[++i];
         else if (!strcmp(argv[i], "--keyboard")) kbd = true;
+        else if (!strcmp(argv[i], "--card") && i + 1 < argc) card_path = argv[++i];
+        else if (!strcmp(argv[i], "--card-out") && i + 1 < argc) card_out = argv[++i];
         else if (!strcmp(argv[i], "--keys") && i + 1 < argc) {
             const char *a = argv[++i]; kbd = true;
             while (a && *a) {
@@ -273,6 +281,20 @@ int main(int argc, char **argv) {
 
     Vtb_sdram *dut = new Vtb_sdram;
 
+    dut->card_present = 0; dut->card_log2_0 = 21; dut->card_log2_1 = 21;
+    if (card_path) {
+        FILE *cf = fopen(card_path, "rb");
+        if (!cf) { fprintf(stderr, "cannot open %s\n", card_path); return 1; }
+        std::vector<uint8_t> img((std::istreambuf_iterator<char>(*new std::ifstream(card_path, std::ios::binary))), std::istreambuf_iterator<char>());
+        fclose(cf);
+        card_size = img.size();
+        unsigned lg = 0; while ((1u << lg) < card_size) lg++;
+        if ((1u << lg) != card_size || lg < 16 || lg > 21) { fprintf(stderr, "card: size must be a power of two, 64 KiB..2 MiB\n"); return 1; }
+        for (uint32_t i = 0; i + 1 < card_size; i += 2)
+            dut->tb_sdram->chip->mem[(CARD2_BASE + i) >> 1] = (uint16_t)(img[i] << 8 | img[i + 1]);
+        dut->card_present = 2; dut->card_log2_1 = lg;
+        printf("card: %s in slot 2, %u bytes (log2 %u)\n", card_path, card_size, lg);
+    }
     // Load the ROM into the chip model the way the HPS will load it: a
     // halfword holds the two bytes at its address, most significant first,
     // and the index is the halfword address. Writes from the core use the
@@ -661,6 +683,14 @@ int main(int argc, char **argv) {
     if (rec_dev) fclose(rec_dev);
     if (rec_irq) fclose(rec_irq);
     if (rec_take) fclose(rec_take);
+    if (card_out && card_size) {
+        FILE *cf = fopen(card_out, "wb");
+        for (uint32_t i = 0; i < card_size; i += 2) {
+            uint16_t w = dut->tb_sdram->chip->mem[(CARD2_BASE + i) >> 1];
+            fputc(w >> 8, cf); fputc(w & 0xFF, cf);
+        }
+        fclose(cf); printf("card: written back to %s\n", card_out);
+    }
     if (wav) {
         uint32_t rate = 11025, data = wav_n * 2, riff = 36 + data;
         uint8_t h[44] = {'R','I','F','F',0,0,0,0,'W','A','V','E','f','m','t',' ',16,0,0,0,1,0,1,0,

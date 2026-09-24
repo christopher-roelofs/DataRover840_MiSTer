@@ -27,9 +27,14 @@ module dr840_machine (
     input  wire        hold,         // and held beforehand, while the memory drains
     input  wire        blank,        // the panel shown off meanwhile
     input  wire [1:0]  tint,         // the panel's colour: off, grey, green
+    // The PC Cards in the two slots: present, and the size as log2.
+    input  wire [1:0]  card_present,
+    input  wire [4:0]  card_log2_0,
+    input  wire [4:0]  card_log2_1,
     output wire        mem_idle,     // nothing of the board's in the memory
     output wire        stopped,      // the core, held by the ROM's power-off
-    output wire        ram_written,  // a word of the RAM changed just now
+    output reg         ram_written,  // a word of the RAM changed just now
+    output reg         card_written, // or of the card's memory
     input  wire [24:0] load_addr,
     input  wire [31:0] load_data,
     input  wire        load_req,
@@ -252,6 +257,8 @@ module dr840_machine (
         .vmem_addr(va), .vmem_req(vreq), .vmem_ack(vack), .vmem_rdata(vrd),
         .amem_addr(aa), .amem_req(areq), .amem_ack(aack), .amem_rdata(ard),
         .kmem_addr(ka), .kmem_req(kreq), .kmem_we(kwe), .kmem_wdata(kwd), .kmem_ack(kack),
+        .card_present(card_present), .card_mask0((22'd1 << card_log2_0) - 22'd1),
+        .card_mask1((22'd1 << card_log2_1) - 22'd1),
         .ram_addr(bram_addr), .ram_req(bram_req), .ram_burst(bram_burst),
         .ram_we(bram_we), .ram_be(bram_be), .ram_wdata(bram_wdata),
         .ram_ack(bram_ack), .ram_rdata(ram_rdata), .ram_busy(bram_busy),
@@ -275,6 +282,7 @@ module dr840_machine (
         .kbd_attached(kbd_attached), .key_tog(key_tog), .key_code(key_code),
         .key_ext(key_ext), .key_down(key_down),
         .kmem_addr(ka), .kmem_req(kreq), .kmem_we(kwe), .kmem_wdata(kwd), .kmem_ack(kack),
+        .card_present(card_present), .card_log2_0(card_log2_0), .card_log2_1(card_log2_1),
         .snd_tog(snd_tog), .snd_addr(snd_addr), .codec_b(codec_b),
         .irq_out(soc_irq), .dbg_pending(),
         .vid_ctrl1(vid_ctrl1), .vid_ctrl2(vid_ctrl2), .vid_ctrl3(vid_ctrl3),
@@ -299,7 +307,13 @@ module dr840_machine (
     assign load_ack  = lend ? ram_ack : 1'b0;
     assign mem_idle  = !ram_busy && !bram_req;
     assign stopped   = cpu_stop;
-    assign ram_written = !lend && bram_req && bram_we && ram_ack;
+    // Registered on the core's edges: from the core's MEM address through
+    // the board's decode into the top level's flags in one period was a
+    // third of a nanosecond over.
+    always @(posedge clk) if (cen) begin
+        ram_written  <= !lend && bram_req && bram_we && ram_ack && bram_addr < 25'h0C0_0000;
+        card_written <= !lend && bram_req && bram_we && ram_ack && bram_addr >= 25'h0C0_0000;
+    end
     assign load_rdata = ram_rdata;
 
     wire [26:1] ch1_addr, ch2_addr;
