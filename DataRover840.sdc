@@ -154,3 +154,9 @@ set_multicycle_path -setup -end 2 -from [get_registers {*dr840_pclink:pclink|*}]
 set_multicycle_path -hold  -end 1 -from [get_registers {*dr840_pclink:pclink|*}] -to [get_registers {*dr840_mem:board|* *dr840_tx39:soc|*}]
 set_multicycle_path -setup -end 2 -from [get_registers {*dr840_mem:board|* *dr840_tx39:soc|*}] -to [get_registers {*dr840_pclink:pclink|*}]
 set_multicycle_path -hold  -end 1 -from [get_registers {*dr840_mem:board|* *dr840_tx39:soc|*}] -to [get_registers {*dr840_pclink:pclink|*}]
+
+# The machine's written-to flags are registered on the core's enabled
+# edges from the cache's state and the board's address, which change on
+# those edges too; the card region's bounds made the path 0.86 ns over.
+set_multicycle_path -setup -end 2 -to [get_registers {*dr840_machine:machine|ram_written *dr840_machine:machine|card_written}]
+set_multicycle_path -hold  -end 1 -to [get_registers {*dr840_machine:machine|ram_written *dr840_machine:machine|card_written}]
