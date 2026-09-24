@@ -158,6 +158,8 @@ int main(int argc, char **argv) {
     // --card path: a memory card in slot 2, its image put into the SDRAM's
     // card region as the loader will; --card-out path writes it back.
     const char *card_path = nullptr, *card_out = nullptr; uint32_t card_size = 0;
+    const char *ram_path = nullptr, *pkg_path = nullptr; uint32_t pkg_size = 0;
+    const uint32_t PKG_BASE = 0x1000000;
     const uint32_t CARD2_BASE = 0x0E00000;
     const char *wav_path = nullptr; FILE *wav = nullptr; uint32_t wav_n = 0; int wav_tog = -1;
     // --trace-after pc,hit,n: print n retired instructions from the hit-th
@@ -218,6 +220,8 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--wav") && i + 1 < argc) wav_path = argv[++i];
         else if (!strcmp(argv[i], "--keyboard")) kbd = true;
         else if (!strcmp(argv[i], "--card") && i + 1 < argc) card_path = argv[++i];
+        else if (!strcmp(argv[i], "--ram") && i + 1 < argc) ram_path = argv[++i];
+        else if (!strcmp(argv[i], "--install") && i + 1 < argc) pkg_path = argv[++i];
         else if (!strcmp(argv[i], "--card-out") && i + 1 < argc) card_out = argv[++i];
         else if (!strcmp(argv[i], "--keys") && i + 1 < argc) {
             const char *a = argv[++i]; kbd = true;
@@ -295,6 +299,28 @@ int main(int argc, char **argv) {
         dut->card_present = 2; dut->card_log2_1 = lg;
         printf("card: %s in slot 2, %u bytes (log2 %u)\n", card_path, card_size, lg);
     }
+    // A RAM image: the machine starts warm, as it does from the MiSTer's
+    // save, and the ROM's "Cleaning up" takes it to where it was.
+    if (ram_path) {
+        std::ifstream rf(ram_path, std::ios::binary);
+        std::vector<uint8_t> img((std::istreambuf_iterator<char>(rf)), std::istreambuf_iterator<char>());
+        if (img.size() != 4u << 20) { fprintf(stderr, "%s: not a 4 MB RAM image\n", ram_path); return 1; }
+        for (size_t i = 0; i + 1 < img.size(); i += 2)
+            dut->tb_sdram->chip->mem[(DRAM_BASE + i) >> 1] = (uint16_t)(img[i] << 8 | img[i + 1]);
+        printf("ram: %s loaded, warm start\n", ram_path);
+    }
+    // A package, where the OSD's loader would put it; offered once the
+    // machine is out of reset.
+    if (pkg_path) {
+        std::ifstream pf(pkg_path, std::ios::binary);
+        std::vector<uint8_t> img((std::istreambuf_iterator<char>(pf)), std::istreambuf_iterator<char>());
+        if (img.empty() || img.size() > 8u << 20) { fprintf(stderr, "%s: not a package\n", pkg_path); return 1; }
+        pkg_size = (uint32_t)img.size();
+        img.resize((img.size() + 3) & ~3u, 0);
+        for (size_t i = 0; i + 1 < img.size(); i += 2)
+            dut->tb_sdram->chip->mem[(PKG_BASE + i) >> 1] = (uint16_t)(img[i] << 8 | img[i + 1]);
+        printf("install: %s, %u bytes, offered on the serial port\n", pkg_path, pkg_size);
+    }
     // Load the ROM into the chip model the way the HPS will load it: a
     // halfword holds the two bytes at its address, most significant first,
     // and the index is the halfword address. Writes from the core use the
@@ -310,9 +336,13 @@ int main(int argc, char **argv) {
     dut->boot_monitor = monitor;
     dut->pen_down = 0; dut->pen_px = 0; dut->pen_py = 0;
     dut->rst_n = 0; dut->irq_in = 0;
+    dut->pkg_go_tog = 0; dut->pkg_len = pkg_size;
     dut->io_ack = 0; dut->io_err = 0;
     for (int i = 0; i < 8; i++) { dut->clk = 0; dut->eval(); dut->clk = 1; dut->eval(); }
     dut->rst_n = 1;
+    if (pkg_size) dut->pkg_go_tog = 1;
+    int pkg_state_seen = 0;
+    static const char *pkg_state_name[] = { "no package", "offered", "linked, sending", "taken", "refused", "?", "?", "?" };
 
     // The framebuffer as the reference's --dump-fb writes it: a PGM, ink
     // complemented to grey, from VIDEOCTRL2/3 as the guest left them.
@@ -528,6 +558,11 @@ int main(int argc, char **argv) {
         if (tx39 && dut->io_req && !io_req_d)
             io_seen[(uint64_t)dut->io_addr | (dut->io_we ? (1ull<<32) : 0)]++;
         io_req_d = dut->io_req;
+        if (pkg_size && dut->dbg_pkg_state != pkg_state_seen) {
+            pkg_state_seen = dut->dbg_pkg_state;
+            printf("\ninstall: %s (%u of %u bytes) at %llu\n", pkg_state_name[pkg_state_seen & 7],
+                   dut->dbg_pkg_sent, pkg_size, (unsigned long long)idx);
+        }
         if (dut->dbg_tx_stb) {
             int c = dut->dbg_tx_data;
             fputc(c, stdout);
@@ -712,6 +747,8 @@ int main(int argc, char **argv) {
            core_cycles ? (double)idx / (double)core_cycles : 0.0, clk_div);
     if (tx39) {
         printf("\n%u byte(s) written to UART A\n", dut->dbg_tx_bytes);
+        if (pkg_size) printf("install: %s (%u of %u bytes)\n", pkg_state_name[dut->dbg_pkg_state & 7],
+                             dut->dbg_pkg_sent, pkg_size);
         printf("peripheral registers, most used first:\n");
         std::vector<std::pair<uint64_t,uint64_t> > iv;
         for (std::map<uint64_t,uint64_t>::iterator it = io_seen.begin();

@@ -55,6 +55,18 @@ access for access), and Magic Cap formats a blank one itself when it goes
 in with the option key held, which the OSD's re-insert entry does.
 `scripts/mkcard` makes a blank one.
 
+**And installs packages.** Magic Cap gets its software over the serial
+port from a PC running WinPcLink; the OSD's "Install package" entry is
+that PC. The file goes into the SDRAM beyond the cards while the machine
+runs, and is offered on UART A by the PC's half of the link
+(`rtl/soc/dr840_pclink.sv`, from the reference emulator's `pclink.c`):
+in Magic Cap, walk to the Storeroom and tap the computer, and "Receiving
+Package" fills its bar. The engine's every byte -- the blocks, the
+quoting, the CRCs, the offer record -- is checked against a port of the
+reference's PC side (`sim/pclink/`), and the whole thing runs in
+simulation from a warm RAM image through the taps to the computer.
+"Offer package again" holds the same package out for another RAM image.
+
 ```
 matched 10000000 of 10000000 instructions, 2146802 bus accesses,
 11791270 cycles (1.18 cycles/insn, 0.848 IPC)
@@ -584,10 +596,12 @@ rtl/soc/dr840_tx39.sv   the TX39 peripheral block: interrupts, UART A, RTC,
                         timers, power, MBUS, and the two Glacier card controllers
 rtl/soc/dr840_sib.sv    the serial interface bus and the UCB1100 codec on it
 rtl/soc/dr840_lcd.sv    the LCD controller, onto a 640x480 raster
+rtl/soc/dr840_pclink.sv the PC side of the package link, on UART A
 rtl/dr840_machine.sv    the machine: clock enable, loader mux, core, board, SoC
 rtl/emu.sv              the MiSTer top: ROM loader, UART pins, debug display
 scripts/deploy          builds a boot on the MiSTer; scripts/serial reads it
 sim/lcd/             the panel's scanout against the framebuffer it scans
+sim/pclink/          the package link against a port of the reference's PC side
 sim/sdram/           the whole memory path against a model of the chip
 sim/cosim/           Verilator lockstep harness against magicrecomp
 sim/golden/          reference traces (regenerated, not committed)
@@ -656,12 +670,10 @@ have come from anywhere else:
 
 ## Next
 
-1. Installing packages from the OSD: the PC side of PCLink in the core,
-   fed by the file loader.
-2. The panel at its own 480x320 with a 3:2 aspect, and the framework's
+1. The panel at its own 480x320 with a 3:2 aspect, and the framework's
    scaling in place of the bezel.
-3. Sound in: the codec's microphone path, and the telecom channel.
-4. Recover the IPC lost to the handshakes on the core's edges: 0.72 at
+2. Sound in: the codec's microphone path, and the telecom channel.
+3. Recover the IPC lost to the handshakes on the core's edges: 0.72 at
    the core's rate over the banner path, against 0.75 before them.
-5. An external interrupt test: the ICU is exercised by the ROM's own timer
+4. An external interrupt test: the ICU is exercised by the ROM's own timer
    path but nothing yet drives an IP line from outside the block.

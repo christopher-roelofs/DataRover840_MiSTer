@@ -313,3 +313,4 @@ set_global_assignment -name SYSTEMVERILOG_FILE rtl/dr840_io_stub.sv
 set_global_assignment -name SYSTEMVERILOG_FILE rtl/dr840_hud.sv
 set_global_assignment -name SYSTEMVERILOG_FILE rtl/dr840_machine.sv
 set_global_assignment -name SYSTEMVERILOG_FILE rtl/soc/dr840_mbus.sv
+set_global_assignment -name SYSTEMVERILOG_FILE rtl/soc/dr840_pclink.sv

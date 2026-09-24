@@ -196,6 +196,12 @@ localparam CONF_STR = {
     // re-insert entry does.
     "S1,IMG,Mount card (slot 2);",
     "T[10],Re-insert card with option;",
+    // A package to install: the file is read into the SDRAM and offered
+    // over the serial port as the computer WinPcLink runs on; in Magic
+    // Cap, go to the Storeroom and tap the computer. Offered again on
+    // request, for another RAM image.
+    "F2,PKG,Install package;",
+    "T[11],Offer package again;",
     "T[5],Save RAM now;",
     // Magic Cap turns the machine off after it has sat idle. A MiSTer has
     // no battery to save, so by default the core presses the ON button
@@ -303,6 +309,7 @@ wire         ram_written, card_written;
 wire  [24:0] ioctl_addr;
 wire   [7:0] ioctl_dout;
 wire         ioctl_wait;
+wire  [15:0] ioctl_index;
 
 hps_io #(.CONF_STR(CONF_STR), .VDNUM(2)) hps_io
 (
@@ -314,6 +321,7 @@ hps_io #(.CONF_STR(CONF_STR), .VDNUM(2)) hps_io
     .ps2_key        (ps2_key),
     .joystick_0     (joystick_0),
     .ioctl_download (ioctl_download),
+    .ioctl_index    (ioctl_index),
     .ioctl_wr       (ioctl_wr),
     .ioctl_addr     (ioctl_addr),
     .ioctl_dout     (ioctl_dout),
@@ -492,6 +500,55 @@ endfunction
 // it holds the core in reset for ever, with no download coming to let go.
 wire hard_rst_n = pll_locked & ~RESET;
 
+////////////////////////////////////////////////////////////////////////////
+// A package. Index 2 of the file loader is not a ROM: it goes into the
+// SDRAM beyond the cards through the package link's own port, while the
+// machine runs -- the user has just walked to the Storeroom and is not
+// to be reset -- and is then offered.
+wire pkg_dl = ioctl_download && (ioctl_index[5:0] == 6'd2);
+wire rom_dl = ioctl_download && !pkg_dl;
+reg         pdl_d, pkg_wreq, pkg_go_tog;
+reg  [24:0] pkg_waddr, pkg_len;
+reg  [31:0] pkg_wdata, pkg_sum;
+reg  [23:0] pbuf;
+wire        pkg_wack;
+wire [2:0]  pkg_state;
+wire [24:0] pkg_sent;
+reg         offer_d;
+always @(posedge clk_sys or negedge hard_rst_n) begin
+    if (!hard_rst_n) begin
+        pdl_d <= 0; pkg_wreq <= 0; pkg_go_tog <= 0; pkg_waddr <= 0; pkg_len <= 0;
+        pkg_wdata <= 0; pkg_sum <= 0; pbuf <= 0; offer_d <= 0;
+    end else begin
+        pdl_d <= pkg_dl; offer_d <= status[11];
+        if (pkg_wreq && pkg_wack) pkg_wreq <= 1'b0;
+        if (pkg_dl && !pdl_d) begin pkg_len <= 25'd0; pkg_sum <= 32'd0; end
+        if (pkg_dl && ioctl_wr) begin
+            case (ioctl_addr[1:0])
+            // The bytes behind the first are cleared as it arrives, so a
+            // tail that is not a whole word sums the same here as there.
+            2'd0: pbuf        <= {ioctl_dout, 16'd0};
+            2'd1: pbuf[15:0]  <= {ioctl_dout, 8'd0};
+            2'd2: pbuf[7:0]   <= ioctl_dout;
+            2'd3: begin
+                pkg_wdata <= {pbuf, ioctl_dout}; pkg_sum <= pkg_sum + {pbuf, ioctl_dout};
+                pkg_waddr <= {ioctl_addr[24:2], 2'b00}; pkg_wreq <= 1'b1;
+            end
+            endcase
+        end else if (pdl_d && !pkg_dl) begin
+            // The tail of a package that is not a whole number of words,
+            // and the length; then the offer.
+            if (ioctl_addr[1:0] != 2'd0) begin
+                pkg_wdata <= {pbuf, 8'd0}; pkg_sum <= pkg_sum + {pbuf, 8'd0};
+                pkg_waddr <= {ioctl_addr[24:2], 2'b00}; pkg_wreq <= 1'b1;
+            end
+            pkg_len <= ioctl_addr;
+            pkg_go_tog <= ~pkg_go_tog;
+        end
+        if (status[11] && !offer_d && pkg_len != 25'd0) pkg_go_tog <= ~pkg_go_tog;
+    end
+end
+
 always @(posedge clk_sys or negedge hard_rst_n) begin
     if (!hard_rst_n) begin
         load_req <= 0; load_busy <= 0; dl_d <= 0; rst_d <= 0;
@@ -506,7 +563,7 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
         stop_d <= 0; savebtn_d <= 0;
         mt_errors <= 0; mt_first <= 32'hFFFF_FFFF;
     end else begin
-        dl_d  <= ioctl_download;
+        dl_d  <= rom_dl;
         rst_d <= reset;
         if (load_busy) begin
             if (load_ack) begin
@@ -633,7 +690,7 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
                 if (mt_phase == MT_WRITE || mt_phase == MT_CLEAR)
                     clr_addr <= clr_addr + 25'd4;
             end
-        end else if (ioctl_download && ioctl_wr) begin
+        end else if (rom_dl && ioctl_wr) begin
             case (ioctl_addr[1:0])
             2'd0: word_buf[31:24] <= ioctl_dout;
             2'd1: word_buf[23:16] <= ioctl_dout;
@@ -645,7 +702,7 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
                 load_busy <= 1'b1;
             end
             endcase
-        end else if (dl_d && !ioctl_download && (ioctl_addr[1:0] != 2'd0)) begin
+        end else if (dl_d && !rom_dl && (ioctl_addr[1:0] != 2'd0)) begin
             // The image need not be a whole number of words -- this one is
             // 4,528,151 bytes -- so the tail is flushed rather than lost.
             load_data <= word_buf;
@@ -655,8 +712,8 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
         end
         // A download that wrote something is a ROM, and then the memory
         // is walked before the core sees any of it.
-        if (ioctl_download && !dl_d) begin rom_words <= 32'd0; rom_sum <= 32'd0; end
-        if (dl_d && !ioctl_download && (rom_words != 0)) begin
+        if (rom_dl && !dl_d) begin rom_words <= 32'd0; rom_sum <= 32'd0; end
+        if (dl_d && !rom_dl && (rom_words != 0)) begin
             rom_present <= 1'b1;
             clr_run     <= 1'b1;
             clr_addr    <= DRAM_BASE;
@@ -672,7 +729,7 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
             mt_errors <= 32'd0; mt_first <= 32'hFFFF_FFFF; rom_back <= 32'd0;
         end
         // The loader's own writes are whole words, not bursts.
-        if (ioctl_download) begin load_we <= 1'b1; load_burst <= 1'b0; end
+        if (rom_dl) begin load_we <= 1'b1; load_burst <= 1'b0; end
 
         // An image mounted: remembered, and if the machine is already
         // running, loaded now -- which is a power cycle into it.
@@ -751,7 +808,7 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
     end
 end
 
-assign ioctl_wait = load_busy;
+assign ioctl_wait = load_busy | pkg_wreq | pkg_wack;
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -778,7 +835,9 @@ dr840_machine machine (
     .card_present({card_in, 1'b0}), .card_log2_0(5'd21), .card_log2_1(card_log2), .key_tog(key_tog), .key_code(key_code), .key_ext(key_ext), .key_down(key_down),
     // Held in reset until there is a ROM to run. The loader owns the
     // memory while it is arriving, and before that there is nothing to do.
-    .load_en(ioctl_download | (load_busy & ~save_run) | ~rom_ok),
+    .load_en(rom_dl | (load_busy & ~save_run) | ~rom_ok),
+    .pkg_go_tog(pkg_go_tog), .pkg_len(pkg_len), .pkg_waddr(pkg_waddr), .pkg_wdata(pkg_wdata),
+    .pkg_wreq(pkg_wreq), .pkg_wack(pkg_wack), .pkg_state(pkg_state), .pkg_sent(pkg_sent),
     .mem_borrow(save_run), .hold(halt_req), .blank(save_run | halt_req), .tint(status[9:8]),
     .mem_idle(mem_idle), .stopped(stopped), .ram_written(ram_written), .card_written(card_written),
     .load_addr(load_addr), .load_data(load_data),
@@ -817,6 +876,9 @@ dr840_status #(.CLK_HZ(92_000_000)) status_line (
          // and whether the ROM read back as it was sent: a 6 MB image once
          // arrived with one bit wrong, and ran to a white screen.
          (rom_back != rom_sum), card_in, card_dirty, 2'd0, chunk}),
+    // K, L: the package link's state and the package's length, and the
+    // package summed as it was loaded.
+    .v10({pkg_state, 4'd0, pkg_len}), .v11(pkg_sum),
     .txd(status_txd)
 );
 assign UART_TXD = status[2] ? guest_txd : status_txd;

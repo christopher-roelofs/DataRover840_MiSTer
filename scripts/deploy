@@ -53,6 +53,13 @@ put "$ROMDIR/Data Rover 840/DataRover-840-Japan.image" Japan
 put "$ROMDIR/Rosemary SDK/MagicCap-USA.image"          SDK
 $SSH "rm -f $DEST/DataRover840.mgl $GAMES/DataRover-840-USA.ima $GAMES/DataRover-840-USA.image"
 
+# The packages the reference emulator ships, for the OSD's "Install
+# package": three megabytes, in their own directory.
+if ls "$ROMDIR"/../packages/*.pkg >/dev/null 2>&1; then
+    $SSH "mkdir -p $GAMES/packages"
+    $SCP "$ROMDIR"/../packages/*.pkg "root@$HOST:$GAMES/packages/"
+fi
+
 # The LCD grid, as a shadow mask for the framework's video settings.
 $SSH "mkdir -p /media/fat/Shadow_Masks"
 $SCP shadow_masks/*.txt "root@$HOST:/media/fat/Shadow_Masks/"

@@ -145,3 +145,12 @@ set_multicycle_path -hold  -end 1 -from [get_registers {*dr840_mem:board|*}] -to
 # logic, register to register, on enabled edges at both ends.
 set_multicycle_path -setup -end 2 -from [get_registers {*dr840_mbus:mbus|* *dr840_snd:snd|* *dr840_lcd:lcd|*}] -to [get_registers {*dr840_tx39:soc|*}]
 set_multicycle_path -hold  -end 1 -from [get_registers {*dr840_mbus:mbus|* *dr840_snd:snd|* *dr840_lcd:lcd|*}] -to [get_registers {*dr840_tx39:soc|*}]
+
+# The package link (dr840_pclink.sv) runs on the core's enabled edges and
+# talks to the board's arbiter and the peripheral block's UART, which
+# change on those edges too. Not to the top level: its handshake with the
+# loader there is sampled every clock.
+set_multicycle_path -setup -end 2 -from [get_registers {*dr840_pclink:pclink|*}] -to [get_registers {*dr840_mem:board|* *dr840_tx39:soc|*}]
+set_multicycle_path -hold  -end 1 -from [get_registers {*dr840_pclink:pclink|*}] -to [get_registers {*dr840_mem:board|* *dr840_tx39:soc|*}]
+set_multicycle_path -setup -end 2 -from [get_registers {*dr840_mem:board|* *dr840_tx39:soc|*}] -to [get_registers {*dr840_pclink:pclink|*}]
+set_multicycle_path -hold  -end 1 -from [get_registers {*dr840_mem:board|* *dr840_tx39:soc|*}] -to [get_registers {*dr840_pclink:pclink|*}]

@@ -36,7 +36,7 @@ def listen(secs):
     lines = []
     for l in re.sub(r"[^\x20-\x7e\n]", "", out).splitlines():
         f = dict(re.findall(r"([A-Z])=([0-9A-F]{8})", l))
-        if len(f) == 10:
+        if len(f) >= 10:
             lines.append({k: int(v, 16) for k, v in f.items()})
     return lines
 
@@ -92,6 +92,21 @@ def check(which, wait_save):
     phase = {3: "cold (cleared)", 4: "warm (loaded from the save)"}.get(a["phase"], str(a["phase"]))
     say(a["img_ok"] and a["phase"] == 4 or (not a["img_ok"]), "RAM image: %s, mounted=%d" % (phase, a["img_ok"]))
     print("   card in slot 2: %s%s" % ("yes" if a["card"] else "no", ", written to" if a["card_dirty"] else ""))
+    # The package link: K is its state and the package's length, L the
+    # package summed as it was loaded, which --pkg <file> checks.
+    if "K" in last:
+        state = last["K"] >> 29; plen = last["K"] & 0x1FFFFFF
+        names = {0: "no package", 1: "offered, waiting for the Storeroom's computer to be tapped",
+                 2: "linked, sending", 3: "taken", 4: "refused by the guest"}
+        line = "package: %s" % names.get(state, str(state))
+        if plen: line += ", %d bytes, sum %08X" % (plen, last["L"])
+        pkg = next((sys.argv[i + 1] for i, x in enumerate(sys.argv) if x == "--pkg" and i + 1 < len(sys.argv)), None)
+        if pkg and plen:
+            d = open(pkg, "rb").read(); n = (len(d) + 3) // 4
+            want = sum(struct.unpack(">%dI" % n, d + b"\0" * (n * 4 - len(d)))) & 0xFFFFFFFF
+            say(plen == len(d) and last["L"] == want, line + " (file: %d bytes, sum %08X)" % (len(d), want))
+        else:
+            print("   " + line)
     if "--shot" in sys.argv:
         print("   shot:", screenshot(which, "/tmp/verify-%s.png" % which))
     if wait_save:
@@ -111,7 +126,7 @@ def check(which, wait_save):
     return ok
 
 if __name__ == "__main__":
-    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    args = [a for i, a in enumerate(sys.argv[1:], 1) if not a.startswith("--") and sys.argv[i - 1] != "--pkg"]
     wait_save = "--wait-save" in sys.argv
     if args and re.match(r"^\d+\.\d+\.\d+\.\d+$", args[0]): HOST = args.pop(0)
     which = args or ["USA", "Japan", "SDK"]

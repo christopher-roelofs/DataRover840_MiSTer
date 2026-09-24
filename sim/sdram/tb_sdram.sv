@@ -106,7 +106,13 @@ module tb_sdram #(
     output wire        dbg_io_ack,
     output wire [31:0] dbg_io_rdata,
     output wire [7:0]  dbg_tx_data,
-    output wire [31:0] dbg_tx_bytes
+    output wire [31:0] dbg_tx_bytes,
+    // The package link: a package already in the SDRAM at its base,
+    // offered by a flip of pkg_go_tog.
+    input  wire        pkg_go_tog,
+    input  wire [24:0] pkg_len,
+    output wire [2:0]  dbg_pkg_state,
+    output wire [24:0] dbg_pkg_sent
 );
     // The core's clock enable, from the same clock the memory uses.
     reg [7:0] cdiv;
@@ -155,6 +161,7 @@ module tb_sdram #(
         .vmem_addr(va), .vmem_req(vreq), .vmem_ack(vack), .vmem_rdata(vrd),
         .amem_addr(aa), .amem_req(areq), .amem_ack(aack), .amem_rdata(ard),
         .kmem_addr(ka), .kmem_req(kreq), .kmem_we(kwe), .kmem_wdata(kwd), .kmem_ack(kack),
+        .pmem_addr(pa), .pmem_req(preq), .pmem_we(pwe), .pmem_wdata(pwd), .pmem_ack(pack), .pmem_rdata(prd),
         .card_present(card_present), .card_mask0((22'd1 << card_log2_0) - 22'd1),
         .card_mask1((22'd1 << card_log2_1) - 22'd1),
         .ram_addr(ram_addr), .ram_req(ram_req), .ram_burst(ram_burst),
@@ -178,6 +185,21 @@ module tb_sdram #(
     wire        kreq, kwe, kack;
     wire [31:0] aa, ard;
     wire        areq, aack;
+    wire [24:0] pa;
+    wire [31:0] pwd, prd;
+    wire        preq, pwe, pack;
+    wire        u_tx_tog, u_rx_tog, u_rx_full, u_on;
+    wire [7:0]  u_rx_data;
+    wire [19:0] u_bit_clocks;
+    dr840_pclink pclink (
+        .clk(clk), .cen(cen), .rst_n(rst_n),
+        .go_tog(pkg_go_tog), .pkg_len(pkg_len),
+        .wr_addr(25'd0), .wr_data(32'd0), .wr_req(1'b0), .wr_ack(),
+        .pmem_addr(pa), .pmem_req(preq), .pmem_we(pwe), .pmem_wdata(pwd), .pmem_ack(pack), .pmem_rdata(prd),
+        .gtx_tog(u_tx_tog), .gtx_data(dbg_tx_data), .grx_tog(u_rx_tog), .grx_data(u_rx_data),
+        .grx_full(u_rx_full), .uart_on(u_on), .bit_clocks(u_bit_clocks),
+        .state(dbg_pkg_state), .sent(dbg_pkg_sent)
+    );
     dr840_snd snd (
         .clk(clk), .cen(cen), .rst_n(rst_n),
         .snd_tog(snd_tog), .snd_addr(snd_addr), .codec_b(codec_b),
@@ -210,6 +232,8 @@ module tb_sdram #(
         .io_be(io_be), .io_wdata(io_wdata),
         .io_ack(t_ack), .io_rdata(t_rdata), .io_err(t_err),
         .boot_monitor(boot_monitor), .uart_txd(), .uart_rxd(1'b1), .irq_out(t_irq),
+        .tx_tog(u_tx_tog), .rx_in_tog(u_rx_tog), .rx_in_data(u_rx_data),
+        .rx_full(u_rx_full), .uart_on(u_on), .bit_clocks(u_bit_clocks),
         .pen_down(pen_down), .pen_x(pen_x), .pen_y(pen_y), .dbg_pending(dbg_pending),
         .on_button(on_button), .cpu_stop(t_stop),
         .kbd_attached(kbd_attached), .key_tog(key_tog), .key_code(key_code),

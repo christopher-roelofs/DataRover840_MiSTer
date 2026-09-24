@@ -97,6 +97,17 @@ module dr840_tx39 #(
     // The debug serial port. UART A is what the IDT monitor prints on.
     output reg         uart_txd,
     input  wire        uart_rxd,
+    // And the same UART as bytes, for the package link (dr840_pclink.sv):
+    // each byte the guest hands its transmitter flips tx_tog; a flip of
+    // rx_in_tog puts rx_in_data in its receiver's holding register, which
+    // rx_full says is still full. What the guest set the UART to is
+    // uart_on and bit_clocks, so the link can pace itself as a wire would.
+    output reg         tx_tog,
+    input  wire        rx_in_tog,
+    input  wire [7:0]  rx_in_data,
+    output wire        rx_full,
+    output wire        uart_on,
+    output reg  [19:0] bit_clocks,
 
     output wire [5:0]  irq_out,       // IP2..IP7
     output wire        dbg_pending,   // anything enabled and pending, live
@@ -495,7 +506,6 @@ module dr840_tx39 #(
     // a multiplier feeding the bit counters' compare directly was the last
     // 10.5 ns path between the machine and 92 MHz.
     localparam [19:0] BIT_MUL = 20'((CLK_HZ * 16) / 3686400);
-    reg [19:0] bit_clocks;
     always @(posedge clk) bit_clocks <= BIT_MUL * ({10'd0, ua_ctrl2[9:0]} + 20'd1);
 
     // Transmit: a holding register and a shift register, which is the
@@ -512,6 +522,9 @@ module dr840_tx39 #(
     reg [19:0] rx_cnt;
     reg        rx_busy;
     reg [2:0]  rxd_sync;
+    reg        rxin_q;
+    assign rx_full = ua_rx_full;
+    assign uart_on = ua_ctrl1[0];
 
     integer k;
 
@@ -527,6 +540,7 @@ module dr840_tx39 #(
             tx_busy <= 1'b0; tx_hold_full <= 1'b0; tx_bit <= 4'd0; tx_cnt <= 20'd0;
             uart_txd <= 1'b1;
             rx_busy <= 1'b0; rx_bit <= 4'd0; rx_cnt <= 20'd0; rxd_sync <= 3'b111;
+            tx_tog <= 1'b0; rxin_q <= 1'b0;
             rtc <= 40'd0; rtc_acc <= 32'd0; rtc_alarm <= 40'd0;
             t_ctrl <= 32'd0; t_per <= 32'd0; per_acc <= 40'd0;
             stp_armed <= 1'b0; stp_deadline <= 40'd0; alarm_armed <= 1'b0;
@@ -716,6 +730,7 @@ module dr840_tx39 #(
                     dbg_tx_bytes <= dbg_tx_bytes + 32'd1;
                     dbg_tx_stb   <= 1'b1;
                     dbg_tx_data  <= io_wdata[7:0];
+                    tx_tog       <= ~tx_tog;
                     if (!tx_busy) begin
                         tx_shift <= io_wdata[7:0];
                         tx_busy  <= 1'b1;
@@ -736,6 +751,15 @@ module dr840_tx39 #(
                     ua_rx_full <= 1'b0;
                     icu_clr[1] = icu_clr[1] | INT2_UARTARXINT;
                 end
+            end
+            // A byte from the package link, straight into the holding
+            // register: the link waits for it to be empty, so nothing is
+            // overwritten.
+            rxin_q <= rx_in_tog;
+            if (rx_in_tog != rxin_q) begin
+                ua_rx      <= rx_in_data;
+                ua_rx_full <= 1'b1;
+                icu_set[1] = icu_set[1] | INT2_UARTARXINT;
             end
 
             // Cleared, then set: nothing raised this cycle is lost. And the

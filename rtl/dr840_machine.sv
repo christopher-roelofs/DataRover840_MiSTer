@@ -63,6 +63,18 @@ module dr840_machine (
     input  wire        uart_rxd,
     input  wire        boot_monitor,    // option button held at reset
 
+    // ---- the package link: the computer on the serial port that
+    // Magic Cap installs packages from. The package is written into the
+    // SDRAM a word at a time, and offered by a flip of pkg_go_tog.
+    input  wire        pkg_go_tog,
+    input  wire [24:0] pkg_len,
+    input  wire [24:0] pkg_waddr,
+    input  wire [31:0] pkg_wdata,
+    input  wire        pkg_wreq,
+    output wire        pkg_wack,
+    output wire [2:0]  pkg_state,
+    output wire [24:0] pkg_sent,
+
     // The pen, in panel pixels; the pointer is drawn on the panel where
     // it is, and the codec sees it in its own counts.
     input  wire        on_button,      // the ON button
@@ -218,6 +230,22 @@ module dr840_machine (
     wire        kreq, kwe, kack;
     wire [31:0] aa, ard;
     wire        areq, aack;
+    wire [24:0] pa;
+    wire [31:0] pwd, prd;
+    wire        preq, pwe, pack;
+    wire        u_tx_tog, u_rx_tog, u_rx_full, u_on;
+    wire [7:0]  u_tx_data, u_rx_data;
+    wire [19:0] u_bit_clocks;
+    // Across the guest's resets: the package stays offered.
+    dr840_pclink pclink (
+        .clk(clk), .cen(cen), .rst_n(rst_n),
+        .go_tog(pkg_go_tog), .pkg_len(pkg_len),
+        .wr_addr(pkg_waddr), .wr_data(pkg_wdata), .wr_req(pkg_wreq), .wr_ack(pkg_wack),
+        .pmem_addr(pa), .pmem_req(preq), .pmem_we(pwe), .pmem_wdata(pwd), .pmem_ack(pack), .pmem_rdata(prd),
+        .gtx_tog(u_tx_tog), .gtx_data(u_tx_data), .grx_tog(u_rx_tog), .grx_data(u_rx_data),
+        .grx_full(u_rx_full), .uart_on(u_on), .bit_clocks(u_bit_clocks),
+        .state(pkg_state), .sent(pkg_sent)
+    );
     dr840_snd snd (
         .clk(clk), .cen(cen), .rst_n(core_rst_n),
         .snd_tog(snd_tog), .snd_addr(snd_addr), .codec_b(codec_b),
@@ -257,6 +285,7 @@ module dr840_machine (
         .vmem_addr(va), .vmem_req(vreq), .vmem_ack(vack), .vmem_rdata(vrd),
         .amem_addr(aa), .amem_req(areq), .amem_ack(aack), .amem_rdata(ard),
         .kmem_addr(ka), .kmem_req(kreq), .kmem_we(kwe), .kmem_wdata(kwd), .kmem_ack(kack),
+        .pmem_addr(pa), .pmem_req(preq), .pmem_we(pwe), .pmem_wdata(pwd), .pmem_ack(pack), .pmem_rdata(prd),
         .card_present(card_present), .card_mask0((22'd1 << card_log2_0) - 22'd1),
         .card_mask1((22'd1 << card_log2_1) - 22'd1),
         .ram_addr(bram_addr), .ram_req(bram_req), .ram_burst(bram_burst),
@@ -277,6 +306,8 @@ module dr840_machine (
         .io_wdata(io_wdata), .io_ack(io_ack), .io_rdata(io_rdata),
         .io_err(io_err),
         .boot_monitor(boot_monitor), .uart_txd(uart_txd), .uart_rxd(uart_rxd),
+        .tx_tog(u_tx_tog), .rx_in_tog(u_rx_tog), .rx_in_data(u_rx_data),
+        .rx_full(u_rx_full), .uart_on(u_on), .bit_clocks(u_bit_clocks),
         .pen_down(pen_down), .pen_x(pen_x), .pen_y(pen_y),
         .on_button(on_button), .cpu_stop(cpu_stop),
         .kbd_attached(kbd_attached), .key_tog(key_tog), .key_code(key_code),
@@ -287,7 +318,7 @@ module dr840_machine (
         .irq_out(soc_irq), .dbg_pending(),
         .vid_ctrl1(vid_ctrl1), .vid_ctrl2(vid_ctrl2), .vid_ctrl3(vid_ctrl3),
         .dbg_tx_bytes(obs_uart_bytes), .dbg_io_reads(obs_io),
-        .dbg_tx_stb(), .dbg_tx_data()
+        .dbg_tx_stb(), .dbg_tx_data(u_tx_data)
     );
 
     // The loader takes the memory while it is running; the board has it
@@ -312,7 +343,8 @@ module dr840_machine (
     // third of a nanosecond over.
     always @(posedge clk) if (cen) begin
         ram_written  <= !lend && bram_req && bram_we && ram_ack && bram_addr < 25'h0C0_0000;
-        card_written <= !lend && bram_req && bram_we && ram_ack && bram_addr >= 25'h0C0_0000;
+        card_written <= !lend && bram_req && bram_we && ram_ack && bram_addr >= 25'h0C0_0000
+                        && bram_addr < 25'h100_0000;
     end
     assign load_rdata = ram_rdata;
 

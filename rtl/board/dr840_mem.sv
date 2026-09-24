@@ -81,6 +81,16 @@ module dr840_mem #(
     input  wire [31:0] kmem_wdata,
     output wire        kmem_ack,
 
+    // The package link (dr840_pclink.sv): the package as the loader
+    // writes it and as the link reads it back. An SDRAM address, not a
+    // guest one -- the package is nowhere in the guest's map.
+    input  wire [24:0] pmem_addr,
+    input  wire        pmem_req,
+    input  wire        pmem_we,
+    input  wire [31:0] pmem_wdata,
+    output wire        pmem_ack,
+    output wire [31:0] pmem_rdata,
+
     // The PC Cards: a memory card in a slot puts its common memory in
     // that slot's window B, which is then RAM -- a region of the SDRAM
     // above the DRAM, mirrored through the window by the card's size.
@@ -207,7 +217,7 @@ module dr840_mem #(
     // both caches being idle in the same cycle, which is not something the
     // picture should have to hope for.
     localparam [2:0] A_FREE = 3'd0, A_DATA = 3'd1, A_INSN = 3'd2, A_LCD = 3'd3, A_SND = 3'd4,
-                     A_KBD = 3'd5;
+                     A_KBD = 3'd5, A_PKG = 3'd6;
     reg [2:0] owner;
 
     wire d_wants_ram = dmem_req && (d_tgt == T_RAM);
@@ -215,16 +225,19 @@ module dr840_mem #(
     wire v_wants_ram = vmem_req && (v_tgt == T_RAM);
     wire a_wants_ram = amem_req && (a_tgt == T_RAM);
     wire k_wants_ram = kmem_req && (k_tgt == T_RAM);
+    wire p_wants_ram = pmem_req;
 
     wire grant_v = (owner == A_LCD) || ((owner == A_FREE) && v_wants_ram);
     wire grant_a = (owner == A_SND) ||
                    ((owner == A_FREE) && !v_wants_ram && a_wants_ram);
     wire grant_k = (owner == A_KBD) ||
                    ((owner == A_FREE) && !v_wants_ram && !a_wants_ram && k_wants_ram);
+    wire grant_p = (owner == A_PKG) ||
+                   ((owner == A_FREE) && !v_wants_ram && !a_wants_ram && !k_wants_ram && p_wants_ram);
     wire grant_d = (owner == A_DATA) ||
-                   ((owner == A_FREE) && !v_wants_ram && !a_wants_ram && !k_wants_ram && d_wants_ram);
+                   ((owner == A_FREE) && !v_wants_ram && !a_wants_ram && !k_wants_ram && !p_wants_ram && d_wants_ram);
     wire grant_i = (owner == A_INSN) ||
-                   ((owner == A_FREE) && !v_wants_ram && !a_wants_ram && !k_wants_ram && !d_wants_ram && i_wants_ram);
+                   ((owner == A_FREE) && !v_wants_ram && !a_wants_ram && !k_wants_ram && !p_wants_ram && !d_wants_ram && i_wants_ram);
 
     // On the core's edges, like everything it arbitrates between. Every
     // input here changes only on one: the requests come from registers the
@@ -248,6 +261,7 @@ module dr840_mem #(
             A_FREE: if (v_wants_ram)      owner <= A_LCD;
                     else if (a_wants_ram) owner <= A_SND;
                     else if (k_wants_ram) owner <= A_KBD;
+                    else if (p_wants_ram) owner <= A_PKG;
                     else if (d_wants_ram) owner <= A_DATA;
                     else if (i_wants_ram) owner <= A_INSN;
             A_DATA: if (!d_wants_ram && !ram_busy) owner <= A_FREE;
@@ -255,25 +269,29 @@ module dr840_mem #(
             A_LCD:  if (!v_wants_ram && !ram_busy) owner <= A_FREE;
             A_SND:  if (!a_wants_ram && !ram_busy) owner <= A_FREE;
             A_KBD:  if (!k_wants_ram && !ram_busy) owner <= A_FREE;
+            A_PKG:  if (!p_wants_ram && !ram_busy) owner <= A_FREE;
             default:                      owner <= A_FREE;
         endcase
     end
 
     assign ram_req   = (grant_d & d_wants_ram) | (grant_i & i_wants_ram)
-                     | (grant_v & v_wants_ram) | (grant_a & a_wants_ram) | (grant_k & k_wants_ram);
+                     | (grant_v & v_wants_ram) | (grant_a & a_wants_ram) | (grant_k & k_wants_ram)
+                     | (grant_p & p_wants_ram);
     assign ram_addr  = grant_d ? d_dec[24:0] : grant_i ? i_dec[24:0] : grant_a ? a_dec[24:0]
-                     : grant_k ? k_dec[24:0] : v_dec[24:0];
-    assign ram_burst = grant_d ? dmem_burst  : grant_i ? imem_burst  : (grant_a || grant_k) ? 1'b0 : 1'b1;
+                     : grant_k ? k_dec[24:0] : grant_p ? pmem_addr : v_dec[24:0];
+    assign ram_burst = grant_d ? dmem_burst  : grant_i ? imem_burst  : (grant_a || grant_k || grant_p) ? 1'b0 : 1'b1;
 
-    assign ram_we    = grant_d ? dmem_we     : grant_k ? kmem_we : 1'b0;
+    assign ram_we    = grant_d ? dmem_we     : grant_k ? kmem_we : grant_p ? pmem_we : 1'b0;
     assign ram_be    = 4'b1111 & (grant_d ? dmem_be : 4'b1111);
-    assign ram_wdata = grant_k ? kmem_wdata : dmem_wdata;
+    assign ram_wdata = grant_k ? kmem_wdata : grant_p ? pmem_wdata : dmem_wdata;
 
     assign vmem_ack   = grant_v & v_wants_ram & ram_ack;
     assign vmem_rdata = ram_rdata;
     assign amem_ack   = grant_a & a_wants_ram & ram_ack;
     assign amem_rdata = ram_rdata;
     assign kmem_ack   = grant_k & k_wants_ram & ram_ack;
+    assign pmem_ack   = grant_p & p_wants_ram & ram_ack;
+    assign pmem_rdata = ram_rdata;
 
     // ------------------------------------------------- peripherals
 
