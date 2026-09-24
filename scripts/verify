@@ -63,11 +63,14 @@ def screenshot(which, out):
     except ImportError:
         return name
     im = Image.open(out).convert("RGB")
-    px = [im.getpixel((x, y)) for y in range(80, 400, 2) for x in range(80, 560, 2)]
+    # The middle two thirds of whatever raster the core is showing: the
+    # panel's own 480x320, or the 640x480 with it in a bezel.
+    w, h = im.size
+    px = [im.getpixel((x, y)) for y in range(h // 6, h - h // 6, 2) for x in range(w // 6, w - w // 6, 2)]
     px.sort(key=sum)
     n = len(px)
     avg = lambda seq: "%02X%02X%02X" % tuple(sum(c[i] for c in seq) // len(seq) for i in range(3))
-    return "%s: background ~%s, ink ~%s" % (name, avg(px[int(n * 0.8):]), avg(px[:int(n * 0.03)]))
+    return "%s: %dx%d, background ~%s, ink ~%s" % (name, w, h, avg(px[int(n * 0.8):]), avg(px[:int(n * 0.03)]))
 
 def check(which, wait_save):
     print("== %s" % which)
