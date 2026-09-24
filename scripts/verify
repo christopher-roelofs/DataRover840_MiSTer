@@ -1,0 +1,114 @@
+#!/usr/bin/env python3
+"""Load each machine on the MiSTer over ssh and read what it says of itself.
+
+    scripts/verify [host] [USA|Japan|SDK ...]
+
+For each ROM: load its .mgl, listen to the status line for a while, and
+report the ROM checksum against the image, the faults (the boot's one BREAK
+is expected), and the RAM image's state -- mounted, loaded, or cold. With
+--wait-save it then waits for the machine's idle power-off, which saves, and
+checks the save file's time and that the machine woke.
+"""
+import os, re, struct, subprocess, sys, time
+
+HOST = "192.168.86.171"
+PASS = os.environ.get("MISTER_PASS", "1")
+ROMDIR = os.environ.get("ROMDIR", os.path.join(os.path.dirname(__file__), "..", "..", "magicrecomp", "roms"))
+IMAGES = {"USA": "Data Rover 840/DataRover-840-USA.image",
+          "Japan": "Data Rover 840/DataRover-840-Japan.image",
+          "SDK": "Rosemary SDK/MagicCap-USA.image"}
+
+def ssh(cmd, timeout=120):
+    r = subprocess.run(["sshpass", "-p", PASS, "ssh", "-o", "StrictHostKeyChecking=no",
+                        "-o", "UserKnownHostsFile=/dev/null", "root@" + HOST, cmd],
+                       capture_output=True, text=True, timeout=timeout)
+    return r.stdout
+
+def image_sum(path):
+    d = open(path, "rb").read()
+    n = len(d) // 4
+    # Whole words: what the hardware's S has always matched (USA BE3685EB).
+    return sum(struct.unpack(">%dI" % n, d[:n * 4])) & 0xFFFFFFFF
+
+def listen(secs):
+    out = ssh("stty -F /dev/ttyS1 38400 raw -echo cs8 -parenb -cstopb; timeout %d cat /dev/ttyS1" % secs,
+              timeout=secs + 30)
+    lines = []
+    for l in re.sub(r"[^\x20-\x7e\n]", "", out).splitlines():
+        f = dict(re.findall(r"([A-Z])=([0-9A-F]{8})", l))
+        if len(f) == 10:
+            lines.append({k: int(v, 16) for k, v in f.items()})
+    return lines
+
+def decode_a(a):
+    return dict(img_ok=a >> 31 & 1, ro=a >> 30 & 1, clr=a >> 29 & 1, save=a >> 28 & 1,
+                halt=a >> 27 & 1, st=a >> 25 & 3, phase=a >> 22 & 7, fail=a >> 13 & 7,
+                rom_bad=a >> 12 & 1, chunk=a & 0xFF)
+
+def screenshot(which, out):
+    """The framework's own capture of the core's output, fetched to `out`;
+    returns the panel's background and ink colours, for the tint."""
+    ssh("mkdir -p /media/fat/screenshots; echo screenshot > /dev/MiSTer_cmd; sleep 3")
+    name = ssh("ls -t /media/fat/screenshots/DataRover840/ | head -1").strip()
+    if not name: return None
+    subprocess.run(["sshpass", "-p", PASS, "scp", "-o", "StrictHostKeyChecking=no",
+                    "-o", "UserKnownHostsFile=/dev/null",
+                    "root@%s:/media/fat/screenshots/DataRover840/%s" % (HOST, name), out],
+                   capture_output=True)
+    try:
+        from PIL import Image
+    except ImportError:
+        return name
+    im = Image.open(out).convert("RGB")
+    px = [im.getpixel((x, y)) for y in range(80, 400, 2) for x in range(80, 560, 2)]
+    px.sort(key=sum)
+    n = len(px)
+    avg = lambda seq: "%02X%02X%02X" % tuple(sum(c[i] for c in seq) // len(seq) for i in range(3))
+    return "%s: background ~%s, ink ~%s" % (name, avg(px[int(n * 0.8):]), avg(px[:int(n * 0.03)]))
+
+def check(which, wait_save):
+    print("== %s" % which)
+    ssh("echo load_core '/media/fat/_Console/DataRover 840 (%s).mgl' > /dev/MiSTer_cmd" % which)
+    lines = listen(45)
+    if not lines:
+        print("   no status line heard"); return False
+    last = lines[-1]; a = decode_a(last["A"])
+    want = image_sum(os.path.join(ROMDIR, IMAGES[which]))
+    ok = True
+    def say(good, text):
+        nonlocal ok
+        print("   %s %s" % ("ok " if good else "BAD", text)); ok = ok and good
+    say(last["S"] == want, "ROM sum %08X (image %08X)" % (last["S"], want))
+    say(not a["rom_bad"], "ROM read back as sent")
+    say(last["R"] == 1, "resets %d" % last["R"])
+    say(last["F"] == 1 and last["X"] == 0x13DDA3C0, "faults: only the boot's BREAK (F=%08X X=%08X)" % (last["F"], last["X"]))
+    running = lines[-1]["N"] > lines[0]["N"]
+    say(running, "running: %d instructions in the window" % (lines[-1]["N"] - lines[0]["N"]))
+    phase = {3: "cold (cleared)", 4: "warm (loaded from the save)"}.get(a["phase"], str(a["phase"]))
+    say(a["img_ok"] and a["phase"] == 4 or (not a["img_ok"]), "RAM image: %s, mounted=%d" % (phase, a["img_ok"]))
+    if "--shot" in sys.argv:
+        print("   shot:", screenshot(which, "/tmp/verify-%s.png" % which))
+    if wait_save:
+        path = "/media/fat/saves/DataRover840/DataRover-840-%s.sav" % which
+        before = ssh("stat -c %%Y %s 2>/dev/null" % path).strip()
+        print("   waiting up to 12 minutes for the idle power-off save...")
+        seen = False
+        for _ in range(12):
+            for l in listen(60):
+                d = decode_a(l["A"])
+                if d["save"] or d["halt"]: seen = True
+            after = ssh("stat -c %%Y %s 2>/dev/null" % path).strip()
+            if after and after != before: break
+        say(after and after != before, "save file written (%s -> %s), save seen on the line: %s" % (before, after, seen))
+        tail = listen(20)
+        say(tail and tail[-1]["N"] > tail[0]["N"], "machine running again after the save")
+    return ok
+
+if __name__ == "__main__":
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    wait_save = "--wait-save" in sys.argv
+    if args and re.match(r"^\d+\.\d+\.\d+\.\d+$", args[0]): HOST = args.pop(0)
+    which = args or ["USA", "Japan", "SDK"]
+    good = all([check(w, wait_save) for w in which])
+    print("verify:", "all good" if good else "something is wrong")
+    sys.exit(0 if good else 1)
