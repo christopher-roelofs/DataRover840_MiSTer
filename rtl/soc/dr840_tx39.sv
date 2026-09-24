@@ -75,6 +75,19 @@ module dr840_tx39 #(
     input  wire [1:0]  card_present,
     input  wire [4:0]  card_log2_0,
     input  wire [4:0]  card_log2_1,
+    // Slot 1 holds the network card (dr840_ne2000.sv) rather than memory:
+    // window A then answers with its CIS, its configuration register at
+    // 0x3F8 and its registers at 0x300..0x31F, and its interrupt is the
+    // slot's ready line.
+    input  wire        net_card,
+    output wire        nic_acc,
+    output wire        nic_we,
+    output wire [4:0]  nic_port,
+    output wire        nic_wide,
+    output wire [15:0] nic_wdata,
+    input  wire [15:0] nic_rdata,
+    output reg         nic_reset,
+    input  wire        nic_irq,
 
     // The sound, for dr840_snd.sv: see dr840_sib.sv.
     output wire        snd_tog,
@@ -339,15 +352,18 @@ module dr840_tx39 #(
     // Registered on the core's edges: from the top level's registers,
     // which no timing group covers.
     reg  [1:0]  cp_q; reg [4:0] cl0_q, cl1_q;
-    always @(posedge clk) if (cen) begin cp_q <= card_present; cl0_q <= card_log2_0; cl1_q <= card_log2_1; end
-    wire [15:0] gl_in0 = (cp_q[0] ? 16'h0006 : GL_CD_MASK);
+    reg net_q, nirq_q;
+    always @(posedge clk) if (cen) begin cp_q <= card_present; cl0_q <= card_log2_0; cl1_q <= card_log2_1; net_q <= net_card; end
+    // The network card's ready line is its interrupt, low while asserted
+    // (an I/O card's IREQ# is the memory card's RDY/BSY#).
+    wire [15:0] gl_in0 = !cp_q[0] ? GL_CD_MASK : net_q ? (nic_irq ? 16'h0002 : 16'h0006) : 16'h0006;
     wire [15:0] gl_in1 = (cp_q[1] ? 16'h0006 : GL_CD_MASK);
     wire        gl_irq0 = |((gl_en[0] & gl_pend[0]) | (gl_en[1] & gl_pend[1]) | (gl_en[2] & gl_pend[2]) | (gl_en[3] & gl_pend[3]));
     wire        gl_irq1 = |((gl_en[4] & gl_pend[4]) | (gl_en[5] & gl_pend[5]) | (gl_en[6] & gl_pend[6]) | (gl_en[7] & gl_pend[7]));
     integer gk;
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            card_q <= 2'b00; gl_irq_q <= 2'b00;
+            card_q <= 2'b00; gl_irq_q <= 2'b00; nirq_q <= 1'b0;
             for (gk = 0; gk < 8; gk = gk + 1) begin gl_pend[gk] <= 16'd0; gl_en[gk] <= 16'd0; end
         end else begin
             card_q   <= cp_q;
@@ -360,6 +376,11 @@ module dr840_tx39 #(
                     gl_pend[{gl_slot, io_addr[2:1]}] <= gl_pend[{gl_slot, io_addr[2:1]}] & ~gl_wval;
             end
             // The card's arrivals and departures.
+            // The NIC's interrupt: ready falling as it asserts (the edge
+            // the Ne2000 driver enables, +14/+1C bit 2), rising as it clears.
+            nirq_q <= nic_irq & net_q & cp_q[0];
+            if (nic_irq && net_q && cp_q[0] && !nirq_q) gl_pend[2] <= gl_pend[2] | 16'h0004;
+            if (!(nic_irq && net_q && cp_q[0]) && nirq_q) gl_pend[0] <= gl_pend[0] | 16'h0004;
             if (cp_q[0] && !card_q[0]) begin gl_pend[2] <= gl_pend[2] | GL_CD_MASK; gl_pend[0] <= gl_pend[0] | 16'h0006; end
             if (!cp_q[0] && card_q[0]) begin gl_pend[0] <= gl_pend[0] | GL_CD_MASK; gl_pend[2] <= gl_pend[2] | 16'h0006; end
             if (cp_q[1] && !card_q[1]) begin gl_pend[6] <= gl_pend[6] | GL_CD_MASK; gl_pend[4] <= gl_pend[4] | 16'h0006; end
@@ -405,6 +426,56 @@ module dr840_tx39 #(
     function [7:0] attr_byte(input [25:0] a, input [4:0] log2);
         attr_byte = (a[0] || a[25:1] > 26'd27) ? 8'hFF : cis_byte(a[8:1], log2);
     endfunction
+    // ---- the network card in slot 1
+    function [7:0] ne_cis(input [6:0] i);        // the reference's ne2000_card.c
+        case (i)
+        7'd0: ne_cis = 8'h01; 7'd1: ne_cis = 8'd3; 7'd2: ne_cis = 8'h00; 7'd3: ne_cis = 8'h00; 7'd4: ne_cis = 8'hFF;
+        7'd5: ne_cis = 8'h15; 7'd6: ne_cis = 8'd17; 7'd7: ne_cis = 8'd4; 7'd8: ne_cis = 8'd1;
+        7'd9: ne_cis = "N"; 7'd10: ne_cis = "D"; 7'd11: ne_cis = "C"; 7'd12: ne_cis = 8'h00;
+        7'd13: ne_cis = "E"; 7'd14: ne_cis = "t"; 7'd15: ne_cis = "h"; 7'd16: ne_cis = "e";
+        7'd17: ne_cis = "r"; 7'd18: ne_cis = "n"; 7'd19: ne_cis = "e"; 7'd20: ne_cis = "t";
+        7'd21: ne_cis = 8'h00; 7'd22: ne_cis = 8'h00; 7'd23: ne_cis = 8'hFF;
+        7'd24: ne_cis = 8'h21; 7'd25: ne_cis = 8'd2; 7'd26: ne_cis = 8'd6; 7'd27: ne_cis = 8'd0;
+        7'd28: ne_cis = 8'h1A; 7'd29: ne_cis = 8'd5; 7'd30: ne_cis = 8'd1; 7'd31: ne_cis = 8'h20;
+        7'd32: ne_cis = 8'hF8; 7'd33: ne_cis = 8'd3; 7'd34: ne_cis = 8'd3;
+        7'd35: ne_cis = 8'h1B; 7'd36: ne_cis = 8'd9; 7'd37: ne_cis = 8'hE0; 7'd38: ne_cis = 8'd1;
+        7'd39: ne_cis = 8'h19; 7'd40: ne_cis = 8'd1; 7'd41: ne_cis = 8'h55; 7'd42: ne_cis = 8'h65;
+        7'd43: ne_cis = 8'h30; 7'd44: ne_cis = 8'hFF; 7'd45: ne_cis = 8'hFF;
+        7'd46: ne_cis = 8'h14; 7'd47: ne_cis = 8'd0; 7'd48: ne_cis = 8'hFF; 7'd49: ne_cis = 8'd0;
+        default: ne_cis = 8'hFF;
+        endcase
+    endfunction
+    reg  [7:0]  cor;                              // the configuration option register
+    wire        net_slot  = is_cardA && !cardA_slot && net_q && cp_q[0];
+    wire [25:0] net_off   = io_addr[25:0];
+    // Which byte of the word, and whether it is a halfword: big-endian lanes.
+    wire [1:0]  lane      = io_be[3] ? 2'd0 : io_be[2] ? 2'd1 : io_be[1] ? 2'd2 : 2'd3;
+    wire        halfword  = (io_be == 4'b1100) || (io_be == 4'b0011);
+    wire        nic_sel   = net_slot && net_off[25:5] == 21'h18 && cor[5:0] == 6'h20 && !cor[7];
+    assign nic_acc   = io_start && nic_sel;
+    assign nic_we    = io_we;
+    assign nic_port  = {net_off[4:2], lane};
+    assign nic_wide  = halfword;
+    assign nic_wdata = halfword ? (io_be[3] ? io_wdata[31:16] : io_wdata[15:0])
+                                : {8'h00, io_wdata[31 - 8 * lane -: 8]};
+    function [7:0] ne_attr(input [25:0] a, input [7:0] c);
+        ne_attr = (a == 26'h3F8) ? c : (a[0] || a[25:1] > 26'd49) ? 8'hFF : ne_cis(a[7:1]);
+    endfunction
+    wire [31:0] net_rdata = nic_sel ? (halfword ? {nic_rdata, nic_rdata} : {4{nic_rdata[7:0]}})
+        : {ne_attr({net_off[25:2], 2'd0}, cor), ne_attr({net_off[25:2], 2'd1}, cor),
+           ne_attr({net_off[25:2], 2'd2}, cor), ne_attr({net_off[25:2], 2'd3}, cor)};
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin cor <= 8'd0; nic_reset <= 1'b0; end
+        else if (cen) begin
+            nic_reset <= 1'b0;
+            if (!net_q) cor <= 8'd0;
+            else if (io_start && net_slot && io_we && net_off[25:2] == 24'h0FE && lane == 2'd0) begin
+                cor <= io_wdata[31:24];
+                if (io_wdata[31]) nic_reset <= 1'b1;
+            end
+        end
+    end
+
     wire [31:0] cardA_rdata = cp_q[cardA_slot]
         ? {attr_byte({io_addr[25:2], 2'd0}, cardA_log2), attr_byte({io_addr[25:2], 2'd1}, cardA_log2),
            attr_byte({io_addr[25:2], 2'd2}, cardA_log2), attr_byte({io_addr[25:2], 2'd3}, cardA_log2)}
@@ -820,7 +891,7 @@ module dr840_tx39 #(
         if (is_glacier) begin
             rd_live = gl_inreg ? {gl_rval, gl_rval} : 32'hFFFF_FFFF;
         end else if (is_cardA) begin
-            rd_live = cardA_rdata;
+            rd_live = net_slot ? net_rdata : cardA_rdata;
         end else if (!is_tx39) begin
             // Nothing else is modelled. An undriven bus reads all-ones.
             rd_live = 32'hFFFF_FFFF;

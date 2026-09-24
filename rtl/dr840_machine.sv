@@ -33,6 +33,27 @@ module dr840_machine (
     input  wire [1:0]  card_present,
     input  wire [4:0]  card_log2_0,
     input  wire [4:0]  card_log2_1,
+    // Slot 1 holds the network card instead, and its frames go through
+    // these to dr840_netbridge.sv, on the core's enabled edges (net_cen).
+    input  wire        net_card,
+    output wire        net_cen,
+    output wire        net_tx_req,
+    output wire [13:0] net_tx_base,
+    output wire [10:0] net_tx_len,
+    input  wire        net_tx_done,
+    input  wire        net_tx_ok,
+    input  wire        net_rx_offer,
+    input  wire [10:0] net_rx_len,
+    input  wire [47:0] net_rx_dst,
+    output wire        net_rx_answer,
+    output wire        net_rx_take,
+    input  wire        net_rx_byte,
+    input  wire [7:0]  net_rx_data,
+    output wire        net_rx_busy,
+    input  wire [13:0] net_b_addr,
+    output wire [7:0]  net_b_q,
+    output wire [31:0] net_dbg_tx,
+    output wire [31:0] net_dbg_rx,
     output wire        mem_idle,     // nothing of the board's in the memory
     output wire        stopped,      // the core, held by the ROM's power-off
     output reg         ram_written,  // a word of the RAM changed just now
@@ -268,6 +289,24 @@ module dr840_machine (
 
     // The LCD controller: scans the framebuffer out of the SDRAM through
     // the board, onto a 640x480 raster.
+    // The network card: an NE2000, reset with the core.
+    wire        nic_acc, nic_we, nic_wide, nic_reset, nic_irq;
+    wire [4:0]  nic_port;
+    wire [15:0] nic_wdata, nic_rdata;
+    assign net_cen = cen;
+    dr840_ne2000 nic (
+        .clk(clk), .cen(cen), .rst_n(core_rst_n),
+        .acc(nic_acc), .we(nic_we), .port(nic_port), .wide(nic_wide), .wdata(nic_wdata),
+        .rdata(nic_rdata), .board_reset(nic_reset), .irq(nic_irq),
+        .tx_req(net_tx_req), .tx_base(net_tx_base), .tx_len(net_tx_len),
+        .tx_done(net_tx_done), .tx_ok(net_tx_ok),
+        .rx_offer(net_rx_offer), .rx_len(net_rx_len), .rx_dst(net_rx_dst),
+        .rx_answer(net_rx_answer), .rx_take(net_rx_take),
+        .rx_byte(net_rx_byte), .rx_data(net_rx_data), .rx_busy(net_rx_busy),
+        .b_addr(net_b_addr), .b_q(net_b_q),
+        .dbg_tx(net_dbg_tx), .dbg_rx(net_dbg_rx)
+    );
+
     wire [31:0] va, vrd;
     wire        vreq, vack;
     dr840_lcd lcd (
@@ -290,7 +329,7 @@ module dr840_machine (
         .amem_addr(aa), .amem_req(areq), .amem_ack(aack), .amem_rdata(ard),
         .kmem_addr(ka), .kmem_req(kreq), .kmem_we(kwe), .kmem_wdata(kwd), .kmem_ack(kack),
         .pmem_addr(pa), .pmem_req(preq), .pmem_we(pwe), .pmem_wdata(pwd), .pmem_ack(pack), .pmem_rdata(prd),
-        .card_present(card_present), .card_mask0((22'd1 << card_log2_0) - 22'd1),
+        .card_present({card_present[1], card_present[0] & ~net_card}), .card_mask0((22'd1 << card_log2_0) - 22'd1),
         .card_mask1((22'd1 << card_log2_1) - 22'd1),
         .ram_addr(bram_addr), .ram_req(bram_req), .ram_burst(bram_burst),
         .ram_we(bram_we), .ram_be(bram_be), .ram_wdata(bram_wdata),
@@ -318,6 +357,9 @@ module dr840_machine (
         .key_ext(key_ext), .key_down(key_down),
         .kmem_addr(ka), .kmem_req(kreq), .kmem_we(kwe), .kmem_wdata(kwd), .kmem_ack(kack),
         .card_present(card_present), .card_log2_0(card_log2_0), .card_log2_1(card_log2_1),
+        .net_card(net_card), .nic_acc(nic_acc), .nic_we(nic_we), .nic_port(nic_port),
+        .nic_wide(nic_wide), .nic_wdata(nic_wdata), .nic_rdata(nic_rdata),
+        .nic_reset(nic_reset), .nic_irq(nic_irq),
         .snd_tog(snd_tog), .snd_addr(snd_addr), .codec_b(codec_b),
         .irq_out(soc_irq), .dbg_pending(),
         .vid_ctrl1(vid_ctrl1), .vid_ctrl2(vid_ctrl2), .vid_ctrl3(vid_ctrl3),

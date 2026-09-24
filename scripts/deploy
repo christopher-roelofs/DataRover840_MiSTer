@@ -60,6 +60,11 @@ if ls "$ROMDIR"/../packages/*.pkg >/dev/null 2>&1; then
     $SCP "$ROMDIR"/../packages/*.pkg "root@$HOST:$GAMES/packages/"
 fi
 
+# The network card's cable: a daemon for the MiSTer's Linux (scripts/drnet).
+$SSH "mkdir -p /media/fat/linux"
+$SCP scripts/drnet "root@$HOST:/media/fat/linux/drnet"
+$SSH "chmod +x /media/fat/linux/drnet"
+
 # The LCD grid, as a shadow mask for the framework's video settings.
 $SSH "mkdir -p /media/fat/Shadow_Masks"
 $SCP shadow_masks/*.txt "root@$HOST:/media/fat/Shadow_Masks/"

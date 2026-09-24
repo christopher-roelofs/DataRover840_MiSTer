@@ -136,13 +136,10 @@ assign UART_DTR = 0;
 // tty. The IDT monitor's banner comes out there.
 assign USER_OUT = '1;
 
-assign DDRAM_CLK      = 0;
-assign DDRAM_ADDR     = 0;
-assign DDRAM_BURSTCNT = 0;
-assign DDRAM_RD       = 0;
-assign DDRAM_DIN      = 0;
-assign DDRAM_BE       = 0;
-assign DDRAM_WE       = 0;
+// The DDR is the network card's: see dr840_netbridge.sv.
+assign DDRAM_CLK      = clk_sys;
+assign DDRAM_BURSTCNT = 8'd1;
+assign DDRAM_BE       = 8'hFF;
 
 assign SDRAM2_DQ   = 'Z;
 assign SDRAM2_A    = 0;
@@ -200,6 +197,10 @@ localparam CONF_STR = {
     // reference emulator's own format, formatted by Magic Cap itself. A
     // blank one needs the option key held as it goes in, which is what the
     // re-insert entry does.
+    // Slot 1: empty, or an NE2000 network card -- Magic Cap needs the
+    // WCPack and Ne2000 packages installed to use it, and objects to an
+    // unknown card without them; scripts/drnet on the MiSTer is its cable.
+    "O[19],Slot 1,Empty,Network card;",
     "S1,IMG,Mount card (slot 2);",
     "T[10],Re-insert card with option;",
     // A package to install: the file is read into the SDRAM and offered
@@ -915,6 +916,27 @@ always @(posedge clk_sys) begin
     load_en_q <= rom_dl_q | (load_busy & ~save_run) | ~rom_ok;
     borrow_q  <= save_run;
 end
+// The network card's frames, to and from the MiSTer's Linux.
+wire        net_cen, net_tx_req, net_tx_done, net_tx_ok, net_rx_offer, net_rx_answer;
+wire        net_rx_take, net_rx_byte, net_rx_busy, net_link;
+wire [13:0] net_tx_base, net_b_addr;
+wire [10:0] net_tx_len, net_rx_len;
+wire [47:0] net_rx_dst;
+wire [7:0]  net_rx_data, net_b_q;
+wire [31:0] net_frames_tx, net_frames_rx;
+dr840_netbridge netbridge (
+    .clk(clk_sys), .cen(net_cen), .rst_n(rst_n), .enable(status[19]),
+    .tx_req(net_tx_req), .tx_base(net_tx_base), .tx_len(net_tx_len),
+    .tx_done(net_tx_done), .tx_ok(net_tx_ok),
+    .rx_offer(net_rx_offer), .rx_len(net_rx_len), .rx_dst(net_rx_dst),
+    .rx_answer(net_rx_answer), .rx_take(net_rx_take),
+    .rx_byte(net_rx_byte), .rx_data(net_rx_data), .rx_busy(net_rx_busy),
+    .b_addr(net_b_addr), .b_q(net_b_q),
+    .ddr_busy(DDRAM_BUSY), .ddr_addr(DDRAM_ADDR), .ddr_rd(DDRAM_RD), .ddr_we(DDRAM_WE),
+    .ddr_din(DDRAM_DIN), .ddr_dout(DDRAM_DOUT), .ddr_dout_ready(DDRAM_DOUT_READY),
+    .link(net_link), .dbg_tx(net_frames_tx), .dbg_rx(net_frames_rx)
+);
+
 dr840_machine machine (
     // The option key: IOCTRL pin 3, low while held. The right mouse button
     // is it, as in the reference's window. On the device the same button
@@ -924,6 +946,13 @@ dr840_machine machine (
     // been running for two seconds.
     .clk(clk_sys), .rst_n(rst_n), .boot_monitor(status[2] | (option_key & opt_ok) | opt_force),
     .pen_down(pen_down), .pen_px(pen_px), .pen_py(pen_py), .on_button(on_button), .ac_in(~status[16]),
+    .net_card(status[19]), .net_cen(net_cen),
+    .net_tx_req(net_tx_req), .net_tx_base(net_tx_base), .net_tx_len(net_tx_len),
+    .net_tx_done(net_tx_done), .net_tx_ok(net_tx_ok),
+    .net_rx_offer(net_rx_offer), .net_rx_len(net_rx_len), .net_rx_dst(net_rx_dst),
+    .net_rx_answer(net_rx_answer), .net_rx_take(net_rx_take),
+    .net_rx_byte(net_rx_byte), .net_rx_data(net_rx_data), .net_rx_busy(net_rx_busy),
+    .net_b_addr(net_b_addr), .net_b_q(net_b_q), .net_dbg_tx(), .net_dbg_rx(),
     .kbd_attached(~status[4]),
     .card_present({card_in, 1'b0}), .card_log2_0(5'd21), .card_log2_1(card_log2), .key_tog(key_tog), .key_code(key_code), .key_ext(key_ext), .key_down(key_down),
     // Held in reset until there is a ROM to run. The loader owns the
@@ -972,9 +1001,11 @@ dr840_status #(.CLK_HZ(92_000_000)) status_line (
          (rom_back != rom_sum), card_in, card_dirty, 2'd0, chunk}),
     // K, L: the package link's state and the package's length, and the
     // package summed as it was loaded.
-    .v10({pkg_state, 4'd0, pkg_len}), .v11(pkg_sum),
-    // J: the second joystick in the top half, the first in the bottom.
-    .v12({joystick_1[15:0], joystick_0[15:0]}),
+    // K's middle bits: the network card fitted, and its daemon there.
+    .v10({pkg_state, status[19], net_link, 2'd0, pkg_len}), .v11(pkg_sum),
+    // J: frames sent and received through the network card, and the
+    // first joystick.
+    .v12({net_frames_tx[7:0], net_frames_rx[7:0], joystick_0[15:0]}),
     .txd(status_txd)
 );
 assign UART_TXD = status[2] ? guest_txd : status_txd;
