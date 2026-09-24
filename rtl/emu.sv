@@ -197,8 +197,10 @@ localparam CONF_STR = {
     // rather than a dark screen.
     "O[6],After idle power-off,Wake at once,Stay off;",
     // As the console cores do it: opening the OSD saves, if anything in
-    // the RAM has changed since the last save.
-    "O[7],Autosave on OSD,On,Off;",
+    // the RAM has changed since the last save. Off by default: a save is
+    // two seconds with the machine held, which is not what opening a menu
+    // should cost.
+    "O[7],Autosave on OSD,Off,On;",
     "-;",
     "T[0],Reset;",
     "R[0],Reset and close OSD;",
@@ -661,7 +663,7 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
         case (save_st)
         2'd0: if ((img_ok || img_new) && !img_ro && rom_ok && !clr_run &&
                   ((stopped && !stop_d) || (status[5] && !savebtn_d) ||
-                   (osd_open && !osd_d && ram_dirty && !status[7]))) begin
+                   (osd_open && !osd_d && ram_dirty && status[7]))) begin
                   halt_req <= 1'b1; idle_cnt <= 5'd0; save_st <= 2'd1; ram_dirty <= 1'b0;
               end
         2'd1: begin
