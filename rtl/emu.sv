@@ -270,7 +270,9 @@ function [8:0] clamp_y(input [8:0] p, input [8:0] d);
         clamp_y = (n < 0) ? 9'd0 : (n > 319) ? 9'd319 : n[8:0];
     end
 endfunction
-wire pen_down = ps2_mouse[0];
+// A left click is a touch; a right click is a touch with the option key
+// held, which is what "hold option and touch" means with a mouse.
+wire pen_down = ps2_mouse[0] | ps2_mouse[1];
 wire         ioctl_download, ioctl_wr;
 reg   [31:0] sd_lba;
 reg          sd_rd, sd_wr;
@@ -403,6 +405,9 @@ reg         halt_req;                 // hold the core for it
 reg  [1:0]  save_st;
 reg  [4:0]  idle_cnt;
 reg         stop_d, savebtn_d;
+reg  [27:0] sd_wait;                  // how long the card has been asked
+reg         img_ro;                   // mounted read-only: no saving into it
+reg  [7:0]  save_fail;                // saves that timed out, on the status line
 wire        mem_idle, stopped;
 // The ON button pressed by the core itself, after a power-off it has
 // saved through: two seconds after the stop, or when the save is done.
@@ -455,6 +460,7 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
         load_we <= 1; load_burst <= 0; mt_phase <= MT_WRITE; mt_beat <= 0; rom_back <= 0;
         sd_lba <= 0; sd_rd <= 0; sd_wr <= 0; lba <= 0; wi <= 0; bi <= 0; ss <= 0; gather <= 0;
         img_ok <= 0; img_d <= 0; save_run <= 0; halt_req <= 0; save_st <= 0; idle_cnt <= 0;
+        sd_wait <= 0; img_ro <= 0; save_fail <= 0;
         stop_d <= 0; savebtn_d <= 0;
         mt_errors <= 0; mt_first <= 32'hFFFF_FFFF;
     end else begin
@@ -494,8 +500,15 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
         end else if (mt_phase == MT_LOAD && clr_run) begin
             // A sector in from the image, then out to the memory.
             case (ss)
-            3'd0: begin sd_lba <= {19'd0, lba}; sd_rd <= 1'b1; ss <= 3'd1; end
+            3'd0: begin sd_lba <= {19'd0, lba}; sd_rd <= 1'b1; sd_wait <= 28'd0; ss <= 3'd1; end
             3'd1: if (sd_ack) begin sd_rd <= 1'b0; ss <= 3'd2; end
+                  else if (sd_wait == 28'd92_000_000) begin
+                      // A second without the card answering: nothing to
+                      // load, so the memory is cleared instead and the
+                      // machine starts clean rather than never.
+                      sd_rd <= 1'b0; img_ok <= 1'b0;
+                      mt_phase <= MT_CLEAR; clr_addr <= DRAM_BASE;
+                  end else sd_wait <= sd_wait + 28'd1;
             3'd2: if (!sd_ack) begin wi <= 7'd0; bi <= 2'd0; ss <= 3'd3; end
             3'd3: ss <= 3'd4;                          // the byte's read is a cycle behind
             3'd4: ss <= 3'd5;
@@ -534,8 +547,12 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
                 load_busy  <= 1'b1;
                 if (wi == 7'd124) ss <= 3'd7;
             end
-            3'd7: begin sd_lba <= {19'd0, lba}; sd_wr <= 1'b1; ss <= 3'd1; end
+            3'd7: begin sd_lba <= {19'd0, lba}; sd_wr <= 1'b1; sd_wait <= 28'd0; ss <= 3'd1; end
             3'd1: if (sd_ack) begin sd_wr <= 1'b0; ss <= 3'd2; end
+                  else if (sd_wait == 28'd92_000_000) begin
+                      // The card is not taking it: give the machine back.
+                      sd_wr <= 1'b0; save_run <= 1'b0; save_fail <= save_fail + 8'd1;
+                  end else sd_wait <= sd_wait + 28'd1;
             3'd2: if (!sd_ack) begin
                 wi <= 7'd0;
                 lba <= lba + 13'd1;
@@ -602,6 +619,8 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
             clr_run  <= 1'b1;
             clr_addr <= DRAM_BASE;
             mt_phase <= MT_WRITE;
+            save_run <= 1'b0; halt_req <= 1'b0; save_st <= 2'd0;
+            sd_rd <= 1'b0; sd_wr <= 1'b0; ss <= 3'd0; lba <= 13'd0; wi <= 7'd0;
             mt_errors <= 32'd0; mt_first <= 32'hFFFF_FFFF; rom_back <= 32'd0;
         end
         // The loader's own writes are whole words, not bursts.
@@ -612,6 +631,7 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
         img_d <= img_mounted;
         if (img_mounted && !img_d) begin
             img_ok <= (img_size == 64'd4194304);
+            img_ro <= img_readonly;
             if (img_size == 64'd4194304 && rom_present && !ioctl_download && !clr_run && !save_run) begin
                 clr_run <= 1'b1; mt_phase <= MT_LOAD; lba <= 13'd0; ss <= 3'd0;
             end
@@ -621,7 +641,7 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
         // core is held, the memory waited for, and then borrowed.
         stop_d <= stopped; savebtn_d <= status[5];
         case (save_st)
-        2'd0: if (img_ok && rom_ok && !clr_run &&
+        2'd0: if (img_ok && !img_ro && rom_ok && !clr_run &&
                   ((stopped && !stop_d) || (status[5] && !savebtn_d))) begin
                   halt_req <= 1'b1; idle_cnt <= 5'd0; save_st <= 2'd1;
               end
@@ -695,7 +715,10 @@ dr840_status #(.CLK_HZ(92_000_000)) status_line (
     .clk(clk_sys), .rst_n(rst_n),
     .v0(obs_resets), .v1(obs_exc), .v2(rom_sum), .v3(obs_pc), .v4(obs_retired),
     .v5(obs_faults), .v6(obs_last_epc), .v7(obs_last_bad),
-    .v8(mt_errors != 32'd0 ? mt_errors : dbg_pen), .v9(rom_back),
+    .v8(mt_errors != 32'd0 ? mt_errors : dbg_pen),
+    // A: the RAM image's state -- mounted, read-only, the walk's phase and
+    // sector state, the card handshake, saves that failed, and the sector.
+    .v9({img_ok, img_ro, clr_run, save_run, halt_req, save_st, mt_phase[2:0], ss, sd_rd, sd_wr, sd_ack, save_fail[2:0], lba}),
     .txd(status_txd)
 );
 assign UART_TXD = status[2] ? guest_txd : status_txd;
