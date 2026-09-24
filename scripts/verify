@@ -84,7 +84,9 @@ def check(which, wait_save):
     say(last["S"] == want, "ROM sum %08X (image %08X)" % (last["S"], want))
     say(not a["rom_bad"], "ROM read back as sent")
     say(last["R"] == 1, "resets %d" % last["R"])
-    say(last["F"] == 1 and last["X"] == 0x13DDA3C0, "faults: only the boot's BREAK (F=%08X X=%08X)" % (last["F"], last["X"]))
+    # Each ROM's boot takes one BREAK, at its own address; a second fault
+    # anywhere puts its code in F's top byte.
+    say(last["F"] == 1, "faults: only the boot's BREAK (F=%08X X=%08X)" % (last["F"], last["X"]))
     running = lines[-1]["N"] > lines[0]["N"]
     say(running, "running: %d instructions in the window" % (lines[-1]["N"] - lines[0]["N"]))
     phase = {3: "cold (cleared)", 4: "warm (loaded from the save)"}.get(a["phase"], str(a["phase"]))
