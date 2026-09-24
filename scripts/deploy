@@ -34,15 +34,18 @@ $SSH "mkdir -p $GAMES; ls $DEST/DataRover840_*.rbf 2>/dev/null | grep -v $NAME |
 
 # Named .rom rather than .image: MiSTer parses the core's extension filter
 # in three-character chunks, so anything longer matches nothing and the file
-# browser comes up empty. One .mgl per ROM, and a blank RAM image for each
-# that has none yet -- an image is the user's machine, never overwritten.
+# browser comes up empty. One .mgl per ROM.
 put() {   # put <image path> <name>
     [ -f "$1" ] || { echo "deploy: no $2 ROM at $1 (skipped)"; return 0; }
     $SCP "$1" "root@$HOST:$GAMES/DataRover-840-$2.rom"
-    $SSH "[ -f $GAMES/DataRover840-$2.sav ] || dd if=/dev/zero of=$GAMES/DataRover840-$2.sav bs=1M count=4 2>/dev/null; \
+    # The RAM image is the framework's: saves/DataRover840/<rom>.sav,
+    # mounted with the ROM and made by the first save. One made the old way
+    # moves there, once.
+    $SSH "mkdir -p /media/fat/saves/DataRover840; \
+          [ -f $GAMES/DataRover840-$2.sav ] && [ ! -f /media/fat/saves/DataRover840/DataRover-840-$2.sav ] && \
+              mv $GAMES/DataRover840-$2.sav /media/fat/saves/DataRover840/DataRover-840-$2.sav; \
           printf '%s\n' '<mistergamedescription>' '<rbf>_Console/DataRover840</rbf>' \
-              '<file delay=\"1\" type=\"s\" index=\"0\" path=\"DataRover840-$2.sav\"/>' \
-              '<file delay=\"2\" type=\"f\" index=\"1\" path=\"DataRover-840-$2.rom\"/>' \
+              '<file delay=\"1\" type=\"f\" index=\"1\" path=\"DataRover-840-$2.rom\"/>' \
               '</mistergamedescription>' > '$DEST/DataRover 840 ($2).mgl'"
 }
 put "$ROMDIR/Data Rover 840/DataRover-840-USA.image"   USA

@@ -290,7 +290,7 @@ wire  [13:0] sd_buff_addr;
 wire   [7:0] sd_buff_dout;
 wire   [7:0] sd_buff_din;
 wire  [63:0] img_size;
-wire         osd_open;
+wire         osd_open = OSD_STATUS;      // the framework's: the menu is open
 reg          osd_d, ram_dirty;
 wire         ram_written;
 wire  [24:0] ioctl_addr;
@@ -311,7 +311,6 @@ hps_io #(.CONF_STR(CONF_STR)) hps_io
     .ioctl_addr     (ioctl_addr),
     .ioctl_dout     (ioctl_dout),
     .ioctl_wait     (ioctl_wait),
-    .OSD_STATUS     (osd_open),
     .sd_lba         ('{sd_lba}),
     .sd_blk_cnt     ('{6'd31}),            // 16 KB a request: 256 of them for the image
     .sd_rd          (sd_rd),
