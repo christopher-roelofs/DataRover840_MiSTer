@@ -199,7 +199,10 @@ int main(int argc, char **argv) {
                 tap_t t = {-1, -1, 0, 2000000};
                 t.x = strtol(a, nullptr, 10);
                 const char *c = strchr(a, ','); if (c) { t.y = strtol(c + 1, nullptr, 10); c = strchr(c + 1, ',');
-                if (c) { t.at = strtoull(c + 1, nullptr, 10); c = strchr(c + 1, ','); if (c) t.len = strtoull(c + 1, nullptr, 10); } }
+                if (c) { t.at = strtoull(c + 1, nullptr, 10); c = strchr(c + 1, ',');
+                         // The length is optional; a comma past the next ';' is the next tap's.
+                         const char *e = strchr(a, ';');
+                         if (c && (!e || c < e)) t.len = strtoull(c + 1, nullptr, 10); } }
                 taps.push_back(t);
                 a = strchr(a, ';'); if (a) a++;
             }
