@@ -232,6 +232,9 @@ localparam CONF_STR = {
     // two seconds with the machine held, which is not what opening a menu
     // should cost.
     "O[7],Autosave on OSD,Off,On;",
+    // A save every so often, if anything has changed since the last; off
+    // by default, since a save holds the machine for two seconds.
+    "O[18:17],Autosave every,Off,5 minutes,15 minutes,30 minutes;",
     "-;",
     "T[0],Reset;",
     "R[0],Reset and close OSD;",
@@ -477,6 +480,11 @@ reg  [7:0]  secb_q;
 reg  [31:0] secw_q;
 reg  [7:0]  chunk;                    // 0..255, of 16 KB
 reg         fresh, fresh_d;
+reg  [26:0] auto_tick;
+reg  [10:0] auto_secs;
+wire        auto_due = (status[18:17] == 2'd1) ? (auto_secs >= 11'd300)
+                     : (status[18:17] == 2'd2) ? (auto_secs >= 11'd900)
+                     : (status[18:17] == 2'd3) ? (auto_secs >= 11'd1800) : 1'b0;
 reg  [3:0]  fresh_cnt;
 // Which image the sector machine is moving: 0 the RAM, 1 the card; where
 // it lives in the SDRAM; and how many chunks it is.
@@ -620,6 +628,7 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
         sd_wait <= 0; img_ro <= 0; save_fail <= 0; osd_d <= 0; ram_dirty <= 0; cimg_d <= 0; reins_d <= 0;
         stop_d <= 0; savebtn_d <= 0;
         fresh <= 0; fresh_d <= 0; fresh_cnt <= 0; fresh_pulse <= 0;
+        auto_tick <= 0; auto_secs <= 0;
         mt_errors <= 0; mt_first <= 32'hFFFF_FFFF;
     end else begin
         dl_d  <= rom_dl;
@@ -828,8 +837,15 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
         // off or on request (and, if the option says, when the OSD opens);
         // the card saved along with it, and always when the OSD opens
         // with it written to, since the OSD is where a card is ejected.
+        // The periodic save: seconds counted, and a save once the chosen
+        // number of minutes have passed with the RAM changed and the
+        // machine running. Any save starts the count again.
+        auto_tick <= (auto_tick == 27'd91_999_999) ? 27'd0 : auto_tick + 27'd1;
+        if (auto_tick == 27'd0 && auto_secs != 11'h7FF) auto_secs <= auto_secs + 11'd1;
+        if (save_run || status[18:17] == 2'd0) auto_secs <= 11'd0;
         if ((stopped && !stop_d) || (status[5] && !savebtn_d) ||
-            (osd_open && !osd_d && ram_dirty && status[7])) begin
+            (osd_open && !osd_d && ram_dirty && status[7]) ||
+            (auto_due && ram_dirty && !stopped && !save_run)) begin
             want_ram_save <= 1'b1;
             if (card_in && card_dirty) want_card_save <= 1'b1;
         end

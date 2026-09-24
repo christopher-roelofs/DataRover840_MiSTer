@@ -49,7 +49,8 @@ Cap turns the machine off, on "Save RAM now", or (off by default) when the
 OSD opens, and read back when the core starts: the ROM finds its own
 world, says "Cleaning up", and carries on where it was. A save or load
 holds the machine for about two seconds, and the panel shows a bar
-filling meanwhile. "Start fresh" resets into cleared RAM instead, leaving
+filling meanwhile. "Autosave every" (off by default) adds a save every 5,
+15 or 30 minutes, taken only if the RAM has changed since the last one. "Start fresh" resets into cleared RAM instead, leaving
 the file to be replaced by the next save. The USA, Japanese
 and Rosemary SDK ROMs are three menu entries, each with its own save. The
 panel can be shown in black and white, as a grey STN or in the green of a
