@@ -64,6 +64,11 @@ module dr840_tx39 #(
     // screen flashing after the machine had sat idle.
     input  wire        on_button,
     output wire        cpu_stop,
+    // The AC adaptor: the PWRINT pin, high while it is plugged in. Magic
+    // Cap reads it from POWERCTRL and takes POSPWRINT when it goes high,
+    // and draws the lightning bolt in its battery gauge -- found by
+    // driving each input the ROM watches in the reference emulator.
+    input  wire        ac_in,
 
     // The PC Cards: which slots hold a memory card, and its size as a
     // power of two (log2 of the bytes: 16 for 64 KiB, 21 for 2 MiB).
@@ -261,6 +266,9 @@ module dr840_tx39 #(
     localparam [11:0] POWERCTRL         = 12'h1C4;
     localparam [31:0] PWRCTRL_ONBUTN    = 32'h8000_0000;
     localparam [31:0] PWRCTRL_PWROK     = 32'h2000_0000;
+    localparam [31:0] PWRCTRL_PWRINT    = 32'h4000_0000;
+    localparam [31:0] INT5_POSPWRINT    = 32'h0800_0000;
+    localparam [31:0] INT5_NEGPWRINT    = 32'h0400_0000;
     localparam [31:0] PWRCTRL_ENSTPTIMER = 32'h0000_0800;
     localparam [31:0] PWRCTRL_PWRCS     = 32'h0000_0002;
     localparam [31:0] PWRCTRL_VCCON     = 32'h0000_0001;
@@ -269,6 +277,7 @@ module dr840_tx39 #(
     reg        pwr_stopped;           // off, until the button
     reg        pwrcs_set;             // PWRCS the button set, until software writes
     reg [1:0]  onbtn_q;               // the button, synchronised
+    reg [1:0]  ac_q;                  // and the AC adaptor
     assign cpu_stop = pwr_stopped;
     localparam [31:0] INT5_STPTIMERINT  = 32'h1000_0000;
 
@@ -544,7 +553,7 @@ module dr840_tx39 #(
             rtc <= 40'd0; rtc_acc <= 32'd0; rtc_alarm <= 40'd0;
             t_ctrl <= 32'd0; t_per <= 32'd0; per_acc <= 40'd0;
             stp_armed <= 1'b0; stp_deadline <= 40'd0; alarm_armed <= 1'b0;
-            pwr_stopped <= 1'b0; pwrcs_set <= 1'b0; onbtn_q <= 2'b00;
+            pwr_stopped <= 1'b0; pwrcs_set <= 1'b0; onbtn_q <= 2'b00; ac_q <= 2'b00;
             served <= 1'b0; irq_r <= 6'd0;
             dbg_tx_bytes <= 32'd0; dbg_io_reads <= 32'd0;
             dbg_tx_stb <= 1'b0; dbg_tx_data <= 8'd0;
@@ -577,6 +586,10 @@ module dr840_tx39 #(
             end
             if (onbtn_q == 2'b10)                 // released
                 icu_set[4] = icu_set[4] | INT5_NEGONBUTNINT;
+            // ---------------------------------------------- the AC adaptor
+            ac_q <= {ac_q[0], ac_in};
+            if (ac_q == 2'b01) icu_set[4] = icu_set[4] | INT5_POSPWRINT;
+            if (ac_q == 2'b10) icu_set[4] = icu_set[4] | INT5_NEGPWRINT;
 
             // ---------------------------------------------- RTC
             if (!t_ctrl[6]) begin
@@ -679,7 +692,7 @@ module dr840_tx39 #(
                 // Input status comes from the bus, not from the command
                 // word; the ROM writes zero here when stopping the block.
                 rf[rf_idx] <= (off == MBUSCTRL)  ? (io_wdata & ~MBUSCTRL_IN_HIGH)
-                            : (off == POWERCTRL) ? (io_wdata & ~PWRCTRL_ONBUTN)
+                            : (off == POWERCTRL) ? (io_wdata & ~(PWRCTRL_ONBUTN | PWRCTRL_PWRINT))
                                                  : io_wdata;
                 if (off == 12'h028) vid_ctrl1 <= io_wdata;
                 if (off == 12'h02C) vid_ctrl2 <= io_wdata;
@@ -874,6 +887,7 @@ module dr840_tx39 #(
                     : (rd_src == RD_IOCTRL) ? ((rf_q & ~IOCTRL_PIN_MASK) | ioctrl_pins)
                     : (rd_src == RD_POWER)  ? (rf_q | PWRCTRL_PWROK
                                                | (onbtn_q[1] ? PWRCTRL_ONBUTN : 32'd0)
+                                               | (ac_q[1]    ? PWRCTRL_PWRINT : 32'd0)
                                                | (pwrcs_set  ? PWRCTRL_PWRCS  : 32'd0))
                                           : rd_q;
 

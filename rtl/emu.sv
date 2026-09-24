@@ -222,6 +222,9 @@ localparam CONF_STR = {
     // for it once the RAM has been written: an autosave and a blink,
     // rather than a dark screen.
     "O[6],After idle power-off,Wake at once,Stay off;",
+    // The AC adaptor, plugged in or not: Magic Cap's battery gauge shows
+    // a lightning bolt while it is.
+    "O[16],Power,AC adaptor,Battery;",
     // As the console cores do it: opening the OSD saves, if anything in
     // the RAM has changed since the last save. Off by default: a save is
     // two seconds with the machine held, which is not what opening a menu
@@ -887,7 +890,7 @@ dr840_machine machine (
     // cannot do it by accident: the button counts only once the ROM has
     // been running for two seconds.
     .clk(clk_sys), .rst_n(rst_n), .boot_monitor(status[2] | (option_key & opt_ok) | opt_force),
-    .pen_down(pen_down), .pen_px(pen_px), .pen_py(pen_py), .on_button(on_button),
+    .pen_down(pen_down), .pen_px(pen_px), .pen_py(pen_py), .on_button(on_button), .ac_in(~status[16]),
     .kbd_attached(~status[4]),
     .card_present({card_in, 1'b0}), .card_log2_0(5'd21), .card_log2_1(card_log2), .key_tog(key_tog), .key_code(key_code), .key_ext(key_ext), .key_down(key_down),
     // Held in reset until there is a ROM to run. The loader owns the

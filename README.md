@@ -35,7 +35,11 @@ with option, and its third button the ON button. Calibration
 goes through, the MiSTer's keyboard is a Magic Bus keyboard, and the boot
 sound plays. After the machine has sat idle Magic Cap turns it off; by
 default the core then presses the ON button for it (there is no battery to
-save), and F4 or the joystick's ON button is that button.
+save), and F4 or the joystick's ON button is that button. The AC
+adaptor is plugged in by default (OSD: Power), which is what a MiSTer is,
+and Magic Cap's battery gauge shows its lightning bolt; it is the TX39's
+PWRINT pin, found by driving each input the ROM watches in the reference
+emulator until the gauge changed.
 
 **And remembers.** The four megabytes of RAM -- everything the user has --
 are a MiSTer save file, `saves/DataRover840/<rom>.sav`, written when Magic
