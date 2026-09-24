@@ -237,7 +237,10 @@ localparam CONF_STR = {
     "R[0],Reset and close OSD;",
     // A joystick is the pen too: the stick moves it, A touches, B touches
     // with the option key held, and the third button is the ON button.
-    "J1,Touch,Touch with option,ON;",
+    // "J," and not "J1,": the 1 makes the framework turn the keyboard
+    // into joystick 0, which is not what a keyboard is for here, and
+    // leaves the pad as another player.
+    "J,Touch,Touch with option,ON;",
     "V,v",`BUILD_DATE
 };
 
@@ -245,7 +248,9 @@ wire [127:0] status;
 wire   [1:0] buttons;
 wire  [24:0] ps2_mouse;
 wire  [10:0] ps2_key;
-wire  [31:0] joystick_0;
+wire  [31:0] joystick_0, joystick_1;
+// Whichever player the framework made the pad: the pen takes both.
+wire  [31:0] pad = joystick_0 | joystick_1;
 
 // The ON button: the joystick's ON button, or F4 on the keyboard (the
 // key the reference uses). Magic Cap turns the machine off after it has
@@ -292,7 +297,7 @@ reg  [8:0] pen_px, pen_py;
 reg        mouse_tog;
 reg [18:0] joy_tick;
 reg [7:0]  joy_held;
-wire       joy_any = |joystick_0[3:0];
+wire       joy_any = |pad[3:0];
 wire [8:0] joy_step = (joy_held == 8'd255) ? 9'd2 : 9'd1;
 always @(posedge clk_sys or negedge rst_n) begin
     if (!rst_n) begin
@@ -310,10 +315,10 @@ always @(posedge clk_sys or negedge rst_n) begin
             if (joy_held != 8'd255) joy_held <= joy_held + 8'd1;
             // right, left, down, up; the mouse's y is upward, so down is
             // a negative step there.
-            if (joystick_0[0])      pen_px <= clamp_x(pen_px, joy_step);
-            else if (joystick_0[1]) pen_px <= clamp_x(pen_px, -joy_step);
-            if (joystick_0[2])      pen_py <= clamp_y(pen_py, -joy_step);
-            else if (joystick_0[3]) pen_py <= clamp_y(pen_py, joy_step);
+            if (pad[0])      pen_px <= clamp_x(pen_px, joy_step);
+            else if (pad[1]) pen_px <= clamp_x(pen_px, -joy_step);
+            if (pad[2])      pen_py <= clamp_y(pen_py, -joy_step);
+            else if (pad[3]) pen_py <= clamp_y(pen_py, joy_step);
         end
     end
 end
@@ -334,8 +339,8 @@ endfunction
 // A left click is a touch; a right click is a touch with the option key
 // held, which is what "hold option and touch" means with a mouse.
 // The joystick's A and B likewise.
-wire pen_down   = ps2_mouse[0] | ps2_mouse[1] | joystick_0[4] | joystick_0[5];
-wire option_key = ps2_mouse[1] | joystick_0[5];
+wire pen_down   = ps2_mouse[0] | ps2_mouse[1] | pad[4] | pad[5];
+wire option_key = ps2_mouse[1] | pad[5];
 wire         ioctl_download, ioctl_wr;
 reg   [31:0] sd_lba;
 reg    [1:0] sd_rd, sd_wr;             // slot 0 the RAM image, slot 1 the card
@@ -362,6 +367,7 @@ hps_io #(.CONF_STR(CONF_STR), .VDNUM(2)) hps_io
     .ps2_mouse      (ps2_mouse),
     .ps2_key        (ps2_key),
     .joystick_0     (joystick_0),
+    .joystick_1     (joystick_1),
     .ioctl_download (ioctl_download),
     .ioctl_index    (ioctl_index),
     .ioctl_wr       (ioctl_wr),
@@ -520,7 +526,7 @@ always @(posedge clk_sys or negedge rst_n) begin
         end
     end
 end
-wire on_button = joystick_0[6] | f4_down | wake;
+wire on_button = pad[6] | f4_down | wake;
 always @(posedge clk_sys) begin
     if (sd_buff_wr) secb[sd_buff_addr[13:0]] <= sd_buff_dout;
     secb_q <= secb[{wi, bi}];
@@ -884,6 +890,15 @@ assign sdram_dq_i = SDRAM_DQ;
 // the RAM is 256 chunks of 16 KB, a card 2^(log2 - 14) of them.
 wire [7:0] xfer_prog = !save_run ? 8'd0 : !cur ? chunk : (chunk << (5'd22 - card_log2));
 
+// The machine's load gate and borrow, a clock late: from the loader's
+// flags into the peripheral block's interrupt lines was a clock with a
+// tenth of a nanosecond short. Both only ever change with the core held
+// or in reset, and a request waits for its acknowledgement anyway.
+reg load_en_q, borrow_q;
+always @(posedge clk_sys) begin
+    load_en_q <= rom_dl_q | (load_busy & ~save_run) | ~rom_ok;
+    borrow_q  <= save_run;
+end
 dr840_machine machine (
     // The option key: IOCTRL pin 3, low while held. The right mouse button
     // is it, as in the reference's window. On the device the same button
@@ -897,10 +912,10 @@ dr840_machine machine (
     .card_present({card_in, 1'b0}), .card_log2_0(5'd21), .card_log2_1(card_log2), .key_tog(key_tog), .key_code(key_code), .key_ext(key_ext), .key_down(key_down),
     // Held in reset until there is a ROM to run. The loader owns the
     // memory while it is arriving, and before that there is nothing to do.
-    .load_en(rom_dl_q | (load_busy & ~save_run) | ~rom_ok),
+    .load_en(load_en_q),
     .pkg_go_tog(pkg_go_tog), .pkg_speed(status[13:12]), .pkg_len(pkg_len), .pkg_waddr(pkg_waddr), .pkg_wdata(pkg_wdata),
     .pkg_wreq(pkg_wreq), .pkg_wack(pkg_wack), .pkg_state(pkg_state), .pkg_sent(pkg_sent),
-    .mem_borrow(save_run), .hold(halt_req), .blank(save_run | halt_req), .progress(xfer_prog), .tint(status[9:8]), .native(native),
+    .mem_borrow(borrow_q), .hold(halt_req), .blank(save_run | halt_req), .progress(xfer_prog), .tint(status[9:8]), .native(native),
     .mem_idle(mem_idle), .stopped(stopped), .ram_written(ram_written), .card_written(card_written),
     .load_addr(load_addr), .load_data(load_data),
     .load_we(load_we), .load_burst(load_burst), .load_rdata(load_rdata),
@@ -927,6 +942,7 @@ dr840_machine machine (
 // talks on it. Magic Cap never does, so then it carries the machine's own
 // status line instead (rtl/dr840_status.sv), which scripts/serial reads.
 wire guest_txd, status_txd;
+
 dr840_status #(.CLK_HZ(92_000_000)) status_line (
     .clk(clk_sys), .rst_n(rst_n),
     .v0(obs_resets), .v1(obs_exc), .v2(rom_sum), .v3(obs_pc), .v4(obs_retired),
@@ -941,6 +957,8 @@ dr840_status #(.CLK_HZ(92_000_000)) status_line (
     // K, L: the package link's state and the package's length, and the
     // package summed as it was loaded.
     .v10({pkg_state, 4'd0, pkg_len}), .v11(pkg_sum),
+    // J: the second joystick in the top half, the first in the bottom.
+    .v12({joystick_1[15:0], joystick_0[15:0]}),
     .txd(status_txd)
 );
 assign UART_TXD = status[2] ? guest_txd : status_txd;
