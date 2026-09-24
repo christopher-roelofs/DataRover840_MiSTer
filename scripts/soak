@@ -21,7 +21,7 @@ while [ $i -le $N ]; do
 stty -F /dev/ttyS1 38400 raw -echo cs8 -parenb -cstopb
 (timeout $SECS cat /dev/ttyS1 > /tmp/soak.cap &)
 sleep 1
-echo load_core /media/fat/_Console/DataRover840.mgl > /dev/MiSTer_cmd
+echo load_core '/media/fat/_Console/DataRover 840 (USA).mgl' > /dev/MiSTer_cmd
 sleep $((SECS + 1))
 cat /tmp/soak.cap" 2>/dev/null | tr -d '\r' | grep '^ R=' > "$OUT.$i" || true
     echo "boot $i: $(wc -l < "$OUT.$i") lines; last: $(tail -1 "$OUT.$i")"

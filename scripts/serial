@@ -18,6 +18,6 @@ sshpass -p "$PASS" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/nu
 stty -F /dev/ttyS1 38400 raw -echo cs8 -parenb -cstopb
 (timeout $SECS cat /dev/ttyS1 > /tmp/serial.cap &)
 sleep 1
-echo load_core /media/fat/_Console/DataRover840.mgl > /dev/MiSTer_cmd
+echo load_core '/media/fat/_Console/DataRover 840 (USA).mgl' > /dev/MiSTer_cmd
 sleep $((SECS + 1))
 cat /tmp/serial.cap"

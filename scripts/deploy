@@ -1,52 +1,57 @@
 #!/bin/sh
 #
-# Put the built core and a ROM on the MiSTer and ask it to run them.
+# Put the built core and the ROMs on the MiSTer and ask it to run one.
 #
-#   scripts/deploy [host]
+#   scripts/deploy [host] [USA|Japan|SDK]
 #
-# The core goes to /media/fat/_Console, which is where the menu looks. The
-# ROM goes beside it so the file browser opens on it.
+# The core goes to /media/fat/_Console, which is where the menu looks. Each
+# ROM is a different machine -- a RAM image belongs to the ROM that made it
+# -- so each gets its own .mgl, which loads the ROM and mounts its image
+# together, and the menu shows three entries for one core.
 set -e
 cd "$(dirname "$0")/.."
 
 HOST=${1:-192.168.86.171}
+WHICH=${2:-USA}
 PASS=${MISTER_PASS:-1}
 RBF=output_files/DataRover840.rbf
-ROM=${ROM:-../magicrecomp/roms/Data Rover 840/DataRover-840-USA.image}
+ROMDIR=${ROMDIR:-../magicrecomp/roms}
 
 [ -f "$RBF" ] || { echo "deploy: no $RBF -- build it first" >&2; exit 1; }
-[ -f "$ROM" ] || { echo "deploy: no ROM at $ROM" >&2; exit 1; }
 
 DEST=/media/fat/_Console
+GAMES=/media/fat/games/DataRover840
 NAME=DataRover840_$(date +%Y%m%d).rbf
+SSH="sshpass -p $PASS ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@$HOST"
+SCP="sshpass -p $PASS scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
 
 echo "deploy: $RBF -> $HOST:$DEST/$NAME"
-sshpass -p "$PASS" scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-    "$RBF" "root@$HOST:$DEST/$NAME"
+$SCP "$RBF" "root@$HOST:$DEST/$NAME"
 # The menu picks the newest of a dated name, so the older ones only take up
 # the card.
-sshpass -p "$PASS" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-    "root@$HOST" "mkdir -p /media/fat/games/DataRover840; \
-                  ls $DEST/DataRover840_*.rbf 2>/dev/null | grep -v $NAME | xargs -r rm -f"
+$SSH "mkdir -p $GAMES; ls $DEST/DataRover840_*.rbf 2>/dev/null | grep -v $NAME | xargs -r rm -f; \
+      [ -f $GAMES/DataRover840.sav ] && [ ! -f $GAMES/DataRover840-USA.sav ] && mv $GAMES/DataRover840.sav $GAMES/DataRover840-USA.sav; true"
+
 # Named .rom rather than .image: MiSTer parses the core's extension filter
 # in three-character chunks, so anything longer matches nothing and the file
-# browser comes up empty.
-sshpass -p "$PASS" scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-    "$ROM" "root@$HOST:/media/fat/games/DataRover840/$(basename "$ROM" .image).rom"
+# browser comes up empty. One .mgl per ROM, and a blank RAM image for each
+# that has none yet -- an image is the user's machine, never overwritten.
+put() {   # put <image path> <name>
+    [ -f "$1" ] || { echo "deploy: no $2 ROM at $1 (skipped)"; return 0; }
+    $SCP "$1" "root@$HOST:$GAMES/DataRover-840-$2.rom"
+    $SSH "[ -f $GAMES/DataRover840-$2.sav ] || dd if=/dev/zero of=$GAMES/DataRover840-$2.sav bs=1M count=4 2>/dev/null; \
+          printf '%s\n' '<mistergamedescription>' '<rbf>_Console/DataRover840</rbf>' \
+              '<file delay=\"1\" type=\"s\" index=\"0\" path=\"DataRover840-$2.sav\"/>' \
+              '<file delay=\"2\" type=\"f\" index=\"1\" path=\"DataRover-840-$2.rom\"/>' \
+              '</mistergamedescription>' > '$DEST/DataRover 840 ($2).mgl'"
+}
+put "$ROMDIR/Data Rover 840/DataRover-840-USA.image"   USA
+put "$ROMDIR/Data Rover 840/DataRover-840-Japan.image" Japan
+put "$ROMDIR/Rosemary SDK/MagicCap-USA.image"          SDK
+$SSH "rm -f $DEST/DataRover840.mgl $GAMES/DataRover-840-USA.ima $GAMES/DataRover-840-USA.image"
 
-# The RAM image, once: it is the user's machine, and is never overwritten.
-sshpass -p "$PASS" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-    "root@$HOST" "[ -f /media/fat/games/DataRover840/DataRover840.sav ] || \
-                  dd if=/dev/zero of=/media/fat/games/DataRover840/DataRover840.sav bs=1M count=4 2>/dev/null"
-
-# The .mgl names the core and the ROM together, so a load_core of it boots
-# straight into the monitor with nothing to pick from the OSD.
-sshpass -p "$PASS" scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-    DataRover840.mgl "root@$HOST:$DEST/DataRover840.mgl"
-
-echo "deploy: loading the core"
-sshpass -p "$PASS" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-    "root@$HOST" "echo load_core $DEST/DataRover840.mgl > /dev/MiSTer_cmd" || \
+echo "deploy: loading the $WHICH machine"
+$SSH "echo load_core '$DEST/DataRover 840 ($WHICH).mgl' > /dev/MiSTer_cmd" || \
     echo "deploy: could not ask MiSTer to load it; pick it from the menu"
 
 echo "deploy: done. scripts/serial shows what the monitor says."
