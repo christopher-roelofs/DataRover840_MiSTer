@@ -479,6 +479,7 @@ reg  [7:0]  secb [0:16383];           // in: what the HPS wrote
 reg  [31:0] secw [0:4095];            // out: what the memory holds
 reg  [7:0]  secb_q;
 reg  [31:0] secw_q;
+reg         rom_req;                  // the request in flight is a ROM word
 reg  [7:0]  chunk;                    // 0..255, of 16 KB
 reg         fresh, fresh_d;
 reg  [26:0] auto_tick;
@@ -618,7 +619,7 @@ end
 
 always @(posedge clk_sys or negedge hard_rst_n) begin
     if (!hard_rst_n) begin
-        load_req <= 0; load_busy <= 0; dl_d <= 0; rst_d <= 0;
+        load_req <= 0; load_busy <= 0; dl_d <= 0; rst_d <= 0; rom_req <= 0;
         rom_words <= 0; rom_present <= 0; clr_run <= 0; clr_addr <= 0; rom_sum <= 0;
         load_we <= 1; load_burst <= 0; mt_phase <= MT_WRITE; mt_beat <= 0; rom_back <= 0;
         sd_lba <= 0; sd_rd <= 0; sd_wr <= 0; chunk <= 0; wi <= 0; bi <= 0; ss <= 0; gather <= 0;
@@ -640,7 +641,10 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
         if (fresh_cnt != 4'd0) fresh_cnt <= fresh_cnt - 4'd1;
         if (load_busy) begin
             if (load_ack) begin
-                if (!clr_run && !save_run) begin
+                if (rom_req) begin
+                    // A ROM word, and only that: the last write of a RAM
+                    // image or card load is acknowledged after its phase
+                    // has ended, and was counted here as one.
                     load_req  <= 0;
                     load_busy <= 0;
                     rom_words <= rom_words + 32'd1;
@@ -697,7 +701,7 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
                 load_we    <= 1'b1;
                 load_burst <= 1'b0;
                 load_req   <= 1'b1;
-                load_busy  <= 1'b1;
+                load_busy  <= 1'b1; rom_req <= 1'b0;
                 wi <= wi + 12'd1;
                 if (wi == 12'd4095) begin
                     chunk <= chunk + 8'd1;
@@ -721,7 +725,7 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
                 load_burst <= 1'b1;
                 mt_beat    <= 2'd0;
                 load_req   <= 1'b1;
-                load_busy  <= 1'b1;
+                load_busy  <= 1'b1; rom_req <= 1'b0;
                 if (wi == 12'd4092) ss <= 3'd7;
             end
             3'd7: begin sd_lba <= {19'd0, chunk, 5'd0}; sd_wr <= cur ? 2'b10 : 2'b01; sd_wait <= 28'd0; ss <= 3'd1; end
@@ -760,7 +764,7 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
                 load_burst <= (mt_phase == MT_READ)  || (mt_phase == MT_ROM);
                 mt_beat    <= 2'd0;
                 load_req   <= 1'b1;
-                load_busy  <= 1'b1;
+                load_busy  <= 1'b1; rom_req <= 1'b0;
                 if (mt_phase == MT_WRITE || mt_phase == MT_CLEAR)
                     clr_addr <= clr_addr + 25'd4;
             end
@@ -774,6 +778,7 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
                 load_addr <= ROM_BASE + {ioctl_addr[24:2], 2'b00};
                 load_req  <= 1'b1;
                 load_busy <= 1'b1;
+                rom_req   <= 1'b1;
             end
             endcase
         end else if (dl_d && !rom_dl && (ioctl_addr[1:0] != 2'd0)) begin
@@ -782,7 +787,7 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
             load_data <= word_buf;
             load_addr <= ROM_BASE + {ioctl_addr[24:2], 2'b00};
             load_req  <= 1'b1;
-            load_busy <= 1'b1;
+            load_busy <= 1'b1; rom_req <= 1'b0;
         end
         // A download that wrote something is a ROM, and then the memory
         // is walked before the core sees any of it.
@@ -1002,7 +1007,10 @@ dr840_status #(.CLK_HZ(92_000_000)) status_line (
     // K, L: the package link's state and the package's length, and the
     // package summed as it was loaded.
     // K's middle bits: the network card fitted, and its daemon there.
-    .v10({pkg_state, status[19], net_link, 2'd0, pkg_len}), .v11(pkg_sum),
+    // With no package, K and L carry the ROM's word count as summed and
+    // its sum as read back from the memory, beside S, the sum as sent.
+    .v10(pkg_len != 25'd0 ? {pkg_state, status[19], net_link, 2'd0, pkg_len} : {3'd0, status[19], net_link, 2'd0, rom_words[24:0]}),
+    .v11(pkg_len != 25'd0 ? pkg_sum : rom_back),
     // J: frames sent and received through the network card, and the
     // first joystick.
     .v12({net_frames_tx[7:0], net_frames_rx[7:0], joystick_0[15:0]}),

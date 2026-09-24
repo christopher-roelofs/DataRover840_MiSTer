@@ -88,6 +88,23 @@ simulation, sixteen times loses data ("Part of the data was lost on the
 way") and unpaced never links. The guest's own work dominates a transfer,
 so 4x is about 1.6 times quicker overall, not four.
 
+**And has a network card.** Slot 1 can hold an NE2000 Ethernet card
+(OSD: Slot 1), the same card the reference emulator browses the web with:
+`rtl/soc/dr840_ne2000.sv` is its model register for register, checked in
+`sim/ne2000` against the reference's own code linked into the testbench
+-- every read, frame and verdict over six seeds, overflows and wraps
+included. Its frames go through a pair of rings in the DDR the FPGA
+shares with the MiSTer's Linux (`rtl/dr840_netbridge.sv`), and
+`scripts/drnet`, a daemon deploy copies to `/media/fat/linux`, joins
+them to the network through a TAP interface. The MiSTer's kernel has no
+NAT, so the DataRover takes an address of its own on the local network,
+and proxy ARP routes it through the MiSTer; the daemon learns the address
+from the DataRover's own ARP. To use it: install WCPack and Ne2000 from
+the OSD's package entry, set Slot 1 to Network card, run
+`/media/fat/linux/drnet &` on the MiSTer, and in Internet Center's setup
+give the Ne2000 LAN connection a free address on your network and the
+router for DNS. Plain HTTP only: the browser has no TLS.
+
 ```
 matched 10000000 of 10000000 instructions, 2146802 bus accesses,
 11791270 cycles (1.18 cycles/insn, 0.848 IPC)
@@ -622,6 +639,8 @@ rtl/soc/dr840_tx39.sv   the TX39 peripheral block: interrupts, UART A, RTC,
 rtl/soc/dr840_sib.sv    the serial interface bus and the UCB1100 codec on it
 rtl/soc/dr840_lcd.sv    the LCD controller, onto a 640x480 raster
 rtl/soc/dr840_pclink.sv the PC side of the package link, on UART A
+rtl/soc/dr840_ne2000.sv the network card: an NE2000
+rtl/dr840_netbridge.sv  its frames through the DDR to scripts/drnet
 rtl/dr840_machine.sv    the machine: clock enable, loader mux, core, board, SoC
 rtl/emu.sv              the MiSTer top: ROM loader, UART pins, debug display
 scripts/deploy          builds a boot on the MiSTer; scripts/serial reads it
@@ -699,5 +718,5 @@ have come from anywhere else:
    the core's rate over the banner path, against 0.75 before them.
 2. An external interrupt test: the ICU is exercised by the ROM's own timer
    path but nothing yet drives an IP line from outside the block.
-3. A network: the ROM speaks PPP to a modem, so a modem PC Card with a
-   16550 is the path, prototyped in the reference emulator first.
+3. The network card's first real session on the hardware: the guest's
+   driver and Internet Center set up, and a page fetched.
