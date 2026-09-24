@@ -226,6 +226,9 @@ localparam CONF_STR = {
     "-;",
     "T[0],Reset;",
     "R[0],Reset and close OSD;",
+    // A joystick is the pen too: the stick moves it, A touches, B touches
+    // with the option key held, and the third button is the ON button.
+    "J1,Touch,Touch with option,ON;",
     "V,v",`BUILD_DATE
 };
 
@@ -235,7 +238,7 @@ wire  [24:0] ps2_mouse;
 wire  [10:0] ps2_key;
 wire  [31:0] joystick_0;
 
-// The ON button: the first joystick button, or F4 on the keyboard (the
+// The ON button: the joystick's ON button, or F4 on the keyboard (the
 // key the reference uses). Magic Cap turns the machine off after it has
 // sat idle, and this is what turns it back on.
 reg f4_down;
@@ -274,17 +277,35 @@ end
 // movements are summed into a place on the panel, held inside it, and the
 // left button is the touch. The panel draws a pointer there, since a
 // touch screen shows nothing of its own.
+// A joystick moves it too: a pixel every 4 ms while a direction is held
+// (250 a second, the panel's width in two), and two after a second.
 reg  [8:0] pen_px, pen_py;
 reg        mouse_tog;
+reg [18:0] joy_tick;
+reg [7:0]  joy_held;
+wire       joy_any = |joystick_0[3:0];
+wire [8:0] joy_step = (joy_held == 8'd255) ? 9'd2 : 9'd1;
 always @(posedge clk_sys or negedge rst_n) begin
     if (!rst_n) begin
-        pen_px <= 9'd240; pen_py <= 9'd160; mouse_tog <= 1'b0;
+        pen_px <= 9'd240; pen_py <= 9'd160; mouse_tog <= 1'b0; joy_tick <= 19'd0; joy_held <= 8'd0;
     end else if (ps2_mouse[24] != mouse_tog) begin
         mouse_tog <= ps2_mouse[24];
         // PS/2: byte 1 flags (bit 4, 5 the signs), byte 2 dx, byte 3 dy,
         // y upward.
         pen_px <= clamp_x(pen_px, {ps2_mouse[4], ps2_mouse[15:8]});
         pen_py <= clamp_y(pen_py, {ps2_mouse[5], ps2_mouse[23:16]});
+    end else begin
+        joy_tick <= (joy_tick == 19'd368_000) ? 19'd0 : joy_tick + 19'd1;
+        if (!joy_any) joy_held <= 8'd0;
+        else if (joy_tick == 19'd0) begin
+            if (joy_held != 8'd255) joy_held <= joy_held + 8'd1;
+            // right, left, down, up; the mouse's y is upward, so down is
+            // a negative step there.
+            if (joystick_0[0])      pen_px <= clamp_x(pen_px, joy_step);
+            else if (joystick_0[1]) pen_px <= clamp_x(pen_px, -joy_step);
+            if (joystick_0[2])      pen_py <= clamp_y(pen_py, -joy_step);
+            else if (joystick_0[3]) pen_py <= clamp_y(pen_py, joy_step);
+        end
     end
 end
 function [8:0] clamp_x(input [8:0] p, input [8:0] d);
@@ -303,7 +324,9 @@ function [8:0] clamp_y(input [8:0] p, input [8:0] d);
 endfunction
 // A left click is a touch; a right click is a touch with the option key
 // held, which is what "hold option and touch" means with a mouse.
-wire pen_down = ps2_mouse[0] | ps2_mouse[1];
+// The joystick's A and B likewise.
+wire pen_down   = ps2_mouse[0] | ps2_mouse[1] | joystick_0[4] | joystick_0[5];
+wire option_key = ps2_mouse[1] | joystick_0[5];
 wire         ioctl_download, ioctl_wr;
 reg   [31:0] sd_lba;
 reg    [1:0] sd_rd, sd_wr;             // slot 0 the RAM image, slot 1 the card
@@ -483,7 +506,7 @@ always @(posedge clk_sys or negedge rst_n) begin
         end
     end
 end
-wire on_button = joystick_0[4] | f4_down | wake;
+wire on_button = joystick_0[6] | f4_down | wake;
 always @(posedge clk_sys) begin
     if (sd_buff_wr) secb[sd_buff_addr[13:0]] <= sd_buff_dout;
     secb_q <= secb[{wi, bi}];
@@ -839,7 +862,7 @@ dr840_machine machine (
     // Boot option alone, so a mouse resting on its button across a reset
     // cannot do it by accident: the button counts only once the ROM has
     // been running for two seconds.
-    .clk(clk_sys), .rst_n(rst_n), .boot_monitor(status[2] | (ps2_mouse[1] & opt_ok) | opt_force),
+    .clk(clk_sys), .rst_n(rst_n), .boot_monitor(status[2] | (option_key & opt_ok) | opt_force),
     .pen_down(pen_down), .pen_px(pen_px), .pen_py(pen_py), .on_button(on_button),
     .kbd_attached(~status[4]),
     .card_present({card_in, 1'b0}), .card_log2_0(5'd21), .card_log2_1(card_log2), .key_tog(key_tog), .key_code(key_code), .key_ext(key_ext), .key_down(key_down),

@@ -29,11 +29,13 @@ step *through* the interrupts, in both directions; see **How it is
 validated**.
 
 A mouse is the pen: it moves a crosshair over the panel, its left button
-is a touch and its right a touch with the option key held. Calibration
+is a touch and its right a touch with the option key held; a joystick is
+the pen as well, its stick moving the crosshair, A a touch and B a touch
+with option, and its third button the ON button. Calibration
 goes through, the MiSTer's keyboard is a Magic Bus keyboard, and the boot
 sound plays. After the machine has sat idle Magic Cap turns it off; by
 default the core then presses the ON button for it (there is no battery to
-save), and F4 or the first joystick button is that button.
+save), and F4 or the joystick's ON button is that button.
 
 **And remembers.** The four megabytes of RAM -- everything the user has --
 are a MiSTer save file, `saves/DataRover840/<rom>.sav`, written when Magic
@@ -68,7 +70,10 @@ simulation from a warm RAM image through the nine taps to the computer:
 the link came up at 535M instructions, the package was taken at 794M,
 and the Storeroom's shelf then holds "DvorakKeyboard 21K" -- the same
 screen the reference emulator ends on. "Offer package again" holds the
-same package out for another RAM image.
+same package out for another RAM image. The device runs the link at 19200
+baud and a real PC could not change that; this link is not a wire, and by
+default hands bytes over as fast as Magic Cap reads them, with the slower
+paces as OSD choices.
 
 ```
 matched 10000000 of 10000000 instructions, 2146802 bus accesses,
@@ -380,8 +385,12 @@ that looks exactly like a CPU bug.
 
 ### What you see
 
-The panel: 480x320 at 2 bits per pixel, centred on a 640x480 raster with a
-dark bezel round it (`rtl/soc/dr840_lcd.sv`). The LCD controller is a
+The panel: 480x320 at 2 bits per pixel, as a raster of its own size at
+59.96 Hz and a 3:2 aspect for the framework's scaler, whose video settings
+choose the size on the screen -- integer 3x or 4x with the LCD grid from
+`shadow_masks/`, or filled (`rtl/soc/dr840_lcd.sv`). The OSD's Screen
+option has the older 640x480 raster with the panel in a bezel instead,
+which is also what the debug display draws in. The LCD controller is a
 scanout of the framebuffer VIDEOCTRL3 names, a line at a time into a line
 buffer, fetched through the board's arbiter as its third and last
 requester. A set bit is ink; INVVID flips it. Until the ROM enables the
@@ -673,10 +682,10 @@ have come from anywhere else:
 
 ## Next
 
-1. The panel at its own 480x320 with a 3:2 aspect, and the framework's
-   scaling in place of the bezel.
-2. Sound in: the codec's microphone path, and the telecom channel.
-3. Recover the IPC lost to the handshakes on the core's edges: 0.72 at
+1. Sound in: the codec's microphone path, and the telecom channel.
+2. Recover the IPC lost to the handshakes on the core's edges: 0.72 at
    the core's rate over the banner path, against 0.75 before them.
-4. An external interrupt test: the ICU is exercised by the ROM's own timer
+3. An external interrupt test: the ICU is exercised by the ROM's own timer
    path but nothing yet drives an IP line from outside the block.
+4. A network: the ROM speaks PPP to a modem, so a modem PC Card with a
+   16550 is the path, prototyped in the reference emulator first.
