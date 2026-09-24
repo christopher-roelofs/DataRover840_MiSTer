@@ -1,0 +1,15 @@
+#!/bin/sh
+#
+# A blank memory card: a zero-filled image of its common memory, the same
+# file the reference emulator's --sram2 takes, so a card made here can be
+# carried between the two. Mount it from the OSD (Mount card, slot 2); a
+# blank card must go in with the option key held for Magic Cap to offer to
+# set it up, which the OSD's "Re-insert card with option" does.
+#
+#   scripts/mkcard [path] [MiB]      sizes 1, 2 (verified) or 4... a power of two
+set -e
+OUT=${1:-card.img}
+MIB=${2:-2}
+case "$MIB" in 1|2) ;; *) echo "mkcard: size must be 1 or 2 MiB (2 is what Magic Cap has been seen to format)" >&2; exit 1;; esac
+dd if=/dev/zero of="$OUT" bs=1M count="$MIB" status=none
+echo "mkcard: $OUT ($MIB MiB, blank; insert with the option key held to set it up)"

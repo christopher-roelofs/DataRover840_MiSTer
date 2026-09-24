@@ -45,6 +45,16 @@ panel can be shown in black and white, as a grey STN or in the green of a
 PIC-2000's lit panel, and `shadow_masks/` holds the LCD grid for the
 framework's video settings at the panel's 3x and 4x integer scales.
 
+**And takes a card.** A memory card in slot 2 is a raw image of its common
+memory -- the reference emulator's own format, so a card is carried
+between the two as a file -- mounted from the OSD, written back with the
+RAM and whenever the OSD opens with it written to. The controller sees it
+arrive, the ROM reads its CIS and probes its size exactly as the reference
+does (the ROM's whole probing of a formatted card matches the reference's
+access for access), and Magic Cap formats a blank one itself when it goes
+in with the option key held, which the OSD's re-insert entry does.
+`scripts/mkcard` makes a blank one.
+
 ```
 matched 10000000 of 10000000 instructions, 2146802 bus accesses,
 11791270 cycles (1.18 cycles/insn, 0.848 IPC)
@@ -646,14 +656,12 @@ have come from anywhere else:
 
 ## Next
 
-1. Memory cards: raw common-memory images, the same files the reference
-   uses, mounted from the OSD and formatted by Magic Cap.
-2. Installing packages from the OSD: the PC side of PCLink in the core,
+1. Installing packages from the OSD: the PC side of PCLink in the core,
    fed by the file loader.
-3. The panel at its own 480x320 with a 3:2 aspect, and the framework's
+2. The panel at its own 480x320 with a 3:2 aspect, and the framework's
    scaling in place of the bezel.
-4. Sound in: the codec's microphone path, and the telecom channel.
-5. Recover the IPC lost to the handshakes on the core's edges: 0.72 at
+3. Sound in: the codec's microphone path, and the telecom channel.
+4. Recover the IPC lost to the handshakes on the core's edges: 0.72 at
    the core's rate over the banner path, against 0.75 before them.
-6. An external interrupt test: the ICU is exercised by the ROM's own timer
+5. An external interrupt test: the ICU is exercised by the ROM's own timer
    path but nothing yet drives an IP line from outside the block.
