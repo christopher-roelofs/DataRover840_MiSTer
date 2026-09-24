@@ -1,0 +1,16 @@
+####
+# Name: DataRover LCD (4x)
+# Author: mister_datarover840
+# Type: LCD
+# Genre: Grid
+#
+# The same cell at 4x, for 1440p.
+####
+
+Resolution=0
+v2
+4,4
+888,888,888,666
+888,888,888,666
+888,888,888,666
+666,666,666,666

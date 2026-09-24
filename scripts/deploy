@@ -50,6 +50,10 @@ put "$ROMDIR/Data Rover 840/DataRover-840-Japan.image" Japan
 put "$ROMDIR/Rosemary SDK/MagicCap-USA.image"          SDK
 $SSH "rm -f $DEST/DataRover840.mgl $GAMES/DataRover-840-USA.ima $GAMES/DataRover-840-USA.image"
 
+# The LCD grid, as a shadow mask for the framework's video settings.
+$SSH "mkdir -p /media/fat/Shadow_Masks"
+$SCP shadow_masks/*.txt "root@$HOST:/media/fat/Shadow_Masks/"
+
 echo "deploy: loading the $WHICH machine"
 $SSH "echo load_core '$DEST/DataRover 840 ($WHICH).mgl' > /dev/MiSTer_cmd" || \
     echo "deploy: could not ask MiSTer to load it; pick it from the menu"

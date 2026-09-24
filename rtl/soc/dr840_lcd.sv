@@ -41,6 +41,10 @@ module dr840_lcd (
     // and the lines cannot be fetched, rather than whatever was in the
     // buffers -- a second of stale lines looked like something broken.
     input  wire        blank,
+    // The panel's colour: 0 its own black and white, 1 a grey STN, 2 the
+    // mint-green backlight -- the reference's tints, each a light and a
+    // dark the four levels sit between.
+    input  wire [1:0]  tint,
 
     // The memory port, physical addresses, bursts of four words.
     output reg  [31:0] vmem_addr,
@@ -157,6 +161,20 @@ module dr840_lcd (
     wire [1:0]  level = invvid ? ~ink : ink;
     wire [7:0]  gray  = 8'd255 - {level, level, level, level};   // 0,85,170,255
 
+    // The four colours of each tint, between the reference's dark and
+    // light ends (dark + (light - dark) * k / 3): grey 20221E..C8CCC0,
+    // green 103A28..6EDC9A. Darkest for the fullest ink.
+    function [23:0] tinted(input [1:0] t, input [1:0] lv);   // lv 0 = darkest ink
+        case ({t, lv})
+        4'b0100: tinted = 24'h20221E; 4'b0101: tinted = 24'h585B54;
+        4'b0110: tinted = 24'h90938A; 4'b0111: tinted = 24'hC8CCC0;
+        4'b1000: tinted = 24'h103A28; 4'b1001: tinted = 24'h2F704E;
+        4'b1010: tinted = 24'h4FA674; 4'b1011: tinted = 24'h6EDC9A;
+        default: tinted = {gray, gray, gray};
+        endcase
+    endfunction
+    wire [23:0] rgb_c = tinted(tint, ~level);
+
     // A crosshair, seven pixels each way, inverted over the picture; a
     // pressed one fills its centre.
     wire [9:0] cdx = (px > {1'b0, cur_x}) ? px - {1'b0, cur_x} : {1'b0, cur_x} - px;
@@ -171,7 +189,7 @@ module dr840_lcd (
         de <= active;
         if (!active)          {r, g, b} <= 24'd0;
         else if (!envid || blank) {r, g, b} <= 24'h50_50_50;      // panel off
-        else if (in_panel)    {r, g, b} <= {gray_c, gray_c, gray_c};
+        else if (in_panel)    {r, g, b} <= on_cursor ? ~rgb_c : rgb_c;
         else                  {r, g, b} <= 24'h30_30_30;          // the bezel
     end
 

@@ -171,12 +171,16 @@ localparam CONF_STR = {
     // longer one silently becomes two filters that match nothing. The
     // device's own images are named .image; .ima is what three characters
     // of that actually is, and .rom is what anyone would reach for.
-    "F1,ROMIMABIN,Load DataRover ROM;",
+    // FS: a file with a save, which the MiSTer keeps as
+    // saves/DataRover840/<name>.sav and mounts on the image slot itself,
+    // so a ROM picked from the browser brings its own RAM.
+    "FS1,ROMIMABIN,Load DataRover ROM;",
     "-;",
     // The option button, held at reset, takes the ROM to the IDT monitor
     // instead of Magic Cap. Takes effect on the next reset.
     "O[2],Boot,Magic Cap,IDT monitor;",
     "O[3],Display,LCD,Debug;",
+    "O[9:8],Panel,Off,Grey,Green;",
     // A Magic Bus AT keyboard, driven by the PS/2 keyboard; its discovery
     // by the ROM matches the reference's access for access.
     "O[4],Keyboard,On,Off;",
@@ -192,6 +196,9 @@ localparam CONF_STR = {
     // for it once the RAM has been written: an autosave and a blink,
     // rather than a dark screen.
     "O[6],After idle power-off,Wake at once,Stay off;",
+    // As the console cores do it: opening the OSD saves, if anything in
+    // the RAM has changed since the last save.
+    "O[7],Autosave on OSD,On,Off;",
     "-;",
     "T[0],Reset;",
     "R[0],Reset and close OSD;",
@@ -281,6 +288,9 @@ wire  [13:0] sd_buff_addr;
 wire   [7:0] sd_buff_dout;
 wire   [7:0] sd_buff_din;
 wire  [63:0] img_size;
+wire         osd_open;
+reg          osd_d, ram_dirty;
+wire         ram_written;
 wire  [24:0] ioctl_addr;
 wire   [7:0] ioctl_dout;
 wire         ioctl_wait;
@@ -299,6 +309,7 @@ hps_io #(.CONF_STR(CONF_STR)) hps_io
     .ioctl_addr     (ioctl_addr),
     .ioctl_dout     (ioctl_dout),
     .ioctl_wait     (ioctl_wait),
+    .OSD_STATUS     (osd_open),
     .sd_lba         ('{sd_lba}),
     .sd_blk_cnt     ('{6'd31}),            // 16 KB a request: 256 of them for the image
     .sd_rd          (sd_rd),
@@ -403,6 +414,7 @@ reg  [1:0]  bi;                       // byte within the word
 reg  [2:0]  ss;                       // the sector's own state
 reg  [31:0] gather;
 reg         img_ok;                   // a four-megabyte image is mounted
+reg         img_new;                  // an empty one: nothing to load, room to save
 reg         img_d;
 reg         save_run;                 // the save walk, without a reset
 reg         halt_req;                 // hold the core for it
@@ -463,8 +475,8 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
         rom_words <= 0; rom_present <= 0; clr_run <= 0; clr_addr <= 0; rom_sum <= 0;
         load_we <= 1; load_burst <= 0; mt_phase <= MT_WRITE; mt_beat <= 0; rom_back <= 0;
         sd_lba <= 0; sd_rd <= 0; sd_wr <= 0; chunk <= 0; wi <= 0; bi <= 0; ss <= 0; gather <= 0;
-        img_ok <= 0; img_d <= 0; save_run <= 0; halt_req <= 0; save_st <= 0; idle_cnt <= 0;
-        sd_wait <= 0; img_ro <= 0; save_fail <= 0;
+        img_ok <= 0; img_new <= 0; img_d <= 0; save_run <= 0; halt_req <= 0; save_st <= 0; idle_cnt <= 0;
+        sd_wait <= 0; img_ro <= 0; save_fail <= 0; osd_d <= 0; ram_dirty <= 0;
         stop_d <= 0; savebtn_d <= 0;
         mt_errors <= 0; mt_first <= 32'hFFFF_FFFF;
     end else begin
@@ -634,8 +646,9 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
         // running, loaded now -- which is a power cycle into it.
         img_d <= img_mounted;
         if (img_mounted && !img_d) begin
-            img_ok <= (img_size == 64'd4194304);
-            img_ro <= img_readonly;
+            img_ok  <= (img_size == 64'd4194304);
+            img_new <= (img_size == 64'd0);
+            img_ro  <= img_readonly;
             if (img_size == 64'd4194304 && rom_present && !ioctl_download && !clr_run && !save_run) begin
                 clr_run <= 1'b1; mt_phase <= MT_LOAD; chunk <= 8'd0; ss <= 3'd0;
             end
@@ -643,11 +656,13 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
 
         // A save: when the ROM turns the machine off, or on request. The
         // core is held, the memory waited for, and then borrowed.
-        stop_d <= stopped; savebtn_d <= status[5];
+        stop_d <= stopped; savebtn_d <= status[5]; osd_d <= osd_open;
+        if (ram_written) ram_dirty <= 1'b1;
         case (save_st)
-        2'd0: if (img_ok && !img_ro && rom_ok && !clr_run &&
-                  ((stopped && !stop_d) || (status[5] && !savebtn_d))) begin
-                  halt_req <= 1'b1; idle_cnt <= 5'd0; save_st <= 2'd1;
+        2'd0: if ((img_ok || img_new) && !img_ro && rom_ok && !clr_run &&
+                  ((stopped && !stop_d) || (status[5] && !savebtn_d) ||
+                   (osd_open && !osd_d && ram_dirty && !status[7]))) begin
+                  halt_req <= 1'b1; idle_cnt <= 5'd0; save_st <= 2'd1; ram_dirty <= 1'b0;
               end
         2'd1: begin
                   idle_cnt <= mem_idle ? idle_cnt + 5'd1 : 5'd0;
@@ -689,8 +704,8 @@ dr840_machine machine (
     // Held in reset until there is a ROM to run. The loader owns the
     // memory while it is arriving, and before that there is nothing to do.
     .load_en(ioctl_download | (load_busy & ~save_run) | ~rom_ok),
-    .mem_borrow(save_run), .hold(halt_req), .blank(save_run | halt_req),
-    .mem_idle(mem_idle), .stopped(stopped),
+    .mem_borrow(save_run), .hold(halt_req), .blank(save_run | halt_req), .tint(status[9:8]),
+    .mem_idle(mem_idle), .stopped(stopped), .ram_written(ram_written),
     .load_addr(load_addr), .load_data(load_data),
     .load_we(load_we), .load_burst(load_burst), .load_rdata(load_rdata),
     .load_req(load_req), .load_ack(load_ack),
@@ -723,7 +738,10 @@ dr840_status #(.CLK_HZ(92_000_000)) status_line (
     .v8(mt_errors != 32'd0 ? mt_errors : dbg_pen),
     // A: the RAM image's state -- mounted, read-only, the walk's phase and
     // sector state, the card handshake, saves that failed, and the sector.
-    .v9({img_ok, img_ro, clr_run, save_run, halt_req, save_st, mt_phase[2:0], ss, sd_rd, sd_wr, sd_ack, save_fail[2:0], 5'd0, chunk}),
+    .v9({img_ok, img_ro, clr_run, save_run, halt_req, save_st, mt_phase[2:0], ss, sd_rd, sd_wr, sd_ack, save_fail[2:0],
+         // and whether the ROM read back as it was sent: a 6 MB image once
+         // arrived with one bit wrong, and ran to a white screen.
+         (rom_back != rom_sum), 4'd0, chunk}),
     .txd(status_txd)
 );
 assign UART_TXD = status[2] ? guest_txd : status_txd;

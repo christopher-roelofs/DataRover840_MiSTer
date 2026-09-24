@@ -39,7 +39,7 @@ module tb_lcd (
     dr840_lcd lcd (
         .clk(clk), .cen(cen), .rst_n(rst_n),
         .ctrl1(ctrl1), .ctrl2(ctrl2), .ctrl3(ctrl3),
-        .cur_x(9'd511), .cur_y(9'd511), .cur_down(1'b0), .blank(1'b0),      // the pointer parked off the panel
+        .cur_x(9'd511), .cur_y(9'd511), .cur_down(1'b0), .blank(1'b0), .tint(2'd0),      // the pointer parked off the panel
         .vmem_addr(vmem_addr), .vmem_req(vmem_req), .vmem_burst(),
         .vmem_ack(vmem_ack), .vmem_rdata(vmem_rdata),
         .ce_pix(ce_pix), .hs(hs), .vs(vs), .de(de), .r(r), .g(g), .b(b)

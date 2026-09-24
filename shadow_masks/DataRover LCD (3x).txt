@@ -1,0 +1,17 @@
+####
+# Name: DataRover LCD (3x)
+# Author: mister_datarover840
+# Type: LCD
+# Genre: Grid
+#
+# One panel pixel as a 3x3 cell with a darker edge, the way the reference
+# emulator draws its LCD filter (edges at 0.78; a 6 here is 0.75). For the
+# 480x320 panel at its 3x integer scale into 1080p.
+####
+
+Resolution=0
+v2
+3,3
+888,888,666
+888,888,666
+666,666,666

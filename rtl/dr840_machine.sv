@@ -26,8 +26,10 @@ module dr840_machine (
     input  wire        mem_borrow,
     input  wire        hold,         // and held beforehand, while the memory drains
     input  wire        blank,        // the panel shown off meanwhile
+    input  wire [1:0]  tint,         // the panel's colour: off, grey, green
     output wire        mem_idle,     // nothing of the board's in the memory
     output wire        stopped,      // the core, held by the ROM's power-off
+    output wire        ram_written,  // a word of the RAM changed just now
     input  wire [24:0] load_addr,
     input  wire [31:0] load_data,
     input  wire        load_req,
@@ -234,7 +236,7 @@ module dr840_machine (
     dr840_lcd lcd (
         .clk(clk), .cen(cen), .rst_n(core_rst_n),
         .ctrl1(vid_ctrl1), .ctrl2(vid_ctrl2), .ctrl3(vid_ctrl3),
-        .cur_x(pen_px), .cur_y(pen_py), .cur_down(pen_down), .blank(blank),
+        .cur_x(pen_px), .cur_y(pen_py), .cur_down(pen_down), .blank(blank), .tint(tint),
         .vmem_addr(va), .vmem_req(vreq), .vmem_burst(), .vmem_ack(vack), .vmem_rdata(vrd),
         .ce_pix(lcd_ce_pix), .hs(lcd_hs), .vs(lcd_vs), .de(lcd_de),
         .r(lcd_r), .g(lcd_g), .b(lcd_b)
@@ -297,6 +299,7 @@ module dr840_machine (
     assign load_ack  = lend ? ram_ack : 1'b0;
     assign mem_idle  = !ram_busy && !bram_req;
     assign stopped   = cpu_stop;
+    assign ram_written = !lend && bram_req && bram_we && ram_ack;
     assign load_rdata = ram_rdata;
 
     wire [26:1] ch1_addr, ch2_addr;
