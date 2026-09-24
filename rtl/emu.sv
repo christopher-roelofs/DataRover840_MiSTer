@@ -223,7 +223,9 @@ localparam CONF_STR = {
     // rather than a dark screen.
     "O[6],After idle power-off,Wake at once,Stay off;",
     // The AC adaptor, plugged in or not: Magic Cap's battery gauge shows
-    // a lightning bolt while it is.
+    // a lightning bolt while it is, and it never turns itself off when
+    // idle -- which is how to have a machine that does not sleep. On
+    // Battery it sleeps, and the option above says what happens then.
     "O[16],Power,AC adaptor,Battery;",
     // As the console cores do it: opening the OSD saves, if anything in
     // the RAM has changed since the last save. Off by default: a save is

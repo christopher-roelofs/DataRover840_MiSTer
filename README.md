@@ -39,7 +39,9 @@ save), and F4 or the joystick's ON button is that button. The AC
 adaptor is plugged in by default (OSD: Power), which is what a MiSTer is,
 and Magic Cap's battery gauge shows its lightning bolt; it is the TX39's
 PWRINT pin, found by driving each input the ROM watches in the reference
-emulator until the gauge changed.
+emulator until the gauge changed. On the adaptor Magic Cap never turns
+itself off when idle, as the real machine on its charger does not; on
+Battery it does, and "After idle power-off" says whether it wakes again.
 
 **And remembers.** The four megabytes of RAM -- everything the user has --
 are a MiSTer save file, `saves/DataRover840/<rom>.sav`, written when Magic
