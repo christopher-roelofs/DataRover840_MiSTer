@@ -28,11 +28,22 @@ count to the instruction. Finding it took running the two machines in
 step *through* the interrupts, in both directions; see **How it is
 validated**.
 
-A mouse is the pen: it moves a crosshair over the panel, and its button is
-the touch. Calibration -- top-left, bottom-right, centre -- goes through.
-After the machine has sat idle Magic Cap turns it off; the first joystick
-button or F4 is the ON button, and it comes back where it left off. No
-keyboard yet.
+A mouse is the pen: it moves a crosshair over the panel, its left button
+is a touch and its right a touch with the option key held. Calibration
+goes through, the MiSTer's keyboard is a Magic Bus keyboard, and the boot
+sound plays. After the machine has sat idle Magic Cap turns it off; by
+default the core then presses the ON button for it (there is no battery to
+save), and F4 or the first joystick button is that button.
+
+**And remembers.** The four megabytes of RAM -- everything the user has --
+are a MiSTer save file, `saves/DataRover840/<rom>.sav`, written when Magic
+Cap turns the machine off, on "Save RAM now", or (off by default) when the
+OSD opens, and read back when the core starts: the ROM finds its own
+world, says "Cleaning up", and carries on where it was. The USA, Japanese
+and Rosemary SDK ROMs are three menu entries, each with its own save. The
+panel can be shown in black and white, as a grey STN or in the green of a
+PIC-2000's lit panel, and `shadow_masks/` holds the LCD grid for the
+framework's video settings at the panel's 3x and 4x integer scales.
 
 ```
 matched 10000000 of 10000000 instructions, 2146802 bus accesses,
@@ -635,11 +646,14 @@ have come from anywhere else:
 
 ## Next
 
-1. The Magic Bus keyboard, on MBUS.
-2. Sound: the ring is consumed at the right rate with the half and wrap
-   interrupts, but the samples go nowhere. The MiSTer's audio out is
-   waiting for them.
-3. Recover the IPC lost to the handshakes on the core's edges: 0.72 at
+1. Memory cards: raw common-memory images, the same files the reference
+   uses, mounted from the OSD and formatted by Magic Cap.
+2. Installing packages from the OSD: the PC side of PCLink in the core,
+   fed by the file loader.
+3. The panel at its own 480x320 with a 3:2 aspect, and the framework's
+   scaling in place of the bezel.
+4. Sound in: the codec's microphone path, and the telecom channel.
+5. Recover the IPC lost to the handshakes on the core's edges: 0.72 at
    the core's rate over the banner path, against 0.75 before them.
-4. An external interrupt test: the ICU is exercised by the ROM's own timer
+6. An external interrupt test: the ICU is exercised by the ROM's own timer
    path but nothing yet drives an IP line from outside the block.
