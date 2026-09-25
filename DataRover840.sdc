@@ -165,8 +165,8 @@ set_multicycle_path -hold  -end 1 -to [get_registers {*dr840_machine:machine|ram
 # peripheral block on the core's enabled edges: its registers take their
 # inputs only there, and the peripheral block samples its read data only at
 # an access's start, which is never the clock after the previous one's.
-set_multicycle_path -setup -end 2 -from [get_registers {*r3900_cached:cpu|* *dr840_tx39:soc|* *dr840_mem:board|*}] -to [get_registers {*dr840_ne2000:nic|*}]
-set_multicycle_path -hold  -end 1 -from [get_registers {*r3900_cached:cpu|* *dr840_tx39:soc|* *dr840_mem:board|*}] -to [get_registers {*dr840_ne2000:nic|*}]
+set_multicycle_path -setup -end 2 -from [get_registers {*r3900_cached:cpu|* *dr840_tx39:soc|* *dr840_mem:board|* *dr840_lcd:lcd|* *dr840_snd:snd|* *dr840_pclink:pclink|*}] -to [get_registers {*dr840_ne2000:nic|*}]
+set_multicycle_path -hold  -end 1 -from [get_registers {*r3900_cached:cpu|* *dr840_tx39:soc|* *dr840_mem:board|* *dr840_lcd:lcd|* *dr840_snd:snd|* *dr840_pclink:pclink|*}] -to [get_registers {*dr840_ne2000:nic|*}]
 set_multicycle_path -setup -end 2 -from [get_registers {*dr840_ne2000:nic|*}] -to [get_registers {*r3900_cached:cpu|* *dr840_tx39:soc|* *dr840_mem:board|*}]
 set_multicycle_path -hold  -end 1 -from [get_registers {*dr840_ne2000:nic|*}] -to [get_registers {*r3900_cached:cpu|* *dr840_tx39:soc|* *dr840_mem:board|*}]
 # And the OSD's network-card setting, registered on those edges and static.
