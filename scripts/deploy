@@ -20,10 +20,14 @@ ROMDIR=${ROMDIR:-../magicrecomp/roms}
 [ -f "$RBF" ] || { echo "deploy: no $RBF -- build it first" >&2; exit 1; }
 
 DEST=/media/fat/_Console
-GAMES=/media/fat/games/DataRover840
 NAME=DataRover840_$(date +%Y%m%d).rbf
 SSH="sshpass -p $PASS ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@$HOST"
 SCP="sshpass -p $PASS scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+# The games folder where Main will look for it: a USB drive's
+# games/DataRover840 comes before the SD card's, as in Main's own search.
+GAMES=$($SSH 'for n in 0 1 2 3 4 5; do d=/media/usb$n/games/DataRover840; \
+              [ -d "$d" ] && { echo "$d"; exit; }; done; echo /media/fat/games/DataRover840')
+echo "deploy: games folder $GAMES"
 
 echo "deploy: $RBF -> $HOST:$DEST/$NAME"
 $SCP "$RBF" "root@$HOST:$DEST/$NAME"
