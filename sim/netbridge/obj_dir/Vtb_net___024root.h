@@ -96,6 +96,7 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_net___024root final : public VerilatedMod
         CData/*1:0*/ tb_net__DOT__br__DOT__bw;
         CData/*2:0*/ tb_net__DOT__br__DOT__lanes;
         CData/*0:0*/ tb_net__DOT__br__DOT__pulse_wait;
+        CData/*0:0*/ tb_net__DOT__br__DOT__magic_ok;
         CData/*7:0*/ __Vfunc_tb_net__DOT__nic__DOT__prom__1__Vfuncout;
         CData/*4:0*/ __Vfunc_tb_net__DOT__nic__DOT__prom__1__a;
         CData/*7:0*/ __Vfunc_tb_net__DOT__nic__DOT__prom__3__Vfuncout;
@@ -145,9 +146,9 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_net___024root final : public VerilatedMod
         SData/*15:0*/ tb_net__DOT__nic__DOT__rsar_n;
         SData/*12:0*/ tb_net__DOT__nic__DOT__wa_e_i;
         SData/*12:0*/ tb_net__DOT__nic__DOT__wa_o_i;
-        SData/*13:0*/ tb_net__DOT__nic__DOT__wb_a;
     };
     struct {
+        SData/*13:0*/ tb_net__DOT__nic__DOT__wb_a;
         SData/*13:0*/ tb_net__DOT__nic__DOT__pb_a;
         SData/*12:0*/ tb_net__DOT__nic__DOT__pa_e;
         SData/*12:0*/ tb_net__DOT__nic__DOT__pa_o;
@@ -182,6 +183,7 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_net___024root final : public VerilatedMod
         IData/*31:0*/ tb_net__DOT__br__DOT__rx_head;
         IData/*31:0*/ tb_net__DOT__br__DOT__rx_tail;
         IData/*19:0*/ tb_net__DOT__br__DOT__poll_cnt;
+        IData/*31:0*/ tb_net__DOT__br__DOT__epoch;
         IData/*31:0*/ __Vdly__tb_net__DOT__nic__DOT__r_crc;
         IData/*31:0*/ __VactIterCount;
         VL_OUT64(ddr_din,63,0);

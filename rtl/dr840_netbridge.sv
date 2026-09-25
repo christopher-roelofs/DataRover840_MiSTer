@@ -10,6 +10,12 @@
 //   0x0010  tx_tail      -- frames the daemon has taken from it
 //   0x0018  rx_head      -- frames the daemon has put in the receive ring
 //   0x0020  rx_tail      -- frames this has taken from it
+//   0x0028  hello        -- this adds one to it when it starts
+//   0x0030  echo         -- the daemon copies hello here once it has
+//                           reset its side: the link is up only while
+//                           the magic is there and the echo is ours, so a
+//                           core loaded afresh never reads a queue left
+//                           from the one before
 //   0x1000  transmit ring: 16 slots of 0x800, a 16-bit length at +0
 //           and the frame at +8
 //   0x9000  receive ring, the same
@@ -69,7 +75,8 @@ module dr840_netbridge (
                      S_TX_HEAD = 5'd8, S_TX_ACK = 5'd9,
                      S_RX_LEN = 5'd10, S_RX_W0 = 5'd11, S_RX_OFFER = 5'd12, S_RX_ANS = 5'd13,
                      S_RX_WORD = 5'd14, S_RX_BYTE = 5'd15, S_RX_TAIL = 5'd16,
-                     S_READ = 5'd17, S_WRITE = 5'd18;
+                     S_READ = 5'd17, S_WRITE = 5'd18, S_HELLO = 5'd19, S_HELLO_W = 5'd20,
+                     S_POLLE = 5'd21, S_START = 5'd22;
     reg [4:0]  st, ret;
     reg [31:0] tx_head, tx_tail, rx_head, rx_tail;
     reg [19:0] poll_cnt;
@@ -78,6 +85,8 @@ module dr840_netbridge (
     reg [1:0]  bw;              // byte-read latency
     reg [2:0]  lanes;
     reg        pulse_wait;
+    reg        magic_ok;
+    reg [31:0] epoch;
 
     // A frame slot's word address.
     function [28:0] slot_word(input [15:0] ring_base_bytes, input [31:0] ctr, input [10:0] byte_off);
@@ -86,19 +95,30 @@ module dr840_netbridge (
 
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            st <= S_IDLE; ret <= S_IDLE;
+            st <= S_START; ret <= S_IDLE;
             tx_done <= 1'b0; tx_ok <= 1'b0; rx_offer <= 1'b0; rx_len <= 11'd0; rx_dst <= 48'd0;
             rx_byte <= 1'b0; rx_data <= 8'd0; b_addr <= 14'd0;
             ddr_addr <= 29'd0; ddr_rd <= 1'b0; ddr_we <= 1'b0; ddr_din <= 64'd0;
             link <= 1'b0; dbg_tx <= 32'd0; dbg_rx <= 32'd0;
             tx_head <= 32'd0; tx_tail <= 32'd0; rx_head <= 32'd0; rx_tail <= 32'd0;
             poll_cnt <= 20'd0; n <= 11'd0; acc <= 64'd0; bw <= 2'd0; lanes <= 3'd0; pulse_wait <= 1'b0;
+            magic_ok <= 1'b0; epoch <= 32'd0;
         end else begin
             // Strobes to the NIC last until an enabled edge has seen them.
             if (cen) begin tx_done <= 1'b0; rx_offer <= 1'b0; rx_byte <= 1'b0; end
             if (!enable) begin
-                st <= S_IDLE; link <= 1'b0; ddr_rd <= 1'b0; ddr_we <= 1'b0;
+                st <= S_START; link <= 1'b0; ddr_rd <= 1'b0; ddr_we <= 1'b0;
+                tx_head <= 32'd0; rx_tail <= 32'd0;
             end else case (st)
+            // ------------------------------------------------ hello, once
+            S_START: begin
+                ddr_addr <= BASE + 29'd5; ddr_rd <= 1'b1; st <= S_READ; ret <= S_HELLO;
+            end
+            S_HELLO: begin
+                epoch <= acc[31:0] + 32'd1;
+                ddr_addr <= BASE + 29'd5; ddr_din <= {32'd0, acc[31:0] + 32'd1};
+                ddr_we <= 1'b1; st <= S_WRITE; ret <= S_IDLE;
+            end
             // ------------------------------------------------ one DDR word
             S_READ: begin
                 if (ddr_rd && !ddr_busy) ddr_rd <= 1'b0;
@@ -124,7 +144,11 @@ module dr840_netbridge (
                 end
             end
             S_POLL0: begin
-                link <= (acc[31:0] == MAGIC);
+                magic_ok <= (acc[31:0] == MAGIC);
+                ddr_addr <= BASE + 29'd6; ddr_rd <= 1'b1; st <= S_READ; ret <= S_POLLE;
+            end
+            S_POLLE: begin
+                link <= magic_ok && acc[31:0] == epoch;
                 ddr_addr <= BASE + 29'd2; ddr_rd <= 1'b1; st <= S_READ; ret <= S_POLL1;
             end
             S_POLL1: begin

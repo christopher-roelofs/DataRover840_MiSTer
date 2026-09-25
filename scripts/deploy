@@ -63,7 +63,13 @@ fi
 # The network card's cable: a daemon for the MiSTer's Linux (scripts/drnet).
 $SSH "mkdir -p /media/fat/linux"
 $SCP scripts/drnet "root@$HOST:/media/fat/linux/drnet"
-$SSH "chmod +x /media/fat/linux/drnet"
+# Started with the MiSTer, and now: it idles unless the DataRover core is
+# loaded, so there is nothing to start by hand.
+$SSH "chmod +x /media/fat/linux/drnet; \
+      grep -q drnet /media/fat/linux/user-startup.sh 2>/dev/null || \
+          echo '[ -x /media/fat/linux/drnet ] && (setsid /media/fat/linux/drnet </dev/null >/dev/null 2>&1 &)' >> /media/fat/linux/user-startup.sh; \
+      /media/fat/linux/drnet --stop >/dev/null 2>&1; sleep 1; \
+      (setsid /media/fat/linux/drnet </dev/null >/dev/null 2>&1 &)"
 
 # The LCD grid, as a shadow mask for the framework's video settings.
 $SSH "mkdir -p /media/fat/Shadow_Masks"

@@ -20,8 +20,11 @@
 #   drnet            run (in the foreground; `drnet &` to leave it)
 #   drnet --stop     stop a running one
 #
-# Copy to /media/fat/linux/drnet (scripts/deploy does); run it by hand, or
-# from /media/fat/linux/user-startup.sh to have it always there.
+# scripts/deploy copies it to /media/fat/linux/drnet and starts it from
+# /media/fat/linux/user-startup.sh, so it is always there. It does nothing
+# while any other core is loaded -- the DDR it uses is theirs then -- and
+# when the DataRover core starts it answers the core's hello (0x28 -> 0x30)
+# with both queues emptied, so nothing is carried over from before.
 import fcntl, mmap, os, select, signal, struct, subprocess, sys, time
 
 BASE, SIZE = 0x38000000, 0x11000
@@ -38,6 +41,12 @@ def uplink():
     out = subprocess.run("ip route show default", shell=True, capture_output=True, text=True).stdout.split()
     return out[out.index("dev") + 1] if "dev" in out else "eth0"
 
+def corename():
+    try:
+        return open("/tmp/CORENAME").read().strip()
+    except OSError:
+        return ""
+
 def main():
     if "--stop" in sys.argv:
         try:
@@ -52,13 +61,6 @@ def main():
     u32 = lambda off: struct.unpack_from("<I", m, off)[0]
     def put32(off, v): struct.pack_into("<I", m, off, v & 0xFFFFFFFF)
 
-    # Start clean: the link down long enough for the core to see it and
-    # zero its own counters (it polls every 0.7 ms), then ours, then up.
-    m[0:4] = b"\0\0\0\0"
-    time.sleep(0.02)
-    for off in (0x08, 0x10, 0x18, 0x20):
-        put32(off, 0)
-
     # The TAP: whole Ethernet frames, no packet-info header.
     tap = os.open("/dev/net/tun", os.O_RDWR)
     fcntl.ioctl(tap, 0x400454CA, struct.pack("16sH", TAP.encode(), 0x0002 | 0x1000))  # TUNSETIFF, IFF_TAP|IFF_NO_PI
@@ -67,11 +69,13 @@ def main():
     sh("echo 1 > /proc/sys/net/ipv4/ip_forward")
     sh("echo 1 > /proc/sys/net/ipv4/conf/%s/proxy_arp" % TAP)
     sh("echo 1 > /proc/sys/net/ipv4/conf/%s/proxy_arp" % up)
-    m[0:4] = MAGIC
-    print("drnet: up, %s <-> %s; set the DataRover's address to a free one on this network" % (TAP, up))
+    print("drnet: ready, %s <-> %s; waiting for the DataRover core" % (TAP, up), flush=True)
 
+    ours = False            # the DataRover core is loaded: the DDR is its
+    echo = None             # the core's hello we have answered
     def stop(*_):
-        m[0:4] = b"\0\0\0\0"
+        # The DDR is only ever touched while it is the DataRover's.
+        if corename() == "DataRover840": m[0:4] = b"\0\0\0\0"
         try: os.unlink(PIDFILE)
         except OSError: pass
         sys.exit(0)
@@ -79,9 +83,25 @@ def main():
     signal.signal(signal.SIGINT, stop)
 
     guest = None
-    rx_head = 0
-    tx_tail = 0
+    rx_head = tx_tail = 0
     while True:
+        # Every pass: the moment another core is loaded the DDR is its.
+        ours = corename() == "DataRover840"
+        if not ours:
+            echo = None
+            time.sleep(0.25)
+            continue
+        # A core that has just started says hello with a new number: both
+        # queues begin again from nothing, and then it is answered.
+        hello = u32(0x28)
+        if hello != echo:
+            rx_head = tx_tail = 0
+            put32(0x10, 0); put32(0x18, 0)
+            m[0:4] = MAGIC
+            put32(0x30, hello)
+            echo = hello
+            print("drnet: the DataRover is up (hello %d)" % hello, flush=True)
+
         # From the DataRover: every frame it has published.
         tx_head = u32(0x08)
         while tx_tail != tx_head:
@@ -95,7 +115,7 @@ def main():
                     if ip != guest and ip != "0.0.0.0":
                         guest = ip
                         sh("ip route replace %s/32 dev %s" % (ip, TAP))
-                        print("drnet: the DataRover is %s" % ip)
+                        print("drnet: the DataRover is %s" % ip, flush=True)
                 try: os.write(tap, frame)
                 except OSError: pass
             tx_tail = (tx_tail + 1) & 0xFFFFFFFF

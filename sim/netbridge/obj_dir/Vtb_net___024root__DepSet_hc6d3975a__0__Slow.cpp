@@ -1562,6 +1562,8 @@ VL_ATTR_COLD void Vtb_net___024root___ctor_var_reset(Vtb_net___024root* vlSelf) 
     vlSelf->tb_net__DOT__br__DOT__bw = VL_RAND_RESET_I(2);
     vlSelf->tb_net__DOT__br__DOT__lanes = VL_RAND_RESET_I(3);
     vlSelf->tb_net__DOT__br__DOT__pulse_wait = VL_RAND_RESET_I(1);
+    vlSelf->tb_net__DOT__br__DOT__magic_ok = VL_RAND_RESET_I(1);
+    vlSelf->tb_net__DOT__br__DOT__epoch = VL_RAND_RESET_I(32);
     vlSelf->__Vfunc_tb_net__DOT__nic__DOT__prom__1__Vfuncout = VL_RAND_RESET_I(8);
     vlSelf->__Vfunc_tb_net__DOT__nic__DOT__prom__1__a = VL_RAND_RESET_I(5);
     vlSelf->__Vfunc_tb_net__DOT__nic__DOT__prom__3__Vfuncout = VL_RAND_RESET_I(8);

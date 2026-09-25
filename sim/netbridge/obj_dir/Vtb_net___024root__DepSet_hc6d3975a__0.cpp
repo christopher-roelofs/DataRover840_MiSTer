@@ -262,6 +262,12 @@ VL_INLINE_OPT void Vtb_net___024root___nba_sequent__TOP__0(Vtb_net___024root* vl
     __Vfunc_tb_net__DOT__br__DOT__slot_word__11__ctr = 0;
     CData/*4:0*/ __Vdly__tb_net__DOT__br__DOT__st;
     __Vdly__tb_net__DOT__br__DOT__st = 0;
+    CData/*0:0*/ __Vdly__ddr_rd;
+    __Vdly__ddr_rd = 0;
+    CData/*4:0*/ __Vdly__tb_net__DOT__br__DOT__ret;
+    __Vdly__tb_net__DOT__br__DOT__ret = 0;
+    CData/*0:0*/ __Vdly__link;
+    __Vdly__link = 0;
     QData/*63:0*/ __Vdly__tb_net__DOT__br__DOT__acc;
     __Vdly__tb_net__DOT__br__DOT__acc = 0;
     IData/*31:0*/ __Vdly__tb_net__DOT__br__DOT__rx_tail;
@@ -278,8 +284,6 @@ VL_INLINE_OPT void Vtb_net___024root___nba_sequent__TOP__0(Vtb_net___024root* vl
     __Vdly__tb_net__DOT__br__DOT__rx_head = 0;
     IData/*31:0*/ __Vdly__tb_net__DOT__br__DOT__tx_tail;
     __Vdly__tb_net__DOT__br__DOT__tx_tail = 0;
-    CData/*0:0*/ __Vdly__link;
-    __Vdly__link = 0;
     IData/*19:0*/ __Vdly__tb_net__DOT__br__DOT__poll_cnt;
     __Vdly__tb_net__DOT__br__DOT__poll_cnt = 0;
     // Body
@@ -320,7 +324,6 @@ VL_INLINE_OPT void Vtb_net___024root___nba_sequent__TOP__0(Vtb_net___024root* vl
     vlSelf->__Vdlyvset__tb_net__DOT__nic__DOT__par__v1 = 0U;
     vlSelf->__Vdlyvset__tb_net__DOT__nic__DOT__par__v2 = 0U;
     __Vdly__tb_net__DOT__br__DOT__poll_cnt = vlSelf->tb_net__DOT__br__DOT__poll_cnt;
-    __Vdly__link = vlSelf->link;
     __Vdly__tb_net__DOT__br__DOT__tx_tail = vlSelf->tb_net__DOT__br__DOT__tx_tail;
     __Vdly__tb_net__DOT__br__DOT__rx_head = vlSelf->tb_net__DOT__br__DOT__rx_head;
     __Vdly__tb_net__DOT__br__DOT__bw = vlSelf->tb_net__DOT__br__DOT__bw;
@@ -333,6 +336,9 @@ VL_INLINE_OPT void Vtb_net___024root___nba_sequent__TOP__0(Vtb_net___024root* vl
     __Vdly__tb_net__DOT__br__DOT__n = vlSelf->tb_net__DOT__br__DOT__n;
     __Vdly__tb_net__DOT__br__DOT__rx_tail = vlSelf->tb_net__DOT__br__DOT__rx_tail;
     __Vdly__tb_net__DOT__br__DOT__acc = vlSelf->tb_net__DOT__br__DOT__acc;
+    __Vdly__link = vlSelf->link;
+    __Vdly__tb_net__DOT__br__DOT__ret = vlSelf->tb_net__DOT__br__DOT__ret;
+    __Vdly__ddr_rd = vlSelf->ddr_rd;
     __Vdly__tb_net__DOT__br__DOT__st = vlSelf->tb_net__DOT__br__DOT__st;
     vlSelf->__Vdly__tb_net__DOT__rx_byte = vlSelf->tb_net__DOT__rx_byte;
     vlSelf->__Vdly__tb_net__DOT__rx_offer = vlSelf->tb_net__DOT__rx_offer;
@@ -349,10 +355,37 @@ VL_INLINE_OPT void Vtb_net___024root___nba_sequent__TOP__0(Vtb_net___024root* vl
                 if ((8U & (IData)(vlSelf->tb_net__DOT__br__DOT__st))) {
                     __Vdly__tb_net__DOT__br__DOT__st = 0U;
                 } else if ((4U & (IData)(vlSelf->tb_net__DOT__br__DOT__st))) {
-                    __Vdly__tb_net__DOT__br__DOT__st = 0U;
+                    if ((2U & (IData)(vlSelf->tb_net__DOT__br__DOT__st))) {
+                        if ((1U & (IData)(vlSelf->tb_net__DOT__br__DOT__st))) {
+                            __Vdly__tb_net__DOT__br__DOT__st = 0U;
+                        } else {
+                            vlSelf->ddr_addr = 0x7000005U;
+                            __Vdly__ddr_rd = 1U;
+                            __Vdly__tb_net__DOT__br__DOT__st = 0x11U;
+                            __Vdly__tb_net__DOT__br__DOT__ret = 0x13U;
+                        }
+                    } else if ((1U & (IData)(vlSelf->tb_net__DOT__br__DOT__st))) {
+                        __Vdly__link = ((IData)(vlSelf->tb_net__DOT__br__DOT__magic_ok) 
+                                        & ((IData)(vlSelf->tb_net__DOT__br__DOT__acc) 
+                                           == vlSelf->tb_net__DOT__br__DOT__epoch));
+                        vlSelf->ddr_addr = 0x7000002U;
+                        __Vdly__ddr_rd = 1U;
+                        __Vdly__tb_net__DOT__br__DOT__st = 0x11U;
+                        __Vdly__tb_net__DOT__br__DOT__ret = 2U;
+                    } else {
+                        __Vdly__tb_net__DOT__br__DOT__st = 0U;
+                    }
                 } else if ((2U & (IData)(vlSelf->tb_net__DOT__br__DOT__st))) {
                     if ((1U & (IData)(vlSelf->tb_net__DOT__br__DOT__st))) {
-                        __Vdly__tb_net__DOT__br__DOT__st = 0U;
+                        vlSelf->tb_net__DOT__br__DOT__epoch 
+                            = ((IData)(1U) + (IData)(vlSelf->tb_net__DOT__br__DOT__acc));
+                        vlSelf->ddr_addr = 0x7000005U;
+                        vlSelf->ddr_din = (QData)((IData)(
+                                                          ((IData)(1U) 
+                                                           + (IData)(vlSelf->tb_net__DOT__br__DOT__acc))));
+                        vlSelf->ddr_we = 1U;
+                        __Vdly__tb_net__DOT__br__DOT__st = 0x12U;
+                        __Vdly__tb_net__DOT__br__DOT__ret = 0U;
                     } else if ((1U & (~ (IData)(vlSelf->ddr_busy)))) {
                         vlSelf->ddr_we = 0U;
                         __Vdly__tb_net__DOT__br__DOT__st 
@@ -361,7 +394,7 @@ VL_INLINE_OPT void Vtb_net___024root___nba_sequent__TOP__0(Vtb_net___024root* vl
                 } else if ((1U & (IData)(vlSelf->tb_net__DOT__br__DOT__st))) {
                     if (((IData)(vlSelf->ddr_rd) & 
                          (~ (IData)(vlSelf->ddr_busy)))) {
-                        vlSelf->ddr_rd = 0U;
+                        __Vdly__ddr_rd = 0U;
                     }
                     if (vlSelf->ddr_dout_ready) {
                         __Vdly__tb_net__DOT__br__DOT__acc 
@@ -378,7 +411,7 @@ VL_INLINE_OPT void Vtb_net___024root___nba_sequent__TOP__0(Vtb_net___024root* vl
                                                        + vlSelf->tb_net__DOT__br__DOT__rx_tail)));
                     vlSelf->ddr_we = 1U;
                     __Vdly__tb_net__DOT__br__DOT__st = 0x12U;
-                    vlSelf->tb_net__DOT__br__DOT__ret = 0U;
+                    __Vdly__tb_net__DOT__br__DOT__ret = 0U;
                     __Vdly__tb_net__DOT__br__DOT__rx_tail 
                         = ((IData)(1U) + vlSelf->tb_net__DOT__br__DOT__rx_tail);
                 }
@@ -422,7 +455,6 @@ VL_INLINE_OPT void Vtb_net___024root___nba_sequent__TOP__0(Vtb_net___024root* vl
                                              + (IData)(vlSelf->tb_net__DOT__br__DOT__n)));
                             __Vfunc_tb_net__DOT__br__DOT__slot_word__7__ctr 
                                 = vlSelf->tb_net__DOT__br__DOT__rx_tail;
-                            vlSelf->ddr_rd = 1U;
                             __Vfunc_tb_net__DOT__br__DOT__slot_word__7__Vfuncout 
                                 = (0x1fffffffU & ((IData)(0x7001200U) 
                                                   + 
@@ -433,8 +465,9 @@ VL_INLINE_OPT void Vtb_net___024root___nba_sequent__TOP__0(Vtb_net___024root* vl
                                                    (0xffU 
                                                     & ((IData)(__Vfunc_tb_net__DOT__br__DOT__slot_word__7__byte_off) 
                                                        >> 3U)))));
+                            __Vdly__ddr_rd = 1U;
                             __Vdly__tb_net__DOT__br__DOT__st = 0x11U;
-                            vlSelf->tb_net__DOT__br__DOT__ret = 0xfU;
+                            __Vdly__tb_net__DOT__br__DOT__ret = 0xfU;
                             vlSelf->ddr_addr = __Vfunc_tb_net__DOT__br__DOT__slot_word__7__Vfuncout;
                         }
                     } else if ((1U & (IData)(vlSelf->tb_net__DOT__br__DOT__st))) {
@@ -490,14 +523,14 @@ VL_INLINE_OPT void Vtb_net___024root___nba_sequent__TOP__0(Vtb_net___024root* vl
                                               + (0xf00U 
                                                  & (__Vfunc_tb_net__DOT__br__DOT__slot_word__8__ctr 
                                                     << 8U))));
-                        vlSelf->ddr_rd = 1U;
                         vlSelf->__Vdly__tb_net__DOT__rx_len 
                             = ((0x5eeU < (0x7ffU & (IData)(vlSelf->tb_net__DOT__br__DOT__acc)))
                                 ? 0x5eeU : (0x7ffU 
                                             & (IData)(vlSelf->tb_net__DOT__br__DOT__acc)));
                         vlSelf->ddr_addr = __Vfunc_tb_net__DOT__br__DOT__slot_word__8__Vfuncout;
+                        __Vdly__ddr_rd = 1U;
                         __Vdly__tb_net__DOT__br__DOT__st = 0x11U;
-                        vlSelf->tb_net__DOT__br__DOT__ret = 0xbU;
+                        __Vdly__tb_net__DOT__br__DOT__ret = 0xbU;
                     }
                 } else if ((1U & (IData)(vlSelf->tb_net__DOT__br__DOT__st))) {
                     if ((1U & ((~ (IData)(vlSelf->tb_net__DOT__tx_done)) 
@@ -513,7 +546,7 @@ VL_INLINE_OPT void Vtb_net___024root___nba_sequent__TOP__0(Vtb_net___024root* vl
                                                        + vlSelf->tb_net__DOT__br__DOT__tx_head)));
                     vlSelf->ddr_we = 1U;
                     __Vdly__tb_net__DOT__br__DOT__st = 0x12U;
-                    vlSelf->tb_net__DOT__br__DOT__ret = 9U;
+                    __Vdly__tb_net__DOT__br__DOT__ret = 9U;
                     vlSelf->__Vdly__tb_net__DOT__tx_ok = 1U;
                     vlSelf->__Vdly__tb_net__DOT__tx_done = 1U;
                     __Vdly__tb_net__DOT__br__DOT__tx_head 
@@ -533,7 +566,7 @@ VL_INLINE_OPT void Vtb_net___024root___nba_sequent__TOP__0(Vtb_net___024root* vl
                         vlSelf->ddr_din = (QData)((IData)(vlSelf->tb_net__DOT__tx_len));
                         vlSelf->ddr_we = 1U;
                         __Vdly__tb_net__DOT__br__DOT__st = 0x12U;
-                        vlSelf->tb_net__DOT__br__DOT__ret = 8U;
+                        __Vdly__tb_net__DOT__br__DOT__ret = 8U;
                     } else {
                         __Vfunc_tb_net__DOT__br__DOT__slot_word__10__byte_off 
                             = (0x7ffU & ((IData)(8U) 
@@ -555,7 +588,7 @@ VL_INLINE_OPT void Vtb_net___024root___nba_sequent__TOP__0(Vtb_net___024root* vl
                         __Vdly__tb_net__DOT__br__DOT__st = 0x12U;
                         __Vdly__tb_net__DOT__br__DOT__lanes = 0U;
                         vlSelf->ddr_addr = __Vfunc_tb_net__DOT__br__DOT__slot_word__10__Vfuncout;
-                        vlSelf->tb_net__DOT__br__DOT__ret 
+                        __Vdly__tb_net__DOT__br__DOT__ret 
                             = (((IData)(vlSelf->tb_net__DOT__br__DOT__n) 
                                 == (IData)(vlSelf->tb_net__DOT__tx_len))
                                 ? 7U : 4U);
@@ -602,19 +635,20 @@ VL_INLINE_OPT void Vtb_net___024root___nba_sequent__TOP__0(Vtb_net___024root* vl
                         = (IData)(vlSelf->tb_net__DOT__br__DOT__acc);
                     __Vdly__tb_net__DOT__br__DOT__st = 0U;
                 } else {
-                    vlSelf->ddr_rd = 1U;
                     __Vdly__tb_net__DOT__br__DOT__tx_tail 
                         = (IData)(vlSelf->tb_net__DOT__br__DOT__acc);
                     vlSelf->ddr_addr = 0x7000003U;
+                    __Vdly__ddr_rd = 1U;
                     __Vdly__tb_net__DOT__br__DOT__st = 0x11U;
-                    vlSelf->tb_net__DOT__br__DOT__ret = 3U;
+                    __Vdly__tb_net__DOT__br__DOT__ret = 3U;
                 }
             } else if ((1U & (IData)(vlSelf->tb_net__DOT__br__DOT__st))) {
-                vlSelf->ddr_rd = 1U;
-                __Vdly__link = (0x454e5244U == (IData)(vlSelf->tb_net__DOT__br__DOT__acc));
-                vlSelf->ddr_addr = 0x7000002U;
+                vlSelf->tb_net__DOT__br__DOT__magic_ok 
+                    = (0x454e5244U == (IData)(vlSelf->tb_net__DOT__br__DOT__acc));
+                vlSelf->ddr_addr = 0x7000006U;
+                __Vdly__ddr_rd = 1U;
                 __Vdly__tb_net__DOT__br__DOT__st = 0x11U;
-                vlSelf->tb_net__DOT__br__DOT__ret = 2U;
+                __Vdly__tb_net__DOT__br__DOT__ret = 0x15U;
             } else {
                 __Vdly__tb_net__DOT__br__DOT__poll_cnt 
                     = (0xfffffU & ((IData)(1U) + vlSelf->tb_net__DOT__br__DOT__poll_cnt));
@@ -647,34 +681,35 @@ VL_INLINE_OPT void Vtb_net___024root___nba_sequent__TOP__0(Vtb_net___024root* vl
                                           + (0xf00U 
                                              & (__Vfunc_tb_net__DOT__br__DOT__slot_word__11__ctr 
                                                 << 8U))));
-                    vlSelf->ddr_rd = 1U;
                     vlSelf->ddr_addr = __Vfunc_tb_net__DOT__br__DOT__slot_word__11__Vfuncout;
+                    __Vdly__ddr_rd = 1U;
                     __Vdly__tb_net__DOT__br__DOT__st = 0x11U;
-                    vlSelf->tb_net__DOT__br__DOT__ret = 0xaU;
+                    __Vdly__tb_net__DOT__br__DOT__ret = 0xaU;
                 } else if ((0U == (0xffffU & vlSelf->tb_net__DOT__br__DOT__poll_cnt))) {
-                    vlSelf->ddr_rd = 1U;
                     vlSelf->ddr_addr = 0x7000000U;
+                    __Vdly__ddr_rd = 1U;
                     __Vdly__tb_net__DOT__br__DOT__st = 0x11U;
-                    vlSelf->tb_net__DOT__br__DOT__ret = 1U;
+                    __Vdly__tb_net__DOT__br__DOT__ret = 1U;
                 }
             }
         } else {
-            vlSelf->ddr_rd = 0U;
-            __Vdly__tb_net__DOT__br__DOT__st = 0U;
+            __Vdly__tb_net__DOT__br__DOT__tx_head = 0U;
+            __Vdly__tb_net__DOT__br__DOT__rx_tail = 0U;
+            __Vdly__tb_net__DOT__br__DOT__st = 0x16U;
             __Vdly__link = 0U;
+            __Vdly__ddr_rd = 0U;
             vlSelf->ddr_we = 0U;
         }
     } else {
         vlSelf->__Vdly__tb_net__DOT__cen = 0U;
         vlSelf->__Vdly__tb_net__DOT__tx_done = 0U;
         vlSelf->tb_net__DOT__b_addr = 0U;
-        vlSelf->ddr_rd = 0U;
         vlSelf->frames_tx = 0U;
         vlSelf->frames_rx = 0U;
         __Vdly__tb_net__DOT__br__DOT__tx_head = 0U;
         __Vdly__tb_net__DOT__br__DOT__rx_tail = 0U;
-        __Vdly__tb_net__DOT__br__DOT__st = 0U;
-        vlSelf->tb_net__DOT__br__DOT__ret = 0U;
+        __Vdly__tb_net__DOT__br__DOT__st = 0x16U;
+        __Vdly__tb_net__DOT__br__DOT__ret = 0U;
         vlSelf->__Vdly__tb_net__DOT__tx_ok = 0U;
         vlSelf->__Vdly__tb_net__DOT__rx_offer = 0U;
         vlSelf->__Vdly__tb_net__DOT__rx_len = 0U;
@@ -682,6 +717,7 @@ VL_INLINE_OPT void Vtb_net___024root___nba_sequent__TOP__0(Vtb_net___024root* vl
         vlSelf->__Vdly__tb_net__DOT__rx_byte = 0U;
         vlSelf->__Vdly__tb_net__DOT__rx_data = 0U;
         vlSelf->ddr_addr = 0U;
+        __Vdly__ddr_rd = 0U;
         vlSelf->ddr_we = 0U;
         vlSelf->ddr_din = 0ULL;
         __Vdly__link = 0U;
@@ -693,8 +729,13 @@ VL_INLINE_OPT void Vtb_net___024root___nba_sequent__TOP__0(Vtb_net___024root* vl
         __Vdly__tb_net__DOT__br__DOT__bw = 0U;
         __Vdly__tb_net__DOT__br__DOT__lanes = 0U;
         vlSelf->tb_net__DOT__br__DOT__pulse_wait = 0U;
+        vlSelf->tb_net__DOT__br__DOT__magic_ok = 0U;
+        vlSelf->tb_net__DOT__br__DOT__epoch = 0U;
     }
     vlSelf->tb_net__DOT__br__DOT__st = __Vdly__tb_net__DOT__br__DOT__st;
+    vlSelf->ddr_rd = __Vdly__ddr_rd;
+    vlSelf->tb_net__DOT__br__DOT__ret = __Vdly__tb_net__DOT__br__DOT__ret;
+    vlSelf->link = __Vdly__link;
     vlSelf->tb_net__DOT__br__DOT__acc = __Vdly__tb_net__DOT__br__DOT__acc;
     vlSelf->tb_net__DOT__br__DOT__rx_tail = __Vdly__tb_net__DOT__br__DOT__rx_tail;
     vlSelf->tb_net__DOT__br__DOT__n = __Vdly__tb_net__DOT__br__DOT__n;
@@ -703,7 +744,6 @@ VL_INLINE_OPT void Vtb_net___024root___nba_sequent__TOP__0(Vtb_net___024root* vl
     vlSelf->tb_net__DOT__br__DOT__bw = __Vdly__tb_net__DOT__br__DOT__bw;
     vlSelf->tb_net__DOT__br__DOT__rx_head = __Vdly__tb_net__DOT__br__DOT__rx_head;
     vlSelf->tb_net__DOT__br__DOT__tx_tail = __Vdly__tb_net__DOT__br__DOT__tx_tail;
-    vlSelf->link = __Vdly__link;
     vlSelf->tb_net__DOT__br__DOT__poll_cnt = __Vdly__tb_net__DOT__br__DOT__poll_cnt;
 }
 

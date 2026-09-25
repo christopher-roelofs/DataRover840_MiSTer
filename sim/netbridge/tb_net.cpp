@@ -150,10 +150,13 @@ int main(int argc, char **argv)
     printf("no daemon: ISR %02X, link %d (%s)\n", isr, d->link, isr == 0x08 ? "carrier lost, as wanted" : "WRONG");
     if (isr != 0x08) fails++;
 
-    // The daemon starts: link down, counters zeroed, magic.
-    put32(0, 0); step(200000);
-    for (uint32_t o : {0x08u, 0x10u, 0x18u, 0x20u}) put32(o, 0);
+    // The daemon starts: the magic alone is not a link.
     memcpy(&mem[0], "DRNE", 4);
+    step(200000);
+    printf("magic without the echo: link %d (%s)\n", d->link, d->link ? "WRONG" : "down, as wanted");
+    if (d->link) fails++;
+    // It answers the core's hello with its queues emptied.
+    put32(0x10, 0); put32(0x18, 0); put32(0x30, u32(0x28));
     step(200000);
     printf("daemon up: link %d\n", d->link);
     if (!d->link) fails++;
