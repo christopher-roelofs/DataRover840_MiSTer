@@ -54,7 +54,16 @@ module dr840_mbus (
     output reg         kmem_req,
     output reg         kmem_we,
     output reg  [31:0] kmem_wdata,
-    input  wire        kmem_ack
+    input  wire        kmem_ack,
+
+    // The state across a power cycle of the MiSTer (dr840_machine.sv):
+    // 0..6 the registers, 7 the keyboard's standing on the bus, 8 how much
+    // has been received. The transfer engine and the key queue start idle
+    // and empty, as they are once Magic Cap has powered off.
+    input  wire [5:0]  ctx_addr,
+    input  wire        ctx_we,
+    input  wire [31:0] ctx_wdata,
+    output reg  [31:0] ctx_rdata
 );
     // ------------------------------------------------------------ registers
     localparam [11:0] R_CTRL = 12'h0E0, R_CTRL2 = 12'h0E4, R_DMASTART = 12'h0E8;
@@ -459,8 +468,35 @@ module dr840_mbus (
             end
             default: st <= S_IDLE;
             endcase
+
+            if (ctx_we) case (ctx_addr)
+            6'd0: ctrl     <= ctx_wdata;
+            6'd1: ctrl2    <= ctx_wdata;
+            6'd2: dmastart <= ctx_wdata;
+            6'd3: dmalen   <= ctx_wdata;
+            6'd4: dmacount <= ctx_wdata;
+            6'd5: command  <= ctx_wdata;
+            6'd6: payload  <= ctx_wdata;
+            6'd7: {input_high, assigned, notified, rx_complete, pending_read, selection} <= ctx_wdata[10:0];
+            6'd8: rx_bytes <= ctx_wdata[19:0];
+            default: ;
+            endcase
         end
     end
+
+    always @(posedge clk)
+        case (ctx_addr)
+        6'd0: ctx_rdata <= ctrl;
+        6'd1: ctx_rdata <= ctrl2;
+        6'd2: ctx_rdata <= dmastart;
+        6'd3: ctx_rdata <= dmalen;
+        6'd4: ctx_rdata <= dmacount;
+        6'd5: ctx_rdata <= command;
+        6'd6: ctx_rdata <= payload;
+        6'd7: ctx_rdata <= {21'd0, input_high, assigned, notified, rx_complete, pending_read, selection};
+        6'd8: ctx_rdata <= {12'd0, rx_bytes};
+        default: ctx_rdata <= 32'd0;
+        endcase
 endmodule
 
 `default_nettype wire

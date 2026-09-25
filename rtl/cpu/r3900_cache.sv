@@ -432,6 +432,12 @@ module r3900_cached #(
     output wire [31:0] stall_load,
     output wire [31:0] stall_fetch,
 
+    // The core's context, straight through: see r3900.sv.
+    input  wire [6:0]  ctx_addr,
+    input  wire        ctx_we,
+    input  wire [31:0] ctx_wdata,
+    output wire [31:0] ctx_rdata,
+
     output wire [31:0] ihit_count,
     output wire [31:0] imiss_count,
     output wire [31:0] dhit_count,
@@ -457,7 +463,8 @@ module r3900_cached #(
         .retire_valid(retire_valid), .retire_pc(retire_pc),
         .retire_insn(retire_insn), .retire_next_pc(retire_next_pc),
         .exc_valid(exc_valid), .exc_code(exc_code), .exc_epc(exc_epc), .exc_ip(exc_ip), .exc_bad(exc_bad),
-        .stall_store(stall_store), .stall_load(stall_load), .stall_fetch(stall_fetch)
+        .stall_store(stall_store), .stall_load(stall_load), .stall_fetch(stall_fetch),
+        .ctx_addr(ctx_addr), .ctx_we(ctx_we), .ctx_wdata(ctx_wdata), .ctx_rdata(ctx_rdata)
     );
 
     r3900_cache cache (

@@ -17,6 +17,12 @@
 module dr840_machine (
     input  wire        clk,          // 92 MHz: SDRAM, and the core halved
     input  wire        rst_n,
+    // The memory's own reset: power-up only. The machine's reset follows
+    // the OSD's and the framework's, and Main holds that one through its
+    // whole start-up -- which is when it sends a remembered ROM (the OSD's
+    // FSC entry). With the SDRAM re-initialising under it, the ROM's first
+    // word never landed, the download's wait never fell, and Main hung.
+    input  wire        mem_rst_n,
 
     // ---- ROM load, from the HPS. Whole words, big-endian.
     input  wire        load_en,      // the loader owns the memory
@@ -106,6 +112,18 @@ module dr840_machine (
     input  wire        on_button,      // the ON button
     input  wire        ac_in,          // the AC adaptor plugged in
     input  wire        no_battery,     // and no main battery fitted
+    // The machine's state across a power cycle of the MiSTer, a word at a
+    // time, only with the core halted: 0x000..0x1FF the peripheral block
+    // (dr840_tx39.sv has the map), 0x200..0x27F the CPU (r3900.sv). The
+    // top level saves it with the RAM when Magic Cap powers off and puts
+    // it back before the core is let go, so a load is a wake, not a reset.
+    // Read a register behind the address; the .sdc gives all of it
+    // several periods, and the top level waits longer than that.
+    input  wire        ctx_sel,
+    input  wire [9:0]  ctx_addr,
+    input  wire        ctx_we,
+    input  wire [31:0] ctx_wdata,
+    output reg  [31:0] ctx_rdata,
     // The Magic Bus keyboard.
     input  wire        kbd_attached,
     input  wire        key_tog,
@@ -197,6 +215,7 @@ module dr840_machine (
         .retire_insn(obs_insn), .retire_next_pc(),
         .exc_valid(exc_valid), .exc_code(exc_code), .exc_epc(exc_epc), .exc_ip(exc_ip), .exc_bad(exc_bad),
         .stall_store(), .stall_load(), .stall_fetch(),
+        .ctx_addr(ctx_addr[6:0]), .ctx_we(ctx_we && ctx_addr[9]), .ctx_wdata(ctx_wdata), .ctx_rdata(cpu_ctx),
         .ihit_count(obs_ihit), .imiss_count(obs_imiss),
         .dhit_count(obs_dhit), .dmiss_count(obs_dmiss)
     );
@@ -251,6 +270,8 @@ module dr840_machine (
     wire [3:0]  io_be;
     wire [5:0]  soc_irq;
     wire        cpu_stop;
+    wire [31:0] cpu_ctx, soc_ctx;
+    always @(posedge clk) ctx_rdata <= ctx_addr[9] ? cpu_ctx : soc_ctx;
     wire        snd_tog;
     wire [31:0] snd_addr;
     wire [15:0] codec_b;
@@ -375,7 +396,9 @@ module dr840_machine (
         .vid_ctrl1(vid_ctrl1), .vid_ctrl2(vid_ctrl2), .vid_ctrl3(vid_ctrl3),
         .dbg_tx_bytes(obs_uart_bytes), .dbg_io_reads(obs_io),
         .dbg_tx_stb(), .dbg_tx_data(u_tx_data),
-        .trace_stb(trace_stb), .trace_word(trace_word)
+        .trace_stb(trace_stb), .trace_word(trace_word),
+        .ctx_sel(ctx_sel && !ctx_addr[9]), .ctx_addr(ctx_addr[8:0]), .ctx_we(ctx_we && !ctx_addr[9]),
+        .ctx_wdata(ctx_wdata), .ctx_rdata(soc_ctx)
     );
 
     // The loader takes the memory while it is running; the board has it
@@ -414,7 +437,7 @@ module dr840_machine (
     wire        ch1_req, ch1_ready, ch2_req, ch2_rnw, ch2_ready;
 
     dr840_sdram adapter (
-        .clk(clk), .cen(lend ? 1'b1 : cen), .rst_n(rst_n),
+        .clk(clk), .cen(lend ? 1'b1 : cen), .rst_n(mem_rst_n),
         .ram_addr(ram_addr), .ram_req(ram_req), .ram_burst(ram_burst),
         .ram_we(ram_we), .ram_be(ram_be), .ram_wdata(ram_wdata),
         .ram_ack(ram_ack), .ram_rdata(ram_rdata), .ram_busy(ram_busy),
@@ -426,7 +449,7 @@ module dr840_machine (
     );
 
     sdram #(.CLK_MHZ(92)) ctl (
-        .init(~rst_n), .clk(clk),
+        .init(~mem_rst_n), .clk(clk),
         .SDRAM_DQ_O(SDRAM_DQ_O), .SDRAM_DQ_OE(SDRAM_DQ_OE),
         .SDRAM_DQ_I(SDRAM_DQ_I), .SDRAM_A(SDRAM_A),
         .SDRAM_DQML(SDRAM_DQML), .SDRAM_DQMH(SDRAM_DQMH),

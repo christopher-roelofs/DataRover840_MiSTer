@@ -143,7 +143,8 @@ module tb_sdram #(
         .stall_store(dbg_stall_store), .stall_load(dbg_stall_load),
         .stall_fetch(dbg_stall_fetch),
         .ihit_count(ihit_count), .imiss_count(imiss_count),
-        .dhit_count(dhit_count), .dmiss_count(dmiss_count)
+        .dhit_count(dhit_count), .dmiss_count(dmiss_count),
+        .ctx_addr(7'd0), .ctx_we(1'b0), .ctx_wdata(32'd0), .ctx_rdata()
     );
 
     wire [24:0] ram_addr;
@@ -246,7 +247,8 @@ module tb_sdram #(
         .snd_tog(snd_tog), .snd_addr(snd_addr), .codec_b(codec_b),
         .vid_ctrl1(dbg_vid_ctrl1), .vid_ctrl2(vid_ctrl2), .vid_ctrl3(dbg_vid_ctrl3),
         .dbg_tx_bytes(dbg_tx_bytes), .dbg_io_reads(),
-        .dbg_tx_stb(dbg_tx_stb), .dbg_tx_data(dbg_tx_data), .trace_stb(), .trace_word()
+        .dbg_tx_stb(dbg_tx_stb), .dbg_tx_data(dbg_tx_data), .trace_stb(), .trace_word(),
+        .ctx_sel(1'b0), .ctx_addr(9'd0), .ctx_we(1'b0), .ctx_wdata(32'd0), .ctx_rdata()
     );
 
     wire        io_ack_mux   = tx39_en ? t_ack   : io_ack;

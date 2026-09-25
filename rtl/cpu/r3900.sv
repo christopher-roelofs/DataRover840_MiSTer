@@ -107,7 +107,20 @@ module r3900 #(
     // peripherals is a machine whose stalls are worth counting.
     output reg  [31:0] stall_store,    // waiting for a write-through
     output reg  [31:0] stall_load,     // waiting for a load
-    output reg  [31:0] stall_fetch     // waiting for an instruction
+    output reg  [31:0] stall_fetch,    // waiting for an instruction
+
+    // The machine's state across a power cycle of the MiSTer: read out
+    // with the core halted at Magic Cap's power-off, and written back
+    // after the next reset, before it is let go (dr840_machine.sv has the
+    // whole context). Words: 0..31 the registers, 32..63 CP0, 64 HI,
+    // 65 LO, 66 where to go on (the instruction waiting in EX, else ID,
+    // else the fetch), 67 and 68 the cycle count. Only ever used with the
+    // core halted and its pipeline drained; reads are a register behind
+    // the address.
+    input  wire [6:0]  ctx_addr,
+    input  wire        ctx_we,
+    input  wire [31:0] ctx_wdata,
+    output reg  [31:0] ctx_rdata
 );
 
     // =================================================== architectural state
@@ -1103,8 +1116,41 @@ module r3900 #(
                 me_exc_v  <= 1'b0;
                 me_phase  <= 1'b0;
             end
+
+            // ------------------------------------------------ context
+            // Written back with the core halted: the registers as they
+            // were, and the fetch pointed at where it stopped, with the
+            // pipeline empty behind it.
+            if (ctx_we) begin
+                if (!ctx_addr[6]) begin
+                    if (ctx_addr[5]) cp0[ctx_addr[4:0]] <= ctx_wdata;
+                    else if (ctx_addr[4:0] != 5'd0) regs[ctx_addr[4:0]] <= ctx_wdata;
+                end else case (ctx_addr[2:0])
+                3'd0: hi <= ctx_wdata;
+                3'd1: lo <= ctx_wdata;
+                3'd2: begin
+                    fpc <= ctx_wdata; a_pc <= ctx_wdata; a_next_pc <= ctx_wdata + 32'd4;
+                    redir_v <= 1'b0; id_v <= 1'b0; ex_v <= 1'b0; me_v <= 1'b0; wb_v <= 1'b0;
+                    ds_wait <= 1'b0; id_ds <= 1'b0; id_exc_v <= 1'b0; ex_exc_v <= 1'b0;
+                    me_exc_v <= 1'b0; me_phase <= 1'b0; md_run <= 1'b0; md_skip <= 1'b0;
+                end
+                3'd3: cycle_count[31:0]  <= ctx_wdata;
+                3'd4: cycle_count[63:32] <= ctx_wdata;
+                default: ;
+                endcase
+            end
         end
     end
+
+    // The context's read side: see the port.
+    always @(posedge clk)
+        ctx_rdata <= !ctx_addr[6] ? (ctx_addr[5] ? cp0[ctx_addr[4:0]] : regs[ctx_addr[4:0]])
+                   : (ctx_addr[2:0] == 3'd0) ? hi
+                   : (ctx_addr[2:0] == 3'd1) ? lo
+                   : (ctx_addr[2:0] == 3'd2) ? (ex_v ? ex_pc : id_v ? id_pc : fpc)
+                   : (ctx_addr[2:0] == 3'd3) ? cycle_count[31:0]
+                   : (ctx_addr[2:0] == 3'd4) ? cycle_count[63:32]
+                   : 32'd0;
 
 `ifdef SIMULATION
     // The architectural pc pair exists to produce next_pc. If it ever

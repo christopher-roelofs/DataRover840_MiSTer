@@ -81,8 +81,11 @@ localparam CONF_STR = {
     // of that actually is, and .rom is what anyone would reach for.
     // FS: a file with a save, which the MiSTer keeps as
     // saves/DataRover840/<name>.sav and mounts on the image slot itself,
-    // so a ROM picked from the browser brings its own RAM.
-    "FS1,ROMIMABIN,Load ROM;",
+    // so a ROM picked from the browser brings its own RAM. C: and Main
+    // remembers the last one, from the browser or an .mgl, and loads it
+    // with its save when the core is started on its own -- the machine
+    // last used, rather than a blank panel waiting for a ROM.
+    "FSC1,ROMIMABIN,Load ROM;",
     // The RAM, kept. A DataRover's four megabytes are battery-backed and
     // hold everything the user has; here they are an image on the card,
     // read in before the core starts and written back when Magic Cap turns
@@ -167,6 +170,11 @@ localparam CONF_STR = {
     // A reset that ignores the save: the RAM cleared, Magic Cap set up
     // from nothing. The save is overwritten by the next one.
     "P3T[15],Start fresh (clear RAM);",
+    // Switched off the old way: Magic Cap powers off and the RAM is saved
+    // without the machine's context, so the next load resets into it and
+    // cleans up, as a DataRover does after all its power has gone -- and
+    // a way back should a saved context ever not carry on.
+    "P3T[25],Full power off;",
 
     "P4,Packages;",
     "P4-;",
@@ -426,7 +434,54 @@ wire       rom_ok = rom_present & ~clr_run;
 // use, and every mismatch counted. The count and the first bad address
 // are on the status line. It costs half a second at boot.
 localparam [2:0] MT_WRITE = 3'd0, MT_READ = 3'd1, MT_ROM = 3'd2, MT_CLEAR = 3'd3,
-                 MT_LOAD = 3'd4, MT_SAVE = 3'd5;
+                 MT_LOAD = 3'd4, MT_SAVE = 3'd5, MT_CTXSAVE = 3'd6, MT_CTXLOAD = 3'd7;
+
+// The machine's context: its CPU and peripheral registers at the moment
+// Magic Cap powered it off (dr840_machine.sv reads and writes them a word
+// at a time). Saved with the RAM, it makes the next load a wake -- the
+// CPU carrying on from its power-off routine, as the ON button makes it
+// on the device -- rather than a reset into retained RAM, which the ROM
+// answers with "Cleaning up...": what a DataRover does after losing all
+// power while it was off, and not what it does when it is switched on.
+//
+// It is one more 16 KB chunk in the RAM image's file, after the four
+// megabytes (sectors 8192..8223): the context's words first, then a
+// header at word 0x3F0 -- magic, version, and the sum of the words.
+// Every save writes the chunk with no header before the RAM, and a save
+// taken at a power-off writes it again with one after, so a save cut off
+// half way never pairs new RAM with an old context. A file of four
+// megabytes exactly is a RAM image as before, and resets as before; one
+// that can grow (a ROM's own save) grows by the chunk at its next save.
+localparam [31:0] CTX_MAGIC   = 32'h4452_4358;       // "DRCX"
+localparam [31:0] CTX_VERSION = 32'd1;
+localparam [9:0]  CTX_LAST    = 10'h27F;             // the machine's words: 0x000..0x27F
+localparam [63:0] IMG_RAM     = 64'd4194304;
+localparam [63:0] IMG_RAM_CTX = 64'd4194304 + 64'd16384;
+reg  [2:0]  mt_phase;
+reg         ctx_sel, ctx_we;
+reg  [9:0]  ctx_addr;
+reg  [31:0] ctx_wdata;
+wire [31:0] ctx_rdata;
+reg  [3:0]  cx_st;
+reg  [4:0]  cx_wait;
+reg  [9:0]  cx_i;
+reg  [31:0] ctx_sum;
+reg         ctx_magic_ok, ctx_ver_ok;
+reg         img_ctx;                  // the image's file holds the chunk
+reg         ctx_ok;                   // a context came with the RAM, and checks out
+reg         ctx_boot;                 // this load may resume (a load, not the OSD's reset)
+reg         ran;                      // the machine has run since its ROM arrived
+reg         ctx_want;                 // this save is taken at a power-off: keep the context
+reg         ctx_step;                 // a save: 0 the chunk without its header, 1 with
+reg         resume_go;                // put back: press ON
+reg         resumed;                  // on the status line: this boot was a wake
+reg         full_off, fulloff_d;      // "Full power off": the next power-off keeps no context
+reg         press_off;                // the core pressing ON to power off
+// The save buffer's one write port: the memory's bursts, or the context.
+reg         sw_we;
+reg  [11:0] sw_a;
+reg  [31:0] sw_d;
+always @(posedge clk_sys) if (sw_we) secw[sw_a] <= sw_d;
 
 // The RAM image: 8192 sectors of 512 bytes through the framework's SD
 // interface, a sector at a time through a buffer here. Loading, the HPS
@@ -450,11 +505,13 @@ wire        auto_due = (status[18:17] == 2'd1) ? (auto_secs >= 11'd300)
                      : (status[18:17] == 2'd3) ? (auto_secs >= 11'd1800) : 1'b0;
 reg  [3:0]  fresh_cnt;
 // Which image the sector machine is moving, numbered as the framework's
-// images are: 0 the RAM, 1 the card in slot 2, 2 the card in slot 1; where
-// it lives in the SDRAM; and how many chunks it is. The cards' own state
-// is per slot, [0] slot 1 and [1] slot 2, as the machine numbers them.
+// images are: 0 the RAM, 1 the card in slot 2, 2 the card in slot 1 -- and
+// 3 the context's chunk, in the RAM's file; where it lives in the SDRAM;
+// and how many chunks it is. The cards' own state is per slot, [0] slot 1
+// and [1] slot 2, as the machine numbers them.
 reg  [1:0]  cur;
-wire        cur_card = cur != 2'd0;
+wire        cur_card = (cur == 2'd1) || (cur == 2'd2);
+wire        cur_ctx  = (cur == 2'd3);
 wire        cur_slot = (cur == 2'd1);     // the slot cur's card is in: 1 slot 2, 0 slot 1
 localparam [24:0] CARD1_BASE = 25'h0C0_0000, CARD2_BASE = 25'h0E0_0000;
 reg  [4:0]  card_log2_0, card_log2_1;     // the cards' sizes, 16..21
@@ -470,9 +527,11 @@ reg         reins_slot;               // the slot being re-inserted
 reg         opt_force;                // the option key, held by the core for a re-insertion
 wire [4:0]  cur_log2   = cur_slot ? card_log2_1 : card_log2_0;
 wire [24:0] xfer_base  = !cur_card ? DRAM_BASE : cur_slot ? CARD2_BASE : CARD1_BASE;
-wire [7:0]  chunk_last = cur_card ? (8'd1 << (cur_log2 - 5'd14)) - 8'd1 : 8'd255;
-wire        sd_ack_c   = sd_ack[cur];
-wire [2:0]  sd_sel     = 3'd1 << cur;
+wire [7:0]  chunk_last = cur_card ? (8'd1 << (cur_log2 - 5'd14)) - 8'd1 : cur_ctx ? 8'd0 : 8'd255;
+wire [1:0]  cur_img    = cur_ctx ? 2'd0 : cur;
+wire        sd_ack_c   = sd_ack[cur_img];
+wire [2:0]  sd_sel     = 3'd1 << cur_img;
+wire [31:0] cur_lba    = cur_ctx ? 32'd8192 : {19'd0, chunk, 5'd0};
 // A card image's size, a power of two from 64 KiB to 2 MiB, as log2.
 function [4:0] size_log2(input [63:0] n);
     size_log2 = (n == 64'd65536) ? 5'd16 : (n == 64'd131072) ? 5'd17
@@ -483,7 +542,7 @@ reg  [11:0] wi;                       // word within the chunk
 reg  [1:0]  bi;                       // byte within the word
 reg  [2:0]  ss;                       // the sector's own state
 reg  [31:0] gather;
-reg         img_ok;                   // a four-megabyte image is mounted
+reg         img_ok;                   // a four-megabyte image is mounted (with or without the context)
 reg         img_new;                  // an empty one: nothing to load, room to save
 reg         img_d;
 reg         save_run;                 // the save walk, without a reset
@@ -499,10 +558,16 @@ wire        mem_idle, stopped;
 // saved through: two seconds after the stop, or when the save is done.
 reg        wake_pend, wake;
 reg [27:0] wake_cnt;
+// And pressed once more: at once after a context has been put back, which
+// is the machine being switched on; and to switch it off for "Full power
+// off", after which it stays off.
+wire ctx_quiet = (mt_phase == MT_CTXLOAD && save_run) || resume_go;
 always @(posedge clk_sys or negedge rst_n) begin
     if (!rst_n) begin wake_pend <= 1'b0; wake <= 1'b0; wake_cnt <= 28'd0; end
     else begin
-        if (stopped && !stop_d && !status[6]) begin wake_pend <= 1'b1; wake_cnt <= 28'd0; end
+        if (stopped && !stop_d && !status[6] && !full_off && !ctx_quiet) begin wake_pend <= 1'b1; wake_cnt <= 28'd0; end
+        if (resume_go) begin wake_pend <= 1'b1; wake_cnt <= 28'd184_000_000; end
+        if (press_off && !wake && !wake_pend) begin wake <= 1'b1; wake_cnt <= 28'd0; end
         if (wake_pend) begin
             if (wake_cnt != 28'd184_000_000) wake_cnt <= wake_cnt + 28'd1;
             else if (save_st == 2'd0 && !save_run) begin wake_pend <= 1'b0; wake <= 1'b1; wake_cnt <= 28'd0; end
@@ -518,11 +583,11 @@ always @(posedge clk_sys) begin
     secb_q <= secb[{wi, bi}];
     secw_q <= secw[sd_buff_addr[13:2]];
 end
+// The context's own memory: the machine's.
 // Big-endian, as the memory is: byte 0 of the word is its top.
 assign sd_buff_din = (sd_buff_addr[1:0] == 2'd0) ? secw_q[31:24]
                    : (sd_buff_addr[1:0] == 2'd1) ? secw_q[23:16]
                    : (sd_buff_addr[1:0] == 2'd2) ? secw_q[15:8] : secw_q[7:0];
-reg  [2:0]  mt_phase;
 // The ROM read back out of the memory and summed again. `rom_sum` is what
 // the loader was given; this is what the machine will actually execute,
 // and until now nothing had compared the two.
@@ -606,12 +671,18 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
         img_ok <= 0; img_new <= 0; img_d <= 0; save_run <= 0; halt_req <= 0; save_st <= 0; idle_cnt <= 0;
         sd_wait <= 0; img_ro <= 0; save_fail <= 0; osd_d <= 0; ram_dirty <= 0; cimg_d <= 0; reins_d <= 0; slot_mem_d <= 2'b11;
         stop_d <= 0; savebtn_d <= 0;
+        ctx_sel <= 0; ctx_we <= 0; ctx_addr <= 0; ctx_wdata <= 0; cx_st <= 0; cx_wait <= 0; cx_i <= 0;
+        ctx_sum <= 0; ctx_magic_ok <= 0; ctx_ver_ok <= 0; img_ctx <= 0; ctx_ok <= 0; ctx_boot <= 0;
+        ctx_want <= 0; ctx_step <= 0; resume_go <= 0; resumed <= 0; full_off <= 0; fulloff_d <= 0; ran <= 0;
+        press_off <= 0; sw_we <= 0; sw_a <= 0; sw_d <= 0;
         fresh <= 0; fresh_d <= 0; fresh_cnt <= 0; fresh_pulse <= 0;
         auto_tick <= 0; auto_secs <= 0;
         mt_errors <= 0; mt_first <= 32'hFFFF_FFFF;
     end else begin
         dl_d  <= rom_dl;
         rst_d <= reset;
+        sw_we <= 1'b0;
+        resume_go <= 1'b0;
         fresh_d <= status[15];
         if (status[15] && !fresh_d && rom_present) begin fresh <= 1'b1; fresh_cnt <= 4'd15; end
         fresh_pulse <= (fresh_cnt != 4'd0);
@@ -629,7 +700,7 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
                 end else if (mt_phase == MT_READ || mt_phase == MT_ROM || mt_phase == MT_SAVE) begin
                     // Four beats to a burst; the request holds through them.
                     if (mt_phase == MT_SAVE) begin
-                        secw[{wi[11:2], mt_beat}] <= load_rdata;
+                        sw_we <= 1'b1; sw_a <= {wi[11:2], mt_beat}; sw_d <= load_rdata;
                     end else if (mt_phase == MT_ROM) begin
                         if (clr_addr + {mt_beat, 2'b00} < rom_end)
                             rom_back <= rom_back + load_rdata;
@@ -653,7 +724,7 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
         end else if (mt_phase == MT_LOAD && (clr_run || save_run)) begin
             // A sector in from the image, then out to the memory.
             case (ss)
-            3'd0: begin sd_lba <= {19'd0, chunk, 5'd0}; sd_rd <= sd_sel; sd_wait <= 28'd0; ss <= 3'd1; end
+            3'd0: begin sd_lba <= cur_lba; sd_rd <= sd_sel; sd_wait <= 28'd0; ss <= 3'd1; end
             3'd1: if (sd_ack_c) begin sd_rd <= 3'b000; ss <= 3'd2; end
                   else if (sd_wait == 28'd92_000_000) begin
                       // A second without the card answering. For the RAM:
@@ -662,6 +733,7 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
                       // For a card: it is not there after all.
                       sd_rd <= 3'b000;
                       if (cur_card) begin save_run <= 1'b0; card_in[cur_slot] <= 1'b0; end
+                      else if (cur_ctx) begin clr_run <= 1'b0; ctx_ok <= 1'b0; end    // the RAM is in: a reset into it
                       else begin img_ok <= 1'b0; mt_phase <= MT_CLEAR; clr_addr <= DRAM_BASE; end
                   end else sd_wait <= sd_wait + 28'd1;
             3'd2: if (!sd_ack_c) begin wi <= 12'd0; bi <= 2'd0; ss <= 3'd3; end
@@ -672,7 +744,25 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
                 bi <= bi + 2'd1;
                 ss <= (bi == 2'd3) ? 3'd6 : 3'd3;
             end
-            3'd6: begin
+            3'd6: if (cur_ctx) begin
+                // The context's chunk goes nowhere yet -- it stays in the
+                // buffer until the core is out of reset -- but is checked:
+                // the words summed, the header compared.
+                if (wi <= {2'd0, CTX_LAST}) ctx_sum <= ctx_sum + gather;   // the machine's words, as the save summed them
+                if (wi == 12'h3F0) ctx_magic_ok <= (gather == CTX_MAGIC);
+                if (wi == 12'h3F1) ctx_ver_ok   <= (gather == CTX_VERSION);
+                if (wi == 12'h3F2) begin
+                    ctx_ok   <= ctx_magic_ok && ctx_ver_ok && (gather == ctx_sum);
+                    // Held from the moment it leaves reset, until the
+                    // context is back in.
+                    halt_req <= ctx_magic_ok && ctx_ver_ok && (gather == ctx_sum);
+                    clr_run  <= 1'b0;
+                    ss       <= 3'd0;
+                end else begin
+                    wi <= wi + 12'd1;
+                    ss <= 3'd3;
+                end
+            end else begin
                 load_addr  <= xfer_base + {3'd0, chunk, wi, 2'b00};
                 load_data  <= gather;
                 load_we    <= 1'b1;
@@ -684,7 +774,12 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
                     chunk <= chunk + 8'd1;
                     ss    <= 3'd0;
                     if (chunk == chunk_last) begin
-                        if (clr_run) clr_run <= 1'b0;
+                        if (clr_run && img_ctx && ctx_boot) begin
+                            // The RAM is in; its context next, if it has one.
+                            cur <= 2'd3; chunk <= 8'd0;
+                            ctx_sum <= 32'd0; ctx_magic_ok <= 1'b0; ctx_ver_ok <= 1'b0;
+                        end
+                        else if (clr_run) clr_run <= 1'b0;
                         else begin save_run <= 1'b0; card_in[cur_slot] <= 1'b1; card_dirty[cur_slot] <= 1'b0; end
                     end
                 end else ss <= 3'd3;
@@ -705,7 +800,7 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
                 load_busy  <= 1'b1; rom_req <= 1'b0;
                 if (wi == 12'd4092) ss <= 3'd7;
             end
-            3'd7: begin sd_lba <= {19'd0, chunk, 5'd0}; sd_wr <= sd_sel; sd_wait <= 28'd0; ss <= 3'd1; end
+            3'd7: begin sd_lba <= cur_lba; sd_wr <= sd_sel; sd_wait <= 28'd0; ss <= 3'd1; end
             3'd1: if (sd_ack_c) begin sd_wr <= 3'b000; ss <= 3'd2; end
                   else if (sd_wait == 28'd92_000_000) begin
                       // The card is not taking it: give the machine back.
@@ -715,9 +810,78 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
                 wi <= 12'd0;
                 chunk <= chunk + 8'd1;
                 ss  <= 3'd0;
-                if (chunk == chunk_last) begin save_run <= 1'b0; if (cur_card) card_dirty[cur_slot] <= 1'b0; end
+                if (chunk == chunk_last) begin
+                    if (cur_ctx && !ctx_step) begin
+                        // The chunk without its header is out: now the RAM.
+                        cur <= 2'd0; chunk <= 8'd0;
+                    end else if (cur == 2'd0 && ctx_want) begin
+                        // The RAM is out: the context, and its header.
+                        mt_phase <= MT_CTXSAVE; ctx_step <= 1'b1; cx_st <= 4'd0; cx_i <= 10'd0;
+                        ctx_sum <= 32'd0; cur <= 2'd3; chunk <= 8'd0;
+                    end else begin
+                        save_run <= 1'b0;
+                        if (cur_card) card_dirty[cur_slot] <= 1'b0;
+                    end
+                end
             end
             default: ss <= 3'd0;
+            endcase
+        end else if (mt_phase == MT_CTXSAVE && save_run) begin
+            // Into the save buffer: nothing but the header's word 0x3F0,
+            // cleared, for the chunk that goes before the RAM; the
+            // machine's words and then the header for the one after.
+            case (cx_st)
+            4'd0: if (!ctx_step) begin
+                      sw_we <= 1'b1; sw_a <= 12'h3F0; sw_d <= 32'd0; cx_st <= 4'd4;
+                  end else begin
+                      ctx_sel <= 1'b1; ctx_addr <= cx_i; cx_wait <= 5'd0; cx_st <= 4'd1;
+                  end
+            4'd1: begin
+                      cx_wait <= cx_wait + 5'd1;
+                      if (cx_wait == 5'd20) begin
+                          sw_we <= 1'b1; sw_a <= {2'd0, cx_i}; sw_d <= ctx_rdata;
+                          ctx_sum <= ctx_sum + ctx_rdata;
+                          if (cx_i == CTX_LAST) cx_st <= 4'd2;
+                          else begin cx_i <= cx_i + 10'd1; cx_st <= 4'd0; end
+                      end
+                  end
+            4'd2: begin sw_we <= 1'b1; sw_a <= 12'h3F0; sw_d <= CTX_MAGIC;   cx_st <= 4'd3; end
+            4'd3: begin sw_we <= 1'b1; sw_a <= 12'h3F1; sw_d <= CTX_VERSION; cx_st <= 4'd5; end
+            4'd5: begin sw_we <= 1'b1; sw_a <= 12'h3F2; sw_d <= ctx_sum;     cx_st <= 4'd4; end
+            default: begin
+                      // Out to the file, as a chunk of the save.
+                      ctx_sel <= 1'b0; cx_st <= 4'd0;
+                      mt_phase <= MT_SAVE; cur <= 2'd3; chunk <= 8'd0; ss <= 3'd7;
+                  end
+            endcase
+        end else if (mt_phase == MT_CTXLOAD && save_run) begin
+            // Back into the machine, from the buffer the chunk arrived in,
+            // with the core halted: a word gathered from four bytes, set
+            // up, written, and let settle, each well inside the periods
+            // the .sdc allows.
+            case (cx_st)
+            4'd0: begin ctx_sel <= 1'b1; wi <= {2'd0, cx_i}; bi <= 2'd0; cx_wait <= 5'd0; cx_st <= 4'd1; end
+            4'd1: begin
+                      cx_wait <= cx_wait + 5'd1;
+                      if (cx_wait == 5'd2) begin
+                          gather <= {gather[23:0], secb_q};
+                          cx_wait <= 5'd0;
+                          if (bi == 2'd3) cx_st <= 4'd2; else bi <= bi + 2'd1;
+                      end
+                  end
+            4'd2: begin ctx_addr <= cx_i; ctx_wdata <= gather; cx_wait <= 5'd0; cx_st <= 4'd3; end
+            4'd3: begin cx_wait <= cx_wait + 5'd1; if (cx_wait == 5'd12) begin ctx_we <= 1'b1; cx_wait <= 5'd0; cx_st <= 4'd4; end end
+            4'd4: begin cx_wait <= cx_wait + 5'd1; if (cx_wait == 5'd12) begin ctx_we <= 1'b0; cx_wait <= 5'd0; cx_st <= 4'd5; end end
+            4'd5: begin
+                      cx_wait <= cx_wait + 5'd1;
+                      if (cx_wait == 5'd12) begin
+                          if (cx_i == CTX_LAST) begin
+                              ctx_sel <= 1'b0; ctx_ok <= 1'b0; cx_st <= 4'd0;
+                              save_run <= 1'b0; resume_go <= 1'b1; resumed <= 1'b1;
+                          end else begin cx_i <= cx_i + 10'd1; cx_st <= 4'd0; end
+                      end
+                  end
+            default: cx_st <= 4'd0;
             endcase
         end else if (clr_run) begin
             if (clr_addr == ((mt_phase == MT_ROM) ? ((rom_end + 25'd15) & ~25'd15)
@@ -768,14 +932,34 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
         end
         // A download that wrote something is a ROM, and then the memory
         // is walked before the core sees any of it.
-        if (rom_dl && !dl_d) begin rom_words <= 32'd0; rom_sum <= 32'd0; end
+        // A download starts afresh: whatever the last one set going -- the
+        // walk, a load or a save -- stops, so that every word of this one
+        // lands. The walk's steps between memory transactions do not hold
+        // the download off, and a second ROM arriving while the first was
+        // being walked lost words: Main now sends the remembered ROM at its
+        // start-up and then an .mgl's own. The walk starts again after.
+        if (rom_ok && !reset) ran <= 1'b1;
+        if (rom_dl && !dl_d) begin
+            rom_words <= 32'd0; rom_sum <= 32'd0; ran <= 1'b0;
+            clr_run <= 1'b0; save_run <= 1'b0; halt_req <= 1'b0; save_st <= 2'd0;
+            sd_rd <= 3'b000; sd_wr <= 3'b000; ss <= 3'd0;
+            ctx_sel <= 1'b0; ctx_we <= 1'b0; cx_st <= 4'd0; ctx_ok <= 1'b0;
+        end
         if (dl_d && !rom_dl && (rom_words != 0)) begin
             rom_present <= 1'b1;
+            ctx_boot    <= 1'b1; ctx_ok <= 1'b0; resumed <= 1'b0;
             clr_run     <= 1'b1;
             clr_addr    <= DRAM_BASE;
             mt_phase    <= MT_WRITE;
             mt_errors   <= 32'd0; mt_first <= 32'hFFFF_FFFF; rom_back <= 32'd0;
         end else if (rst_d && !reset && rom_present) begin
+            // A reset is a reset: into the retained RAM, not a wake -- once
+            // the machine has run. Main holds the reset through its own
+            // start-up, which is when it sends a remembered ROM, and that
+            // reset's release is still the load.
+            if (ran) begin ctx_boot <= 1'b0; resumed <= 1'b0; end
+            ctx_ok <= 1'b0;
+            ctx_sel <= 1'b0; ctx_we <= 1'b0; cx_st <= 4'd0;
             clr_run  <= 1'b1;
             clr_addr <= DRAM_BASE;
             mt_phase <= MT_WRITE;
@@ -791,10 +975,12 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
         // running, loaded now -- which is a power cycle into it.
         img_d <= img_mounted[0]; cimg_d <= {img_mounted[1], img_mounted[2]};
         if (img_mounted[0] && !img_d) begin
-            img_ok  <= (img_size == 64'd4194304);
+            img_ok  <= (img_size == IMG_RAM) || (img_size == IMG_RAM_CTX);
+            img_ctx <= (img_size == IMG_RAM_CTX);
             img_new <= (img_size == 64'd0);
             img_ro  <= img_readonly;
-            if (img_size == 64'd4194304 && rom_present && !ioctl_download && !clr_run && !save_run) begin
+            if ((img_size == IMG_RAM || img_size == IMG_RAM_CTX) && rom_present && !ioctl_download && !clr_run && !save_run) begin
+                ctx_boot <= 1'b1; ctx_ok <= 1'b0; resumed <= 1'b0;
                 clr_run <= 1'b1; mt_phase <= MT_LOAD; cur <= 2'd0; chunk <= 8'd0; ss <= 3'd0;
             end
         end
@@ -830,7 +1016,19 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
         auto_tick <= (auto_tick == 27'd91_999_999) ? 27'd0 : auto_tick + 27'd1;
         if (auto_tick == 27'd0 && auto_secs != 11'h7FF) auto_secs <= auto_secs + 11'd1;
         if (save_run || status[18:17] == 2'd0) auto_secs <= 11'd0;
-        if ((stopped && !stop_d) || (status[5] && !savebtn_d) ||
+        // "Full power off": Magic Cap switched off by the ON button, and
+        // saved without its context, so that the next load resets into
+        // the RAM and cleans up -- the old way, and a way out should a
+        // context ever not resume. Already off, just saved that way.
+        fulloff_d <= status[25];
+        press_off <= 1'b0;
+        if (status[25] && !fulloff_d && rom_ok) begin
+            full_off <= 1'b1;
+            if (stopped) want_ram_save <= 1'b1;
+            else press_off <= 1'b1;
+        end
+        if (!stopped && stop_d && !ctx_quiet) full_off <= 1'b0;   // switched on again
+        if ((stopped && !stop_d && !ctx_quiet) || (status[5] && !savebtn_d) ||
             (osd_open && !osd_d && ram_dirty && status[7]) ||
             (auto_due && ram_dirty && !stopped && !save_run)) begin
             want_ram_save <= 1'b1;
@@ -849,8 +1047,8 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
         // One at a time, with the core held and the memory waited for.
         case (save_st)
         2'd0: if (rom_ok && !clr_run && !ioctl_download &&
-                  (|want_card_load || (want_ram_save && (img_ok || img_new) && !img_ro) || |want_card_save)) begin
-                  xfer_kind <= |want_card_load ? 2'd2 : want_ram_save ? 2'd0 : 2'd1;
+                  (ctx_ok || |want_card_load || (want_ram_save && (img_ok || img_new) && !img_ro) || |want_card_save)) begin
+                  xfer_kind <= ctx_ok ? 2'd3 : |want_card_load ? 2'd2 : want_ram_save ? 2'd0 : 2'd1;
                   // Slot 1 first, when both have something to do.
                   xfer_slot <= |want_card_load ? !want_card_load[0] : !want_card_save[0];
                   halt_req <= 1'b1; idle_cnt <= 5'd0; save_st <= 2'd1;
@@ -860,7 +1058,12 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
                   if (idle_cnt == 5'd31) begin
                       save_run <= 1'b1; chunk <= 8'd0; wi <= 12'd0; ss <= 3'd0; save_st <= 2'd2;
                       case (xfer_kind)
-                      2'd0: begin mt_phase <= MT_SAVE; cur <= 2'd0; want_ram_save <= 1'b0; ram_dirty <= 1'b0; end
+                      // The RAM: the context's chunk, headerless, first --
+                      // and its context after, if this is a power-off.
+                      2'd0: begin mt_phase <= MT_CTXSAVE; ctx_step <= 1'b0; cx_st <= 4'd0; cur <= 2'd3;
+                                  ctx_want <= stopped && !full_off;
+                                  want_ram_save <= 1'b0; ram_dirty <= 1'b0; end
+                      2'd3: begin mt_phase <= MT_CTXLOAD; cx_st <= 4'd0; cx_i <= 10'd0; end
                       2'd1: begin mt_phase <= MT_SAVE; cur <= xfer_slot ? 2'd1 : 2'd2; want_card_save[xfer_slot] <= 1'b0; end
                       default: begin mt_phase <= MT_LOAD; cur <= xfer_slot ? 2'd1 : 2'd2; want_card_load[xfer_slot] <= 1'b0; end
                       endcase
@@ -945,7 +1148,7 @@ dr840_machine machine (
     // Boot option alone, so a mouse resting on its button across a reset
     // cannot do it by accident: the button counts only once the ROM has
     // been running for two seconds.
-    .clk(clk_sys), .rst_n(rst_n), .boot_monitor(status[2] | (option_key & opt_ok) | opt_force),
+    .clk(clk_sys), .rst_n(rst_n), .mem_rst_n(hard_rst_n), .boot_monitor(status[2] | (option_key & opt_ok) | opt_force),
     .pen_down(pen_down), .pen_px(pen_px), .pen_py(pen_py), .on_button(on_button), .ac_in(status[22:21] != 2'd2),
     .no_battery(status[22:21] == 2'd1),
     .net_card(net_on), .net_cen(net_cen),
@@ -957,6 +1160,7 @@ dr840_machine machine (
     .net_b_addr(net_b_addr), .net_b_q(net_b_q), .net_dbg_tx(), .net_dbg_rx(),
     .trace_stb(trace_stb), .trace_word(trace_word),
     .kbd_attached(~status[4]),
+    .ctx_sel(ctx_sel), .ctx_addr(ctx_addr), .ctx_we(ctx_we), .ctx_wdata(ctx_wdata), .ctx_rdata(ctx_rdata),
     .card_present(card_in & slot_mem), .card_log2_0(card_log2_0), .card_log2_1(card_log2_1), .key_tog(key_tog), .key_code(key_code), .key_ext(key_ext), .key_down(key_down),
     // Held in reset until there is a ROM to run. The loader owns the
     // memory while it is arriving, and before that there is nothing to do.
@@ -1007,7 +1211,9 @@ dr840_status #(.CLK_HZ(92_000_000)) status_line (
     // K's middle bits: the network card fitted, and its daemon there.
     // With no package, K and L carry the ROM's word count as summed and
     // its sum as read back from the memory, beside S, the sum as sent.
-    .v10(pkg_len != 25'd0 ? {pkg_state, net_on, net_link, 2'd0, pkg_len} : {3'd0, net_on, net_link, 2'd0, rom_words[24:0]}),
+    // Bits 26 and 25: this boot was a wake from a saved context; the RAM
+    // image's file has room for one.
+    .v10(pkg_len != 25'd0 ? {pkg_state, net_on, net_link, resumed, img_ctx, pkg_len} : {3'd0, net_on, net_link, resumed, img_ctx, rom_words[24:0]}),
     .v11(pkg_len != 25'd0 ? pkg_sum : rom_back),
     // J: frames sent and received through the network card, and the
     // first joystick.

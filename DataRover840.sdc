@@ -176,3 +176,17 @@ set_multicycle_path -hold  -end 1 -from [get_registers {*dr840_machine:machine|n
 # registers to the verdict's parts, all of which change on enabled edges only.
 set_multicycle_path -setup -end 2 -from [get_registers {*dr840_ne2000:nic|off_* *dr840_ne2000:nic|curr* *dr840_ne2000:nic|bnry* *dr840_ne2000:nic|pstart* *dr840_ne2000:nic|pstop* *dr840_ne2000:nic|rcr* *dr840_ne2000:nic|mar* *dr840_ne2000:nic|par* *dr840_ne2000:nic|cr*}] -to [get_registers {*dr840_ne2000:nic|v_*}]
 set_multicycle_path -hold  -end 1 -from [get_registers {*dr840_ne2000:nic|off_* *dr840_ne2000:nic|curr* *dr840_ne2000:nic|bnry* *dr840_ne2000:nic|pstart* *dr840_ne2000:nic|pstop* *dr840_ne2000:nic|rcr* *dr840_ne2000:nic|mar* *dr840_ne2000:nic|par* *dr840_ne2000:nic|cr*}] -to [get_registers {*dr840_ne2000:nic|v_*}]
+# The machine's context (dr840_machine.sv), moved only with the core halted:
+# the top level sets an address or a value and waits a dozen clocks and more
+# before it writes or reads, so everything from its context registers, and
+# everything into the read registers behind the blocks' context ports, has
+# several periods.
+set_multicycle_path -setup -end 8 -from [get_registers {*emu:emu|ctx_sel *emu:emu|ctx_we *emu:emu|ctx_addr[*] *emu:emu|ctx_wdata[*]}]
+set_multicycle_path -hold  -end 7 -from [get_registers {*emu:emu|ctx_sel *emu:emu|ctx_we *emu:emu|ctx_addr[*] *emu:emu|ctx_wdata[*]}]
+set_multicycle_path -setup -end 8 -to [get_registers {*|ctx_rdata[*]}]
+set_multicycle_path -hold  -end 7 -to [get_registers {*|ctx_rdata[*]}]
+# UART A's bit time: a product of the divisor, which changes only when the
+# ROM writes UARTA_CTRL2 (once, at boot) or a context puts it back with the
+# core halted; the counters that compare against it can take two periods.
+set_multicycle_path -setup -end 2 -from [get_registers {*dr840_tx39:soc|bit_clocks[*]}]
+set_multicycle_path -hold  -end 1 -from [get_registers {*dr840_tx39:soc|bit_clocks[*]}]

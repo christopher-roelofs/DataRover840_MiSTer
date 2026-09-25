@@ -66,7 +66,15 @@ module dr840_sib #(
     // register B for what to do with it. dr840_snd.sv fetches and plays.
     output reg         snd_tog,
     output reg  [31:0] snd_addr,
-    output wire [15:0] codec_b
+    output wire [15:0] codec_b,
+
+    // The state across a power cycle of the MiSTer (dr840_machine.sv):
+    // 0..12 the bus's registers in address order, 16..31 the codec's,
+    // 32 the interrupt pin as last seen and the sound ring's place.
+    input  wire [5:0]  ctx_addr,
+    input  wire        ctx_we,
+    input  wire [31:0] ctx_wdata,
+    output reg  [31:0] ctx_rdata
 );
     assign codec_b = ureg[4'd8];
     // ------------------------------------------------------------ registers
@@ -314,8 +322,46 @@ module dr840_sib #(
                 default: ;
                 endcase
             end
+
+            if (ctx_we) begin
+                if (ctx_addr[5:4] == 2'b01) ureg[ctx_addr[3:0]] <= ctx_wdata[15:0];
+                else if (ctx_addr == 6'd32) begin irq_seen <= ctx_wdata[31]; ring_off <= ctx_wdata[13:0]; end
+                else case (ctx_addr)
+                6'd0:  size    <= ctx_wdata;
+                6'd1:  sndrx   <= ctx_wdata;
+                6'd2:  sndtx   <= ctx_wdata;
+                6'd3:  telrx   <= ctx_wdata;
+                6'd4:  teltx   <= ctx_wdata;
+                6'd5:  ctrl    <= ctx_wdata;
+                6'd6:  sndhold <= ctx_wdata;
+                6'd7:  telhold <= ctx_wdata;
+                6'd8:  sf0ctrl <= ctx_wdata;
+                6'd9:  sf1ctrl <= ctx_wdata;
+                6'd10: sf0stat <= ctx_wdata;
+                6'd11: sf1stat <= ctx_wdata;
+                6'd12: dmactrl <= ctx_wdata;
+                default: ;
+                endcase
+            end
         end
     end
+
+    always @(posedge clk)
+        ctx_rdata <= (ctx_addr[5:4] == 2'b01) ? {16'd0, ureg[ctx_addr[3:0]]}
+                   : (ctx_addr == 6'd32) ? {irq_seen, 17'd0, ring_off}
+                   : (ctx_addr == 6'd0)  ? size
+                   : (ctx_addr == 6'd1)  ? sndrx
+                   : (ctx_addr == 6'd2)  ? sndtx
+                   : (ctx_addr == 6'd3)  ? telrx
+                   : (ctx_addr == 6'd4)  ? teltx
+                   : (ctx_addr == 6'd5)  ? ctrl
+                   : (ctx_addr == 6'd6)  ? sndhold
+                   : (ctx_addr == 6'd7)  ? telhold
+                   : (ctx_addr == 6'd8)  ? sf0ctrl
+                   : (ctx_addr == 6'd9)  ? sf1ctrl
+                   : (ctx_addr == 6'd10) ? sf0stat
+                   : (ctx_addr == 6'd11) ? sf1stat
+                   : (ctx_addr == 6'd12) ? dmactrl : 32'd0;
 
     always @(*) begin
         case (off)

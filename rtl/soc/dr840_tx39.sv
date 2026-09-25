@@ -148,7 +148,27 @@ module dr840_tx39 #(
     // controller's registers, one strobe each -- {we, controller, be,
     // offset, data} -- for dr840_netbridge.sv to write into the DDR.
     output reg         trace_stb,
-    output reg  [63:0] trace_word
+    output reg  [63:0] trace_word,
+
+    // The block's state across a power cycle of the MiSTer (see
+    // dr840_machine.sv): words 0x000..0x0FF the register file, 0x100..0x13F
+    // the card controllers' registers, 0x140..0x17F the codec's, 0x180..
+    // 0x1BF the Magic Bus's, 0x1C0.. the modelled registers here -- the
+    // clock and timers first, the interrupt banks and the power flags
+    // last, so that nothing raised while the rest goes back is kept --
+    // and then which cards were in, so that one changed while the MiSTer
+    // was off arrives, or leaves, as it would have. Local to 0x1C0:
+    // 00..0F timers, UART, video; 10..17 the card controllers' enables,
+    // 18..1F their latches; 20..25 the interrupt enables, 26 the network
+    // card's COR; 28..2D the interrupt banks; 30 the power and timer
+    // flags; 31 the cards.
+    // ctx_sel turns the two memories' ports over to the context while it
+    // is read or written; it is only ever up with the core halted.
+    input  wire        ctx_sel,
+    input  wire [8:0]  ctx_addr,
+    input  wire        ctx_we,
+    input  wire [31:0] ctx_wdata,
+    output reg  [31:0] ctx_rdata
 );
 
     // ---------------------------------------------------------- decode
@@ -203,6 +223,11 @@ module dr840_tx39 #(
         rf[8'h32] = 32'h4000_0000;   // 0x0C8, UART B: transmitter empty
     end
     wire [7:0] rf_idx = off[9:2];
+    wire       ctx_rf  = ctx_sel && ctx_addr[8:8] == 1'b0;               // 0x000..0x0FF
+    wire       ctx_glr = ctx_sel && ctx_addr[8:6] == 3'b100;             // 0x100..0x13F
+    wire       ctx_sib = ctx_addr[8:6] == 3'b101;                        // 0x140..0x17F
+    wire       ctx_mb  = ctx_addr[8:6] == 3'b110;                        // 0x180..0x1BF
+    wire       ctx_reg = ctx_addr[8:6] == 3'b111;                        // 0x1C0..0x1FF
 
     // Read synchronously. Read combinationally and this is not a memory at
     // all: Quartus builds 8,192 flip-flops and a 256-to-1 multiplexer in
@@ -210,7 +235,15 @@ module dr840_tx39 #(
     // first time it was written that way. The handshake already spans two
     // cycles, so the value is ready before the acknowledgement is.
     reg [31:0] rf_q;
-    always @(posedge clk) rf_q <= rf[rf_idx];
+    always @(posedge clk) rf_q <= rf[ctx_rf ? ctx_addr[7:0] : rf_idx];
+    // One write port, the bus's or the context's.
+    wire        rf_we = ctx_rf ? ctx_we : (io_start && is_tx39 && io_we);
+    wire [7:0]  rf_wa = ctx_rf ? ctx_addr[7:0] : rf_idx;
+    wire [31:0] rf_wd = ctx_rf ? ctx_wdata
+                      : (off == 12'h0E0) ? (io_wdata & ~32'h2000_0000)                 // MBUSCTRL: input status is the bus's
+                      : (off == 12'h1C4) ? (io_wdata & ~(32'h8000_0000 | 32'h4000_0000)) // POWERCTRL: ONBUTN, PWRINT are pins
+                                         : io_wdata;
+    always @(posedge clk) if (rf_we) rf[rf_wa] <= rf_wd;
 
     // ------------------------------------------------- interrupt controller
 
@@ -304,14 +337,15 @@ module dr840_tx39 #(
     wire        is_sib = (off >= 12'h060) && (off <= 12'h090);
     // The Magic Bus controller and the keyboard: rtl/soc/dr840_mbus.sv.
     wire        is_mbus = (off >= 12'h0E0) && (off <= 12'h0F8);
-    wire [31:0] mbus_rdata, mbus_set;
+    wire [31:0] mbus_rdata, mbus_set, mbus_ctx, sib_ctx;
     dr840_mbus mbus (
         .clk(clk), .cen(cen), .rst_n(rst_n), .attached(kbd_attached),
         .wr(io_start && is_tx39 && io_we && is_mbus), .off(off), .wdata(io_wdata),
         .rdata(mbus_rdata), .int2_set(mbus_set),
         .key_tog(key_tog), .key_code(key_code), .key_ext(key_ext), .key_down(key_down),
         .kmem_addr(kmem_addr), .kmem_req(kmem_req), .kmem_we(kmem_we),
-        .kmem_wdata(kmem_wdata), .kmem_ack(kmem_ack)
+        .kmem_wdata(kmem_wdata), .kmem_ack(kmem_ack),
+        .ctx_addr(ctx_addr[5:0]), .ctx_we(ctx_we && ctx_mb), .ctx_wdata(ctx_wdata), .ctx_rdata(mbus_ctx)
     );
     wire [31:0] sib_rdata;
     wire [31:0] sib_set;                // bits to raise in INTRSTATUS1
@@ -320,7 +354,8 @@ module dr840_tx39 #(
         .wr(io_start && is_tx39 && io_we && is_sib), .off(off), .wdata(io_wdata),
         .rdata(sib_rdata), .int1_set(sib_set),
         .pen_down(pen_down), .pen_x(pen_x), .pen_y(pen_y), .no_battery(no_battery),
-        .snd_tog(snd_tog), .snd_addr(snd_addr), .codec_b(codec_b)
+        .snd_tog(snd_tog), .snd_addr(snd_addr), .codec_b(codec_b),
+        .ctx_addr(ctx_addr[5:0]), .ctx_we(ctx_we && ctx_sib), .ctx_wdata(ctx_wdata), .ctx_rdata(sib_ctx)
     );
 
     // The two Glacier PC Card controllers, at 0x10400000 and 0x10800000:
@@ -393,6 +428,14 @@ module dr840_tx39 #(
             if (!cp_q[0] && card_q[0]) begin gl_pend[0] <= gl_pend[0] | GL_CD_MASK; gl_pend[2] <= gl_pend[2] | (net_q ? 16'h000C : 16'h0006); end
             if (cp_q[1] && !card_q[1]) begin gl_pend[6] <= gl_pend[6] | GL_CD_MASK; gl_pend[4] <= gl_pend[4] | 16'h0006; end
             if (!cp_q[1] && card_q[1]) begin gl_pend[4] <= gl_pend[4] | GL_CD_MASK; gl_pend[6] <= gl_pend[6] | 16'h0006; end
+            // The context: which cards were in when it was saved, so a
+            // change while the MiSTer was off is an insertion or removal
+            // Magic Cap sees; and the enables and latches.
+            if (ctx_we && ctx_reg) begin
+                if (ctx_addr[5:0] == 6'h31) card_q <= ctx_wdata[1:0];      // last of all
+                if (ctx_addr[5:3] == 3'b010) gl_en[ctx_addr[2:0]] <= ctx_wdata[15:0];     // 0x1D0..0x1D7
+                if (ctx_addr[5:3] == 3'b011) gl_pend[ctx_addr[2:0]] <= ctx_wdata[15:0];   // 0x1D8..0x1DF
+            end
         end
     end
     wire gl_irq_rise = (gl_irq0 && !gl_irq_q[0]) || (gl_irq1 && !gl_irq_q[1]);
@@ -481,6 +524,7 @@ module dr840_tx39 #(
                 cor <= io_wdata[31:24];
                 if (io_wdata[31]) nic_reset <= 1'b1;
             end
+            if (ctx_we && ctx_reg && ctx_addr[5:0] == 6'h26) cor <= ctx_wdata[7:0];
         end
     end
 
@@ -493,19 +537,18 @@ module dr840_tx39 #(
         for (gi = 0; gi < 64; gi = gi + 1) glr[gi] = 16'd0;
     end
     reg  [15:0] glr_q;
-    always @(posedge clk) glr_q <= glr[gl_idx];
+    always @(posedge clk) glr_q <= glr[ctx_glr ? ctx_addr[5:0] : gl_idx];
     wire [15:0] gl_wval = io_be[3] ? io_wdata[31:16] : io_wdata[15:0];
     wire [15:0] gl_rval = (io_addr[5:1] == 5'd6) ? ((glr_q & ~GL_INPUTS) | (gl_slot ? gl_in1 : gl_in0))
                         : (io_addr[5:1] >= 5'd12 && io_addr[5:1] <= 5'd15) ? gl_pend[{gl_slot, io_addr[2:1]}]
                         : glr_q;
-    always @(posedge clk) if (io_start && is_glacier && gl_inreg && io_we) begin
-        if (io_addr[5:1] >= 5'd12 && io_addr[5:1] <= 5'd15)
-            glr[gl_idx] <= glr_q & ~gl_wval;                       // pending: W1C
-        else if (io_addr[5:1] == 5'd6)
-            glr[gl_idx] <= (glr_q & GL_INPUTS) | (gl_wval & ~GL_INPUTS);
-        else
-            glr[gl_idx] <= gl_wval;
-    end
+    wire        glr_we = ctx_glr ? ctx_we : (io_start && is_glacier && gl_inreg && io_we);
+    wire [5:0]  glr_wa = ctx_glr ? ctx_addr[5:0] : gl_idx;
+    wire [15:0] glr_wd = ctx_glr ? ctx_wdata[15:0]
+                       : (io_addr[5:1] >= 5'd12 && io_addr[5:1] <= 5'd15) ? (glr_q & ~gl_wval)   // pending: W1C
+                       : (io_addr[5:1] == 5'd6) ? ((glr_q & GL_INPUTS) | (gl_wval & ~GL_INPUTS))
+                                                : gl_wval;
+    always @(posedge clk) if (glr_we) glr[glr_wa] <= glr_wd;
 
     localparam [11:0] MBUSCTRL          = 12'h0E0;
     localparam [31:0] MBUSCTRL_BUSY     = 32'h8000_0000;
@@ -772,13 +815,10 @@ module dr840_tx39 #(
 
             // ---------------------------------------------- register access
             if (io_start && is_tx39 && io_we) begin
-                // Everything is remembered; the decoded registers below
-                // just also do something about it.
-                // Input status comes from the bus, not from the command
-                // word; the ROM writes zero here when stopping the block.
-                rf[rf_idx] <= (off == MBUSCTRL)  ? (io_wdata & ~MBUSCTRL_IN_HIGH)
-                            : (off == POWERCTRL) ? (io_wdata & ~(PWRCTRL_ONBUTN | PWRCTRL_PWRINT))
-                                                 : io_wdata;
+                // Everything is remembered (rf_we above: input status
+                // comes from the bus, not from the command word, and the
+                // ROM writes zero to MBUSCTRL when stopping the block); the
+                // decoded registers below just also do something about it.
                 if (off == 12'h028) vid_ctrl1 <= io_wdata;
                 if (off == 12'h02C) vid_ctrl2 <= io_wdata;
                 if (off == 12'h030) vid_ctrl3 <= io_wdata;
@@ -882,7 +922,75 @@ module dr840_tx39 #(
                 else       nxt_high   = nxt_high   | (|(nxt_st & nxt_en));
             end
             if (cen) irq_r <= {1'b0, nxt_high, 1'b0, nxt_normal, 2'b00};
+
+            // The context, written back last so that it wins.
+            if (ctx_we && ctx_reg) begin
+                case (ctx_addr[5:0])
+                6'h00: rtc[31:0]         <= ctx_wdata;
+                6'h01: rtc[39:32]        <= ctx_wdata[7:0];
+                6'h02: rtc_acc           <= ctx_wdata;
+                6'h03: rtc_alarm[31:0]   <= ctx_wdata;
+                6'h04: rtc_alarm[39:32]  <= ctx_wdata[7:0];
+                6'h05: t_ctrl            <= ctx_wdata;
+                6'h06: t_per             <= ctx_wdata;
+                6'h07: per_acc[31:0]     <= ctx_wdata;
+                6'h08: per_acc[39:32]    <= ctx_wdata[7:0];
+                6'h09: stp_deadline[31:0]  <= ctx_wdata;
+                6'h0A: stp_deadline[39:32] <= ctx_wdata[7:0];
+                6'h0B: ua_ctrl1          <= ctx_wdata;
+                6'h0C: ua_ctrl2          <= ctx_wdata;
+                6'h0D: vid_ctrl1         <= ctx_wdata;
+                6'h0E: vid_ctrl2         <= ctx_wdata;
+                6'h0F: vid_ctrl3         <= ctx_wdata;
+                6'h20, 6'h21, 6'h22, 6'h23, 6'h24, 6'h25:
+                       icu_enable[ctx_addr[2:0]] <= ctx_wdata;
+                6'h28, 6'h29, 6'h2A, 6'h2B, 6'h2C, 6'h2D:
+                       icu_status[ctx_addr[2:0]] <= ctx_wdata;
+                6'h30: begin
+                       alarm_armed <= ctx_wdata[0]; stp_armed <= ctx_wdata[1];
+                       pwrcs_set   <= ctx_wdata[2]; pwr_stopped <= ctx_wdata[3];
+                end
+                default: ;
+                endcase
+            end
         end
+    end
+
+    // The context's read side: a register behind the address, which only
+    // changes with the core halted.
+    always @(posedge clk) begin
+        if (ctx_addr[8] == 1'b0)          ctx_rdata <= rf_q;
+        else if (ctx_addr[8:6] == 3'b100) ctx_rdata <= {16'd0, glr_q};
+        else if (ctx_sib)                 ctx_rdata <= sib_ctx;
+        else if (ctx_mb)                  ctx_rdata <= mbus_ctx;
+        else case (ctx_addr[5:0])
+        6'h00: ctx_rdata <= rtc[31:0];
+        6'h01: ctx_rdata <= {24'd0, rtc[39:32]};
+        6'h02: ctx_rdata <= rtc_acc;
+        6'h03: ctx_rdata <= rtc_alarm[31:0];
+        6'h04: ctx_rdata <= {24'd0, rtc_alarm[39:32]};
+        6'h05: ctx_rdata <= t_ctrl;
+        6'h06: ctx_rdata <= t_per;
+        6'h07: ctx_rdata <= per_acc[31:0];
+        6'h08: ctx_rdata <= {24'd0, per_acc[39:32]};
+        6'h09: ctx_rdata <= stp_deadline[31:0];
+        6'h0A: ctx_rdata <= {24'd0, stp_deadline[39:32]};
+        6'h0B: ctx_rdata <= ua_ctrl1;
+        6'h0C: ctx_rdata <= ua_ctrl2;
+        6'h0D: ctx_rdata <= vid_ctrl1;
+        6'h0E: ctx_rdata <= vid_ctrl2;
+        6'h0F: ctx_rdata <= vid_ctrl3;
+        6'h26: ctx_rdata <= {24'd0, cor};
+        6'h31: ctx_rdata <= {30'd0, card_q};
+        6'h18, 6'h19, 6'h1A, 6'h1B, 6'h1C, 6'h1D, 6'h1E, 6'h1F:
+               ctx_rdata <= {16'd0, gl_pend[ctx_addr[2:0]]};
+        6'h20, 6'h21, 6'h22, 6'h23, 6'h24, 6'h25:
+               ctx_rdata <= icu_enable[ctx_addr[2:0]];
+        6'h28, 6'h29, 6'h2A, 6'h2B, 6'h2C, 6'h2D:
+               ctx_rdata <= icu_status[ctx_addr[2:0]];
+        6'h30: ctx_rdata <= {28'd0, pwr_stopped, pwrcs_set, stp_armed, alarm_armed};
+        default: ctx_rdata <= (ctx_addr[5:3] == 3'b010) ? {16'd0, gl_en[ctx_addr[2:0]]} : 32'd0;
+        endcase
     end
 
     // The reply is decided on the edge that carries the transaction out

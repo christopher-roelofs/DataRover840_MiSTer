@@ -55,7 +55,8 @@ module tb_board (
         .retire_valid(retire_valid), .retire_pc(retire_pc),
         .retire_insn(retire_insn), .retire_next_pc(retire_next_pc),
         .ihit_count(ihit_count), .imiss_count(imiss_count),
-        .dhit_count(dhit_count), .dmiss_count(dmiss_count)
+        .dhit_count(dhit_count), .dmiss_count(dmiss_count),
+        .ctx_addr(7'd0), .ctx_we(1'b0), .ctx_wdata(32'd0), .ctx_rdata()
     );
 
     dr840_mem board (
