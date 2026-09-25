@@ -72,8 +72,6 @@ assign VIDEO_ARY = native ? 13'd2 : 13'd3;
 // (about 28 characters; longer is cut off). The status bits are the ones
 // they have always been, so a saved configuration still means the same;
 // bit 3, the debug display that was, is unused.
-// status_menumask bit 0 is the network card: H0 hides what slot 1's
-// memory card has no use for while the network card is fitted.
 localparam CONF_STR = {
     "DataRover840;;",
     "-;",
@@ -94,6 +92,12 @@ localparam CONF_STR = {
     // over the serial port as the computer WinPcLink runs on; in Magic
     // Cap, go to the Storeroom and tap the computer. .pkg, and .mc2 --
     // the Web Browser is one (three characters each, run together).
+    // The two card slots' images. On the main page, and never hidden:
+    // an .mgl mounts an image by selecting its entry on the page the OSD
+    // opens on, and one it cannot find there is not mounted at all -- a
+    // card entry on a page had Main load the card as the ROM instead.
+    "S2,IMG,Slot 1 card image;",
+    "S1,IMG,Slot 2 card image;",
     "F2,PKGMC2,Install package;",
     "-;",
     // Memory cards: a raw image of the card's common memory, the
@@ -101,28 +105,41 @@ localparam CONF_STR = {
     // Magic Cap itself. Slot 2's image is the framework's image 1 and slot
     // 1's is image 2, so that .mgl files written for slot 2 before slot 1
     // had cards still mount it there.
-    // Slot 1 holds a memory card, or instead an NE2000 network card --
-    // Magic Cap needs the WCPack and Ne2000 packages installed to use it,
+    // Each slot holds a memory card -- the mounted image, if there is one
+    // -- or is empty; slot 1 can hold an NE2000 network card instead
+    // (Magic Cap needs the WCPack and Ne2000 packages installed to use it,
     // and objects to an unknown card without them; the MiSTer's side is
-    // scripts/drnet, or a Main with the bridge built in. With the network
-    // card fitted, an image mounted in slot 1 waits in the SDRAM unseen.
-    "O[19],Slot 1,Memory card,Network card;",
-    "H0S2,IMG,Mount slot 1 card;",
-    "S1,IMG,Mount slot 2 card;",
-    "-;",
-
-    "P1,Display;",
+    // scripts/drnet, or a Main with the bridge built in). Choosing Empty
+    // takes the card out: saved first if it has been written to, while
+    // its image is still the one mounted. An image stays loaded while its
+    // slot is empty or holds the network card, and goes back in with
+    // Memory card. Bits 20:19 for slot 1 keep what bit 19 always meant
+    // (0 memory card, 1 network card); bit 23 is slot 2. status_menumask
+    // bit 0 hides slot 1's memory card entries when it holds something
+    // else, bit 1 slot 2's when it is empty (only the re-insert entries: the
+    // images' own entries stay on the main page, where an .mgl can find them).
+    "P1,Card slots;",
     "P1-;",
+    "P1O[20:19],Slot 1,Memory card,Network card,Empty;",
+    // Out and back in with the option key held, which is how Magic Cap
+    // is asked to set up (format) a blank card.
+    "H0P1T[24],Slot 1: re-insert (option);",
+    "P1-;",
+    "P1O[23],Slot 2,Memory card,Empty;",
+    "H1P1T[10],Slot 2: re-insert (option);",
+
+    "P2,Display;",
+    "P2-;",
     // The panel's own 480x320 for the framework's scaler -- its video
     // settings choose the size, and shadow_masks/ has the LCD grid for
     // 3x and 4x -- or the old 640x480 with the panel in a bezel.
-    "P1O[14],Resolution,480x320,640x480 bezel;",
+    "P2O[14],Resolution,480x320,640x480 bezel;",
     // The screen's colours: black and white, or a grey LCD's or the
     // green backlight's, the reference's tints.
-    "P1O[9:8],LCD color,Black & white,Grey,Green;",
+    "P2O[9:8],LCD color,Black & white,Grey,Green;",
 
-    "P2,Power & Saving;",
-    "P2-;",
+    "P3,Power & Saving;",
+    "P3-;",
     // Where the power comes from. By default the AC adaptor with a
     // battery fitted: the gauge shows the charging bolt. The adaptor alone
     // is the main battery reading nothing, and Magic Cap draws a plug in
@@ -131,49 +148,44 @@ localparam CONF_STR = {
     // Cap never turns itself off when idle; on Battery it does, and the
     // next option says what happens then. Bits 22:21; bit 16, the old
     // two-way setting, is unused.
-    "P2O[22:21],Power,AC + battery,AC adaptor,Battery;",
+    "P3O[22:21],Power,AC + battery,AC adaptor,Battery;",
     // Magic Cap turns the machine off after it has sat idle. A MiSTer has
     // no battery to save, so by default the core presses the ON button
     // for it once the RAM has been written: an autosave and a blink,
     // rather than a dark screen.
-    "P2O[6],Idle power-off,Wake,Stay off;",
+    "P3O[6],Idle power-off,Wake,Stay off;",
     // As the console cores do it: opening the OSD saves, if anything in
     // the RAM has changed since the last save. Off by default: a save is
     // two seconds with the machine held, which is not what opening a menu
     // should cost.
-    "P2O[7],Autosave on OSD,Off,On;",
+    "P3O[7],Autosave on OSD,Off,On;",
     // A save every so often, if anything has changed since the last; off
     // by default, since a save holds the machine for two seconds.
-    "P2O[18:17],Autosave every,Off,5 min,15 min,30 min;",
-    "P2-;",
-    "P2T[5],Save RAM now;",
+    "P3O[18:17],Autosave every,Off,5 min,15 min,30 min;",
+    "P3-;",
+    "P3T[5],Save RAM now;",
     // A reset that ignores the save: the RAM cleared, Magic Cap set up
     // from nothing. The save is overwritten by the next one.
-    "P2T[15],Start fresh (clear RAM);",
+    "P3T[15],Start fresh (clear RAM);",
 
-    "P3,Cards & Packages;",
-    "P3-;",
-    // Out and back in with the option key held, which is how Magic Cap
-    // is asked to set up (format) a blank card.
-    "H0P3T[20],Re-insert slot 1 (option);",
-    "P3T[10],Re-insert slot 2 (option);",
-    "P3-;",
+    "P4,Packages;",
+    "P4-;",
     // The device's UART runs the link at 19200 baud, which a real PC
     // could not change either; this link is not a wire, and hands the
     // bytes over four times as fast, which is as fast as Magic Cap keeps
     // up with (dr840_pclink.sv). Slower, if a package ever needs it.
-    "P3O[13:12],Package speed,4x,2x,1x (19200);",
+    "P4O[13:12],Package speed,4x,2x,1x (19200);",
     // The package offered again, for another RAM image.
-    "P3T[11],Offer package again;",
+    "P4T[11],Offer package again;",
 
-    "P4,System;",
-    "P4-;",
+    "P5,System;",
+    "P5-;",
     // A Magic Bus AT keyboard, driven by the PS/2 keyboard; its discovery
     // by the ROM matches the reference's access for access.
-    "P4O[4],Keyboard,On,Off;",
+    "P5O[4],Keyboard,On,Off;",
     // The option button, held at reset, takes the ROM to the IDT monitor
     // instead of Magic Cap. Takes effect on the next reset.
-    "P4O[2],Boot,Magic Cap,IDT monitor;",
+    "P5O[2],Boot,Magic Cap,IDT monitor;",
 
     "-;",
     "R[0],Reset;",
@@ -298,6 +310,11 @@ wire  [63:0] img_size;
 wire         osd_open = OSD_STATUS;      // the framework's: the menu is open
 reg          osd_d, ram_dirty;
 reg    [1:0] cimg_d, reins_d;        // per card slot: [0] slot 1, [1] slot 2
+// What each slot holds, from the OSD: a memory card (the mounted image,
+// if any), and in slot 1 perhaps the network card instead.
+wire   [1:0] slot_mem = {~status[23], status[20:19] == 2'd0};
+wire         net_on   = (status[20:19] == 2'd1);
+reg    [1:0] slot_mem_d;
 wire         ram_written;
 wire   [1:0] card_written;               // per slot: [0] slot 1, [1] slot 2
 wire  [24:0] ioctl_addr;
@@ -311,7 +328,7 @@ hps_io #(.CONF_STR(CONF_STR), .VDNUM(3)) hps_io
     .HPS_BUS        (HPS_BUS),
     .buttons        (buttons),
     .status         (status),
-    .status_menumask({15'd0, status[19]}),
+    .status_menumask({14'd0, ~slot_mem}),
     .ps2_mouse      (ps2_mouse),
     .ps2_key        (ps2_key),
     .joystick_0     (joystick_0),
@@ -587,7 +604,7 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
         want_ram_save <= 0; want_card_save <= 0; want_card_load <= 0;
         reins_cnt <= 0; reins_st <= 0; reins_slot <= 0; opt_force <= 0;
         img_ok <= 0; img_new <= 0; img_d <= 0; save_run <= 0; halt_req <= 0; save_st <= 0; idle_cnt <= 0;
-        sd_wait <= 0; img_ro <= 0; save_fail <= 0; osd_d <= 0; ram_dirty <= 0; cimg_d <= 0; reins_d <= 0;
+        sd_wait <= 0; img_ro <= 0; save_fail <= 0; osd_d <= 0; ram_dirty <= 0; cimg_d <= 0; reins_d <= 0; slot_mem_d <= 2'b11;
         stop_d <= 0; savebtn_d <= 0;
         fresh <= 0; fresh_d <= 0; fresh_cnt <= 0; fresh_pulse <= 0;
         auto_tick <= 0; auto_secs <= 0;
@@ -817,13 +834,18 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
             (osd_open && !osd_d && ram_dirty && status[7]) ||
             (auto_due && ram_dirty && !stopped && !save_run)) begin
             want_ram_save <= 1'b1;
-            if (card_in[0] && card_dirty[0]) want_card_save[0] <= 1'b1;
-            if (card_in[1] && card_dirty[1]) want_card_save[1] <= 1'b1;
+            if (card_in[0] && slot_mem[0] && card_dirty[0]) want_card_save[0] <= 1'b1;
+            if (card_in[1] && slot_mem[1] && card_dirty[1]) want_card_save[1] <= 1'b1;
         end
         if (osd_open && !osd_d) begin
-            if (card_in[0] && card_dirty[0]) want_card_save[0] <= 1'b1;
-            if (card_in[1] && card_dirty[1]) want_card_save[1] <= 1'b1;
+            if (card_in[0] && slot_mem[0] && card_dirty[0]) want_card_save[0] <= 1'b1;
+            if (card_in[1] && slot_mem[1] && card_dirty[1]) want_card_save[1] <= 1'b1;
         end
+        // A card taken out from the OSD: saved, if it has been written to,
+        // while its image is still the one mounted.
+        slot_mem_d <= slot_mem;
+        if (slot_mem_d[0] && !slot_mem[0] && card_in[0] && card_dirty[0]) want_card_save[0] <= 1'b1;
+        if (slot_mem_d[1] && !slot_mem[1] && card_in[1] && card_dirty[1]) want_card_save[1] <= 1'b1;
         // One at a time, with the core held and the memory waited for.
         case (save_st)
         2'd0: if (rom_ok && !clr_run && !ioctl_download &&
@@ -851,10 +873,10 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
         // Re-insertion with the option key held: out for a tenth of a
         // second, then in with the key down for three, which is how a
         // blank card is offered for setting up.
-        reins_d <= {status[10], status[20]};
+        reins_d <= {status[10], status[24]};
         case (reins_st)
-        2'd0: if (status[20] && !reins_d[0] && card_in[0]) begin card_in[0] <= 1'b0; reins_slot <= 1'b0; reins_cnt <= 28'd0; reins_st <= 2'd1; end
-              else if (status[10] && !reins_d[1] && card_in[1]) begin card_in[1] <= 1'b0; reins_slot <= 1'b1; reins_cnt <= 28'd0; reins_st <= 2'd1; end
+        2'd0: if (status[24] && !reins_d[0] && card_in[0] && slot_mem[0]) begin card_in[0] <= 1'b0; reins_slot <= 1'b0; reins_cnt <= 28'd0; reins_st <= 2'd1; end
+              else if (status[10] && !reins_d[1] && card_in[1] && slot_mem[1]) begin card_in[1] <= 1'b0; reins_slot <= 1'b1; reins_cnt <= 28'd0; reins_st <= 2'd1; end
         2'd1: begin reins_cnt <= reins_cnt + 28'd1;
                     if (reins_cnt == 28'd9_200_000) begin opt_force <= 1'b1; reins_cnt <= 28'd0; reins_st <= 2'd2; end end
         2'd2: begin reins_cnt <= reins_cnt + 28'd1;
@@ -903,7 +925,7 @@ wire [31:0] net_frames_tx, net_frames_rx;
 wire        trace_stb;
 wire [63:0] trace_word;
 dr840_netbridge netbridge (
-    .clk(clk_sys), .cen(net_cen), .rst_n(rst_n), .enable(status[19]),
+    .clk(clk_sys), .cen(net_cen), .rst_n(rst_n), .enable(net_on),
     .tx_req(net_tx_req), .tx_base(net_tx_base), .tx_len(net_tx_len),
     .tx_done(net_tx_done), .tx_ok(net_tx_ok),
     .rx_offer(net_rx_offer), .rx_len(net_rx_len), .rx_dst(net_rx_dst),
@@ -926,7 +948,7 @@ dr840_machine machine (
     .clk(clk_sys), .rst_n(rst_n), .boot_monitor(status[2] | (option_key & opt_ok) | opt_force),
     .pen_down(pen_down), .pen_px(pen_px), .pen_py(pen_py), .on_button(on_button), .ac_in(status[22:21] != 2'd2),
     .no_battery(status[22:21] == 2'd1),
-    .net_card(status[19]), .net_cen(net_cen),
+    .net_card(net_on), .net_cen(net_cen),
     .net_tx_req(net_tx_req), .net_tx_base(net_tx_base), .net_tx_len(net_tx_len),
     .net_tx_done(net_tx_done), .net_tx_ok(net_tx_ok),
     .net_rx_offer(net_rx_offer), .net_rx_len(net_rx_len), .net_rx_dst(net_rx_dst),
@@ -935,7 +957,7 @@ dr840_machine machine (
     .net_b_addr(net_b_addr), .net_b_q(net_b_q), .net_dbg_tx(), .net_dbg_rx(),
     .trace_stb(trace_stb), .trace_word(trace_word),
     .kbd_attached(~status[4]),
-    .card_present(card_in), .card_log2_0(card_log2_0), .card_log2_1(card_log2_1), .key_tog(key_tog), .key_code(key_code), .key_ext(key_ext), .key_down(key_down),
+    .card_present(card_in & slot_mem), .card_log2_0(card_log2_0), .card_log2_1(card_log2_1), .key_tog(key_tog), .key_code(key_code), .key_ext(key_ext), .key_down(key_down),
     // Held in reset until there is a ROM to run. The loader owns the
     // memory while it is arriving, and before that there is nothing to do.
     .load_en(load_en_q),
@@ -985,7 +1007,7 @@ dr840_status #(.CLK_HZ(92_000_000)) status_line (
     // K's middle bits: the network card fitted, and its daemon there.
     // With no package, K and L carry the ROM's word count as summed and
     // its sum as read back from the memory, beside S, the sum as sent.
-    .v10(pkg_len != 25'd0 ? {pkg_state, status[19], net_link, 2'd0, pkg_len} : {3'd0, status[19], net_link, 2'd0, rom_words[24:0]}),
+    .v10(pkg_len != 25'd0 ? {pkg_state, net_on, net_link, 2'd0, pkg_len} : {3'd0, net_on, net_link, 2'd0, rom_words[24:0]}),
     .v11(pkg_len != 25'd0 ? pkg_sum : rom_back),
     // J: frames sent and received through the network card, and the
     // first joystick.

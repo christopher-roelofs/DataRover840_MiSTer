@@ -21,7 +21,7 @@ cat <<'HEAD'
 # nothing unless the DataRover 840 core is loaded. Running this again just
 # restarts it; "--remove" takes it away again.
 #
-# In the core: OSD > Slot 1 > Network card. In Magic Cap: install the
+# In the core: OSD > Card slots > Slot 1 > Network card. In Magic Cap: install the
 # WCPack and Ne2000 packages (OSD > Install package, then the Storeroom's
 # computer), then in Internet Center > Setup add a provider whose
 # connection is "Ne2000 LAN", with an address nothing else on your network

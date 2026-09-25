@@ -2,7 +2,7 @@
 #
 # drnet -- the DataRover's network cable, on the MiSTer.
 #
-# The core's network card (an NE2000 in slot 1; OSD: Slot 1) puts the frames
+# The core's network card (an NE2000 in slot 1; OSD: Card slots) puts the frames
 # it sends into a ring in the DDR memory the FPGA shares with Linux, and
 # takes the frames it receives from another (rtl/dr840_netbridge.sv has the
 # layout). This moves them between those rings and a TAP interface, and

@@ -68,7 +68,8 @@ common memory -- the reference emulator's own format (`--sram1`,
 `--sram2`), so a card is carried between the two as a file -- mounted from
 the OSD for either slot, written back with the RAM and whenever the OSD
 opens with it written to. Slot 1 holds a memory card or instead the
-network card (OSD: Slot 1); slot 2 a memory card. Two memory cards show
+network card, or is empty; slot 2 a memory card or is empty (OSD: Card
+slots). Two memory cards show
 in the Storeroom as two shelves, as in the reference. Slot 2's image is
 the framework's image 1 and slot 1's image 2, so an .mgl written for slot
 2 still mounts there. The controller sees it
@@ -100,7 +101,7 @@ way") and unpaced never links. The guest's own work dominates a transfer,
 so 4x is about 1.6 times quicker overall, not four.
 
 **And has a network card.** Slot 1 can hold an NE2000 Ethernet card
-(OSD: Slot 1), the same card the reference emulator browses the web with:
+(OSD: Card slots, Slot 1), the same card the reference emulator browses the web with:
 `rtl/soc/dr840_ne2000.sv` is its model register for register, checked in
 `sim/ne2000` against the reference's own code linked into the testbench
 -- every read, frame and verdict over six seeds, overflows and wraps
@@ -722,15 +723,27 @@ have come from anywhere else:
 
 ## The OSD
 
-Media at the top: the ROM, the RAM image, a package to install, and the
-two card slots (slot 1's memory card entries hide while the network card
-is fitted). Settings are on pages:
+Media at the top: the ROM, the RAM image, each card slot's image and a
+package to install. The images stay on the main page because an .mgl
+mounts an image by selecting its entry on the page the OSD opens on; an
+entry on a sub-page is not found. Settings are on pages:
 
+- **Card slots**: what each slot holds. Slot 1 is a memory card, the
+  network card or empty; slot 2 a memory card or empty. A memory card is
+  the image mounted for that slot, and its re-insert entry shows only
+  while the slot holds a memory card. Choosing Empty takes the
+  card out, saving it first if it has been written to; the image stays
+  loaded, and Memory card puts it back in. Re-insert takes a card out and
+  back in with the option key held, which is how a blank one is set up.
 - **Display**: resolution (the panel's 480x320, or 640x480 in a bezel)
   and the LCD's colours.
-- **Power & Saving**: AC adaptor with a battery, AC adaptor alone, or battery, what happens after Magic
-  Cap's idle power-off, autosaves, "Save RAM now" and "Start fresh".
-- **Cards & Packages**: re-inserting a card with the option key held (to
-  set up a blank one), the package link's speed, and offering the package
-  again.
+- **Power & Saving**: AC adaptor with a battery, AC adaptor alone, or
+  battery; what happens after Magic Cap's idle power-off; autosaves, "Save
+  RAM now" and "Start fresh".
+- **Packages**: the package link's speed, and offering the package again.
 - **System**: the keyboard, and booting to the IDT monitor.
+
+A memory card in a slot is saved whenever the OSD opens with it written
+to, since the OSD is where a card is changed. Magic Cap writes to a card
+every fraction of a second, so that is every time; a slot set to Empty
+is not saved or written.
