@@ -12,6 +12,8 @@
 #       shot NAME          a screenshot to NAME.png (here)
 #       pen                print where the core has the pen
 #       load MGL           load_core that .mgl (a path on the MiSTer)
+#       key K K*N ...      keys on a virtual keyboard (f12, up, down, enter,
+#                          letters...), for the OSD
 #
 import os, re, subprocess, sys, time
 
@@ -66,11 +68,21 @@ def main():
             x, y = int(w[1]), int(w[2])
             d, u = ("down", "up") if c == "tap" else ("rdown", "rup")
             send("home", "move %d %d" % (x, y), "sleep 0.3", d, "sleep 0.2", u, "sleep 0.3")
+        elif c == "drag":     # drag X1 Y1 X2 Y2: pressed at one, released at the other
+            x1, y1, x2, y2 = map(int, w[1:5])
+            send("home", "move %d %d" % (x1, y1), "sleep 0.3", "down", "sleep 0.4")
+            steps = 12
+            for i in range(steps):
+                send("move %d %d" % ((x2 - x1) * (i + 1) // steps - (x2 - x1) * i // steps,
+                                     (y2 - y1) * (i + 1) // steps - (y2 - y1) * i // steps), "sleep 0.05")
+            send("sleep 0.4", "up", "sleep 0.5")
         elif c == "wait": time.sleep(float(w[1]))
         elif c == "shot": shot(w[1])
         elif c == "pen": print("pen", pen(), flush=True)
         elif c == "load":
             ssh("echo load_core '%s' > /dev/MiSTer_cmd" % " ".join(w[1:])); time.sleep(3)
+        elif c == "key":      # key f12 up*30 down*10 enter p ...
+            send(line.strip())
         elif c == "hold":     # move there and leave the pen up, for pen readings
             send("home", "move %s %s" % (w[1], w[2]))
     vm.stdin.close(); vm.wait(timeout=10)

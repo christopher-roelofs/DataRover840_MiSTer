@@ -265,7 +265,7 @@ module dr840_tx39 #(
     // Pin 3 the option key; pins 1 and 0 the card battery inputs of slots
     // 1 and 2, high with a healthy SRAM card in the slot (ROM 13C346CC).
     wire [31:0] ioctrl_pins = (boot_monitor_q ? 32'd0 : 32'h0000_0008)
-                            | (cp_q[0] ? 32'h2 : 32'd0)
+                            | ((cp_q[0] && !net_card) ? 32'h2 : 32'd0)   // SRAM battery; not an I/O card's
                             | (cp_q[1] ? 32'h1 : 32'd0);
 
     // POWERCTRL. PWROK says the supply rails are good, which on a machine
@@ -354,9 +354,11 @@ module dr840_tx39 #(
     reg  [1:0]  cp_q; reg [4:0] cl0_q, cl1_q;
     reg net_q, nirq_q;
     always @(posedge clk) if (cen) begin cp_q <= card_present; cl0_q <= card_log2_0; cl1_q <= card_log2_1; net_q <= net_card; end
-    // The network card's ready line is its interrupt, low while asserted
-    // (an I/O card's IREQ# is the memory card's RDY/BSY#).
-    wire [15:0] gl_in0 = !cp_q[0] ? GL_CD_MASK : net_q ? (nic_irq ? 16'h0002 : 16'h0006) : 16'h0006;
+    // The network card is an I/O card: bit 3 is its readiness, which the
+    // ROM debounces before it will use the card (for a memory card the same
+    // bit is write-protect), and bit 2 its interrupt, low while asserted.
+    // No battery bits. As the reference's glacier.c has it.
+    wire [15:0] gl_in0 = !cp_q[0] ? GL_CD_MASK : net_q ? (nic_irq ? 16'h0008 : 16'h000C) : 16'h0006;
     wire [15:0] gl_in1 = (cp_q[1] ? 16'h0006 : GL_CD_MASK);
     wire        gl_irq0 = |((gl_en[0] & gl_pend[0]) | (gl_en[1] & gl_pend[1]) | (gl_en[2] & gl_pend[2]) | (gl_en[3] & gl_pend[3]));
     wire        gl_irq1 = |((gl_en[4] & gl_pend[4]) | (gl_en[5] & gl_pend[5]) | (gl_en[6] & gl_pend[6]) | (gl_en[7] & gl_pend[7]));
@@ -381,8 +383,8 @@ module dr840_tx39 #(
             nirq_q <= nic_irq & net_q & cp_q[0];
             if (nic_irq && net_q && cp_q[0] && !nirq_q) gl_pend[2] <= gl_pend[2] | 16'h0004;
             if (!(nic_irq && net_q && cp_q[0]) && nirq_q) gl_pend[0] <= gl_pend[0] | 16'h0004;
-            if (cp_q[0] && !card_q[0]) begin gl_pend[2] <= gl_pend[2] | GL_CD_MASK; gl_pend[0] <= gl_pend[0] | 16'h0006; end
-            if (!cp_q[0] && card_q[0]) begin gl_pend[0] <= gl_pend[0] | GL_CD_MASK; gl_pend[2] <= gl_pend[2] | 16'h0006; end
+            if (cp_q[0] && !card_q[0]) begin gl_pend[2] <= gl_pend[2] | GL_CD_MASK; gl_pend[0] <= gl_pend[0] | (net_q ? 16'h000C : 16'h0006); end
+            if (!cp_q[0] && card_q[0]) begin gl_pend[0] <= gl_pend[0] | GL_CD_MASK; gl_pend[2] <= gl_pend[2] | (net_q ? 16'h000C : 16'h0006); end
             if (cp_q[1] && !card_q[1]) begin gl_pend[6] <= gl_pend[6] | GL_CD_MASK; gl_pend[4] <= gl_pend[4] | 16'h0006; end
             if (!cp_q[1] && card_q[1]) begin gl_pend[4] <= gl_pend[4] | GL_CD_MASK; gl_pend[6] <= gl_pend[6] | 16'h0006; end
         end

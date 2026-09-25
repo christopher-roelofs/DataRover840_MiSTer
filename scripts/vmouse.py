@@ -31,7 +31,28 @@ for r in (REL_X, REL_Y):
 dev = struct.pack("80sHHHHi", b"DataRover remote mouse", 3, 0x1234, 0x5678, 1, 0) + b"\0" * (4 * 64 * 4)
 os.write(fd, dev)
 fcntl.ioctl(fd, UI_DEV_CREATE)
-time.sleep(1.5)          # for the MiSTer to find it
+
+# And a keyboard, for the OSD: its own device, so the MiSTer takes it as one.
+kfd = os.open("/dev/uinput", os.O_WRONLY | os.O_NONBLOCK)
+for ev in (EV_KEY, EV_SYN):
+    fcntl.ioctl(kfd, UI_SET_EVBIT, ev)
+for k in range(1, 128):
+    fcntl.ioctl(kfd, UI_SET_KEYBIT, k)
+os.write(kfd, struct.pack("80sHHHHi", b"DataRover remote keyboard", 3, 0x1234, 0x5679, 1, 0) + b"\0" * (4 * 64 * 4))
+fcntl.ioctl(kfd, UI_DEV_CREATE)
+time.sleep(1.5)          # for the MiSTer to find them
+KEYS = {"f12": 88, "up": 103, "down": 108, "left": 105, "right": 106, "enter": 28, "esc": 1,
+        "backspace": 14, "home": 102, "end": 107, "dot": 52, "slash": 53, "space": 57, "minus": 12}
+for i, ch in enumerate("qwertyuiop"): KEYS[ch] = 16 + i
+for i, ch in enumerate("asdfghjkl"): KEYS[ch] = 30 + i
+for i, ch in enumerate("zxcvbnm"): KEYS[ch] = 44 + i
+for i, ch in enumerate("1234567890"): KEYS[ch] = 2 + i
+def key(name):
+    code = KEYS[name]
+    os.write(kfd, struct.pack("llHHi", 0, 0, EV_KEY, code, 1)); os.write(kfd, struct.pack("llHHi", 0, 0, EV_SYN, 0, 0))
+    time.sleep(0.05)
+    os.write(kfd, struct.pack("llHHi", 0, 0, EV_KEY, code, 0)); os.write(kfd, struct.pack("llHHi", 0, 0, EV_SYN, 0, 0))
+    time.sleep(0.12)
 
 def emit(t, c, v):
     os.write(fd, struct.pack("llHHi", 0, 0, t, c, v))
@@ -56,6 +77,11 @@ for line in sys.stdin:
     elif c == "rdown": emit(EV_KEY, BTN_RIGHT, 1); syn()
     elif c == "rup": emit(EV_KEY, BTN_RIGHT, 0); syn()
     elif c == "sleep": time.sleep(float(w[1]))
+    elif c == "key":
+        for k in w[1:]:
+            n = 1
+            if "*" in k: k, n = k.split("*"); n = int(n)
+            for _ in range(n): key(k)
     print("ok", flush=True)
 
 fcntl.ioctl(fd, UI_DEV_DESTROY)
