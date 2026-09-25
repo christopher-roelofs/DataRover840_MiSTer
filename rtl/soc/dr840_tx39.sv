@@ -653,7 +653,13 @@ module dr840_tx39 #(
             // ---------------------------------------------- INTRSTATUS1
             icu_set[0] = icu_set[0] | sib_set;
             icu_set[1] = icu_set[1] | mbus_set;
-            if (gl_irq_rise) icu_set[3] = icu_set[3] | 32'h0000_0004;   // the card controllers
+            // The card controllers share MFIO pin 1 (CARDDIR): INTSTATUS3
+            // bit 2, the bank the ROM enables (INTENABLE3 = 2005) and its
+            // shared handler acknowledges -- the reference raises bank 3.
+            // INTSTATUS4 is enabled by nothing, and an interrupt raised
+            // there was lost: card insertion only worked because the ROM
+            // also polls for it, and the Ne2000 driver waited for ever.
+            if (gl_irq_rise) icu_set[2] = icu_set[2] | 32'h0000_0004;
 
             // ---------------------------------------------- the ON button
             onbtn_q <= {onbtn_q[0], on_button};
@@ -941,7 +947,11 @@ module dr840_tx39 #(
     end
 
     localparam [2:0] RD_LIVE = 3'd0, RD_RF = 3'd1, RD_MBUS = 3'd2, RD_IOCTRL = 3'd3,
-                     RD_POWER = 3'd4;
+                     RD_POWER = 3'd4, RD_MFIO = 3'd5;
+    localparam [11:0] MFIODATAIN = 12'h18C;
+    // MFIO pin 1, as MFIODATAIN reads it: the card controllers' interrupt.
+    reg gl_irq_lvl;
+    always @(posedge clk) gl_irq_lvl <= gl_irq0 | gl_irq1;
     wire rd_is_rf = is_tx39 && !is_sib && !is_mbus && !(off == 12'h104)
                  && !(off >= 12'h100 && off < 12'h130)
                  && off != T_RTCHI && off != T_RTCLO && off != T_ALMHI
@@ -961,6 +971,7 @@ module dr840_tx39 #(
                 : (off == MBUSCTRL)  ? RD_MBUS
                 : (off == IOCTRL)    ? RD_IOCTRL
                 : (off == POWERCTRL) ? RD_POWER
+                : (off == MFIODATAIN) ? RD_MFIO
                                      : RD_RF;
     end
     // MBUS: never busy, and the bus reads high because nothing is pulling
@@ -968,6 +979,7 @@ module dr840_tx39 #(
     assign io_rdata = (rd_src == RD_RF)   ? rf_q
                     : (rd_src == RD_MBUS) ? ((rf_q & ~MBUSCTRL_BUSY) | MBUSCTRL_IN_HIGH)
                     : (rd_src == RD_IOCTRL) ? ((rf_q & ~IOCTRL_PIN_MASK) | ioctrl_pins)
+                    : (rd_src == RD_MFIO)   ? ((rf_q & ~32'h0000_0002) | (gl_irq_lvl ? 32'h0000_0002 : 32'd0))
                     : (rd_src == RD_POWER)  ? (rf_q | PWRCTRL_PWROK
                                                | (onbtn_q[1] ? PWRCTRL_ONBUTN : 32'd0)
                                                | (ac_q[1]    ? PWRCTRL_PWRINT : 32'd0)
