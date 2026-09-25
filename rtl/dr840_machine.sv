@@ -358,7 +358,9 @@ module dr840_machine (
         .kbd_attached(kbd_attached), .key_tog(key_tog), .key_code(key_code),
         .key_ext(key_ext), .key_down(key_down),
         .kmem_addr(ka), .kmem_req(kreq), .kmem_we(kwe), .kmem_wdata(kwd), .kmem_ack(kack),
-        .card_present(card_present), .card_log2_0(card_log2_0), .card_log2_1(card_log2_1),
+        // Slot 1 holds a card when the network card is fitted, too.
+        .card_present({card_present[1], card_present[0] | net_card}),
+        .card_log2_0(card_log2_0), .card_log2_1(card_log2_1),
         .net_card(net_card), .nic_acc(nic_acc), .nic_we(nic_we), .nic_port(nic_port),
         .nic_wide(nic_wide), .nic_wdata(nic_wdata), .nic_rdata(nic_rdata),
         .nic_reset(nic_reset), .nic_irq(nic_irq),
