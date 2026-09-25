@@ -1,0 +1,65 @@
+#!/bin/sh
+#
+# Make "DataRover Network.sh": one file a user copies to /media/fat/Scripts
+# and runs from the MiSTer's Scripts menu. It carries scripts/drnet inside
+# it, installs it to /media/fat/linux, has the MiSTer start it at boot, and
+# starts it now.
+#
+#   scripts/mknetsh [out]      (default: "output_files/DataRover Network.sh")
+set -e
+cd "$(dirname "$0")/.."
+OUT=${1:-"output_files/DataRover Network.sh"}
+{
+cat <<'HEAD'
+#!/bin/bash
+#
+# DataRover Network -- the DataRover 840 core's network card, connected.
+#
+# Run this once from the MiSTer's Scripts menu. It installs a small program
+# (/media/fat/linux/drnet) that joins the core's network card to the
+# MiSTer's network, and has the MiSTer start it whenever it boots. It does
+# nothing unless the DataRover 840 core is loaded. Running this again just
+# restarts it; "--remove" takes it away again.
+#
+# In the core: OSD > Slot 1 > Network card. In Magic Cap: install the
+# WCPack and Ne2000 packages (OSD > Install package, then the Storeroom's
+# computer), then in Internet Center > Setup add a provider whose
+# connection is "Ne2000 LAN", with an address nothing else on your network
+# uses, and your router's address as the name server.
+
+DRNET=/media/fat/linux/drnet
+STARTUP=/media/fat/linux/user-startup.sh
+LINE='[ -x /media/fat/linux/drnet ] && (setsid /media/fat/linux/drnet </dev/null >/dev/null 2>&1 &)'
+
+stop() { [ -x "$DRNET" ] && "$DRNET" --stop >/dev/null 2>&1; sleep 1; }
+
+if [ "$1" == "--remove" ]; then
+    stop
+    rm -f "$DRNET"
+    [ -f "$STARTUP" ] && sed -i '/linux\/drnet/d' "$STARTUP"
+    echo "DataRover Network removed."
+    exit 0
+fi
+
+mkdir -p /media/fat/linux
+cat > "$DRNET" <<'DRNET_EOF'
+HEAD
+cat scripts/drnet
+cat <<'TAIL'
+DRNET_EOF
+chmod +x "$DRNET"
+[ -f "$STARTUP" ] || printf '#!/bin/sh\n' > "$STARTUP"
+grep -q 'linux/drnet' "$STARTUP" || echo "$LINE" >> "$STARTUP"
+stop
+(setsid "$DRNET" </dev/null >/dev/null 2>&1 &)
+sleep 2
+if [ -f /tmp/drnet.pid ]; then
+    echo "DataRover Network is running, and will start with the MiSTer."
+    echo "It connects the core's network card whenever DataRover 840 is loaded."
+else
+    echo "DataRover Network did not start."
+fi
+TAIL
+} > "$OUT"
+chmod +x "$OUT"
+echo "mknetsh: $OUT"

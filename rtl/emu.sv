@@ -207,7 +207,9 @@ localparam CONF_STR = {
     // over the serial port as the computer WinPcLink runs on; in Magic
     // Cap, go to the Storeroom and tap the computer. Offered again on
     // request, for another RAM image.
-    "F2,PKG,Install package;",
+    // .pkg, and .mc2 -- the Web Browser is one (the extensions are three
+    // characters each, run together).
+    "F2,PKGMC2,Install package;",
     "T[11],Offer package again;",
     // The device's UART runs the link at 19200 baud, which a real PC
     // could not change either; this link is not a wire, and hands the
