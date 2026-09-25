@@ -20,6 +20,10 @@
 #   drnet            run (in the foreground; `drnet &` to leave it)
 #   drnet --stop     stop a running one
 #
+# A MiSTer main binary with the bridge built in (support/datarover in the
+# DataRover's Main_MiSTer branch) does the same work with no daemon: use
+# one or the other, not both.
+#
 # scripts/deploy copies it to /media/fat/linux/drnet and starts it from
 # /media/fat/linux/user-startup.sh, so it is always there. It does nothing
 # while any other core is loaded -- the DDR it uses is theirs then -- and
@@ -112,10 +116,14 @@ def main():
             n = struct.unpack_from("<H", m, slot)[0]
             if 14 <= n <= 1518:
                 frame = m[slot + 8:slot + 8 + n]
-                # Its ARP names its address: route that to the TAP.
-                if frame[12:14] == b"\x08\x06" and len(frame) >= 32:
-                    ip = ".".join(str(b) for b in frame[28:32])
-                    if ip != guest and ip != "0.0.0.0":
+                # Its ARP, or the source of its IPv4, names its address:
+                # route that to the TAP.
+                ip = None
+                if frame[12:14] == b"\x08\x06" and len(frame) >= 32: ip = frame[28:32]
+                elif frame[12:14] == b"\x08\x00" and len(frame) >= 34: ip = frame[26:30]
+                if ip and ip not in (b"\0\0\0\0", b"\xff\xff\xff\xff"):
+                    ip = ".".join(str(b) for b in ip)
+                    if ip != guest:
                         guest = ip
                         sh("ip route replace %s/32 dev %s" % (ip, TAP))
                         print("drnet: the DataRover is %s" % ip, flush=True)
