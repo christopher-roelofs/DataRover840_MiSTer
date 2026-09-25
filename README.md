@@ -99,11 +99,19 @@ shares with the MiSTer's Linux (`rtl/dr840_netbridge.sv`), and
 them to the network through a TAP interface. The MiSTer's kernel has no
 NAT, so the DataRover takes an address of its own on the local network,
 and proxy ARP routes it through the MiSTer; the daemon learns the address
-from the DataRover's own ARP. To use it: install WCPack and Ne2000 from
-the OSD's package entry, set Slot 1 to Network card, run
-`/media/fat/linux/drnet &` on the MiSTer, and in Internet Center's setup
-give the Ne2000 LAN connection a free address on your network and the
-router for DNS. Plain HTTP only: the browser has no TLS.
+from the DataRover's own ARP. To use it: `scripts/mknetsh` makes
+`DataRover Network.sh`, one file a user copies to `/media/fat/Scripts`
+and runs once from the Scripts menu (it carries the daemon, installs it
+and starts it at every boot; `--remove` undoes that). Then install
+WCPack and Ne2000 from the OSD's package entry (MagicJavaScript and
+WebBrowser40 too, for the browser), set Slot 1 to Network card, and in
+Internet Center's setup give the Ne2000 LAN connection a free address on
+your network and the router for DNS. Plain HTTP only: the browser has no
+TLS. Verified on the hardware: the browser fetches http://example.com/
+through the MiSTer's Wi-Fi (ARP, DNS, TCP and the page, and a reload).
+The bridge's counters start at zero once and run on across a daemon
+restart; a restarted daemon takes up the core's counts rather than
+resetting both, which once left the transmit queue looking full.
 
 ```
 matched 10000000 of 10000000 instructions, 2146802 bus accesses,
@@ -718,5 +726,4 @@ have come from anywhere else:
    the core's rate over the banner path, against 0.75 before them.
 2. An external interrupt test: the ICU is exercised by the ROM's own timer
    path but nothing yet drives an IP line from outside the block.
-3. The network card's first real session on the hardware: the guest's
-   driver and Internet Center set up, and a page fetched.
+3. A memory card in slot 1 alongside the network card.
