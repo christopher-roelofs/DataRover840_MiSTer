@@ -32,6 +32,7 @@ MAGIC = b"DRNE"
 TX_RING, RX_RING, SLOT, SLOTS = 0x1000, 0x9000, 0x800, 16
 TAP = "drnet0"
 PIDFILE = "/tmp/drnet.pid"
+DEBUG = "--debug" in sys.argv
 
 def sh(cmd):
     subprocess.run(cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -95,8 +96,10 @@ def main():
         # queues begin again from nothing, and then it is answered.
         hello = u32(0x28)
         if hello != echo:
-            rx_head = tx_tail = 0
-            put32(0x10, 0); put32(0x18, 0)
+            # Take up the core's own counters: whatever it has published is
+            # what it will go on from, and anything still queued is stale.
+            tx_tail = u32(0x08); rx_head = u32(0x20)
+            put32(0x10, tx_tail); put32(0x18, rx_head)
             m[0:4] = MAGIC
             put32(0x30, hello)
             echo = hello
@@ -116,6 +119,7 @@ def main():
                         guest = ip
                         sh("ip route replace %s/32 dev %s" % (ip, TAP))
                         print("drnet: the DataRover is %s" % ip, flush=True)
+                if DEBUG: print("drnet: out %s" % frame[:60].hex(), flush=True)
                 try: os.write(tap, frame)
                 except OSError: pass
             tx_tail = (tx_tail + 1) & 0xFFFFFFFF
@@ -125,6 +129,7 @@ def main():
         r, _, _ = select.select([tap], [], [], 0.002)
         while r and ((rx_head - u32(0x20)) & 0xFFFFFFFF) < SLOTS:
             frame = os.read(tap, 2048)
+            if DEBUG: print("drnet: in  %s" % frame[:60].hex(), flush=True)
             if 14 <= len(frame) <= 1518:
                 slot = RX_RING + (rx_head % SLOTS) * SLOT
                 m[slot + 8:slot + 8 + len(frame)] = frame

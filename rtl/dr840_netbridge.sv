@@ -10,7 +10,8 @@
 //   0x0010  tx_tail      -- frames the daemon has taken from it
 //   0x0018  rx_head      -- frames the daemon has put in the receive ring
 //   0x0020  rx_tail      -- frames this has taken from it
-//   0x0028  hello        -- this adds one to it when it starts
+//   0x0028  hello        -- this adds one to it when it starts, having
+//                           published its own two counters as zero
 //   0x0030  echo         -- the daemon copies hello here once it has
 //                           reset its side: the link is up only while
 //                           the magic is there and the echo is ours, so a
@@ -81,7 +82,7 @@ module dr840_netbridge (
                      S_RX_LEN = 5'd10, S_RX_W0 = 5'd11, S_RX_OFFER = 5'd12, S_RX_ANS = 5'd13,
                      S_RX_WORD = 5'd14, S_RX_BYTE = 5'd15, S_RX_TAIL = 5'd16,
                      S_READ = 5'd17, S_WRITE = 5'd18, S_HELLO = 5'd19, S_HELLO_W = 5'd20,
-                     S_POLLE = 5'd21, S_START = 5'd22, S_TRACE = 5'd23;
+                     S_POLLE = 5'd21, S_START = 5'd22, S_TRACE = 5'd23, S_ZERO = 5'd24;
     reg [4:0]  st, ret;
     reg [31:0] tx_head, tx_tail, rx_head, rx_tail;
     reg [19:0] poll_cnt;
@@ -90,7 +91,7 @@ module dr840_netbridge (
     reg [1:0]  bw;              // byte-read latency
     reg [2:0]  lanes;
     reg        pulse_wait;
-    reg        magic_ok;
+    reg        magic_ok, hello_read;
     // The trace: a small queue, drained into the DDR when the bridge is idle.
     reg [63:0] tq [0:63];
     reg [5:0]  tq_w, tq_r;
@@ -112,7 +113,7 @@ module dr840_netbridge (
             link <= 1'b0; dbg_tx <= 32'd0; dbg_rx <= 32'd0;
             tx_head <= 32'd0; tx_tail <= 32'd0; rx_head <= 32'd0; rx_tail <= 32'd0;
             poll_cnt <= 20'd0; n <= 11'd0; acc <= 64'd0; bw <= 2'd0; lanes <= 3'd0; pulse_wait <= 1'b0;
-            magic_ok <= 1'b0; epoch <= 32'd0; tq_w <= 6'd0; tq_r <= 6'd0; t_count <= 32'd0;
+            magic_ok <= 1'b0; epoch <= 32'd0; hello_read <= 1'b0; tq_w <= 6'd0; tq_r <= 6'd0; t_count <= 32'd0;
         end else begin
             if (trace_stb && enable && (tq_w + 6'd1 != tq_r)) tq_w <= tq_w + 6'd1;
             // Strobes to the NIC last until an enabled edge has seen them.
@@ -122,13 +123,25 @@ module dr840_netbridge (
                 tx_head <= 32'd0; rx_tail <= 32'd0;
             end else case (st)
             // ------------------------------------------------ hello, once
+            // Its own counters published as zero first, so a daemon that
+            // answers the hello starts from what is really there.
             S_START: begin
-                ddr_addr <= BASE + 29'd5; ddr_rd <= 1'b1; st <= S_READ; ret <= S_HELLO;
+                ddr_addr <= BASE + 29'd1; ddr_din <= 64'd0; ddr_we <= 1'b1; st <= S_WRITE; ret <= S_ZERO;
+            end
+            S_ZERO: begin
+                ddr_addr <= BASE + 29'd4; ddr_din <= 64'd0; ddr_we <= 1'b1; st <= S_WRITE; ret <= S_HELLO;
             end
             S_HELLO: begin
-                epoch <= acc[31:0] + 32'd1;
-                ddr_addr <= BASE + 29'd5; ddr_din <= {32'd0, acc[31:0] + 32'd1};
-                ddr_we <= 1'b1; st <= S_WRITE; ret <= S_IDLE;
+                // First the hello read, then one more than it written back.
+                if (!hello_read) begin
+                    hello_read <= 1'b1;
+                    ddr_addr <= BASE + 29'd5; ddr_rd <= 1'b1; st <= S_READ; ret <= S_HELLO;
+                end else begin
+                    hello_read <= 1'b0;
+                    epoch <= acc[31:0] + 32'd1;
+                    ddr_addr <= BASE + 29'd5; ddr_din <= {32'd0, acc[31:0] + 32'd1};
+                    ddr_we <= 1'b1; st <= S_WRITE; ret <= S_IDLE;
+                end
             end
             // ------------------------------------------------ one DDR word
             S_READ: begin
@@ -175,12 +188,9 @@ module dr840_netbridge (
                 ddr_addr <= BASE + 29'd3; ddr_rd <= 1'b1; st <= S_READ; ret <= S_POLL2;
             end
             S_POLL2: begin
+                // The counters run on across a lost link: the daemon, when it
+                // comes back, takes up the ones published here.
                 rx_head <= acc[31:0];
-                if (!link) begin
-                    // The daemon starts from what it reads here: nothing
-                    // queued either way.
-                    tx_head <= 32'd0; rx_tail <= 32'd0;
-                end
                 st <= S_IDLE;
             end
 

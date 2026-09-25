@@ -156,7 +156,8 @@ int main(int argc, char **argv)
     printf("magic without the echo: link %d (%s)\n", d->link, d->link ? "WRONG" : "down, as wanted");
     if (d->link) fails++;
     // It answers the core's hello with its queues emptied.
-    put32(0x10, 0); put32(0x18, 0); put32(0x30, u32(0x28));
+    d_tx_tail = u32(0x08); d_rx_head = u32(0x20);
+    put32(0x10, d_tx_tail); put32(0x18, d_rx_head); put32(0x30, u32(0x28));
     step(200000);
     printf("daemon up: link %d\n", d->link);
     if (!d->link) fails++;
@@ -164,6 +165,17 @@ int main(int argc, char **argv)
     // Frames both ways, interleaved.
     std::vector<std::vector<uint8_t>> sent, offered;
     for (int k = 0; k < 40; k++) {
+        if (k == 20) {
+            // The daemon restarts: the magic gone a while, then back, taking
+            // up the core's counters as they stand.
+            daemon_take(); drain();
+            put32(0, 0); step(300000);
+            d_tx_tail = u32(0x08); d_rx_head = u32(0x20);
+            put32(0x10, d_tx_tail); put32(0x18, d_rx_head);
+            memcpy(&mem[0], "DRNE", 4); put32(0x30, u32(0x28));
+            step(300000);
+            printf("daemon restarted: link %d\n", d->link);
+        }
         std::vector<uint8_t> f(14 + rand() % 1505);
         for (auto &b : f) b = rand();
         if (rand() % 2) {
