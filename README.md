@@ -31,7 +31,10 @@ validated**.
 A mouse is the pen: it moves a crosshair over the panel, its left button
 is a touch and its right a touch with the option key held; a joystick is
 the pen as well, its stick moving the crosshair, A a touch and B a touch
-with option, and its third button the ON button. Calibration
+with option, and its Start button the ON button. The core's button names
+come with the standard ones (A, B, Start) for Main to map a pad by when
+nothing has been defined for it; without them Main mapped the directions
+and no button at all. Calibration
 goes through, the MiSTer's keyboard is a Magic Bus keyboard, and the boot
 sound plays. After the machine has sat idle Magic Cap turns it off; by
 default the core then presses the ON button for it (there is no battery to
@@ -57,10 +60,15 @@ panel can be shown in black and white, as a grey STN or in the green of a
 PIC-2000's lit panel, and `shadow_masks/` holds the LCD grid for the
 framework's video settings at the panel's 3x and 4x integer scales.
 
-**And takes a card.** A memory card in slot 2 is a raw image of its common
-memory -- the reference emulator's own format, so a card is carried
-between the two as a file -- mounted from the OSD, written back with the
-RAM and whenever the OSD opens with it written to. The controller sees it
+**And takes cards, in both slots.** A memory card is a raw image of its
+common memory -- the reference emulator's own format (`--sram1`,
+`--sram2`), so a card is carried between the two as a file -- mounted from
+the OSD for either slot, written back with the RAM and whenever the OSD
+opens with it written to. Slot 1 holds a memory card or instead the
+network card (OSD: Slot 1); slot 2 a memory card. Two memory cards show
+in the Storeroom as two shelves, as in the reference. Slot 2's image is
+the framework's image 1 and slot 1's image 2, so an .mgl written for slot
+2 still mounts there. The controller sees it
 arrive, the ROM reads its CIS and probes its size exactly as the reference
 does (the ROM's whole probing of a formatted card matches the reference's
 access for access), and Magic Cap formats a blank one itself when it goes
@@ -726,4 +734,5 @@ have come from anywhere else:
    the core's rate over the banner path, against 0.75 before them.
 2. An external interrupt test: the ICU is exercised by the ROM's own timer
    path but nothing yet drives an IP line from outside the block.
-3. A memory card in slot 1 alongside the network card.
+3. The network card in slot 2, should anyone want a memory card in slot 1
+   and the network together.

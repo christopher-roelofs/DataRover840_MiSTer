@@ -100,16 +100,22 @@ localparam CONF_STR = {
     // read in before the core starts and written back when Magic Cap turns
     // the machine off, or on request. The .mgl mounts it.
     "S0,SAV,Mount RAM image;",
-    // A memory card in slot 2: a raw image of its common memory, the
-    // reference emulator's own format, formatted by Magic Cap itself. A
-    // blank one needs the option key held as it goes in, which is what the
-    // re-insert entry does.
-    // Slot 1: empty, or an NE2000 network card -- Magic Cap needs the
-    // WCPack and Ne2000 packages installed to use it, and objects to an
-    // unknown card without them; scripts/drnet on the MiSTer is its cable.
-    "O[19],Slot 1,Empty,Network card;",
+    // Memory cards: a raw image of the card's common memory, the
+    // reference emulator's own format (--sram1, --sram2), formatted by
+    // Magic Cap itself. A blank one needs the option key held as it goes
+    // in, which is what the re-insert entries do. Slot 2's image is the
+    // framework's image 1 and slot 1's is image 2, so that .mgl files
+    // written for slot 2 before slot 1 had cards still mount it there.
+    // Slot 1 holds a memory card, or instead an NE2000 network card --
+    // Magic Cap needs the WCPack and Ne2000 packages installed to use it,
+    // and objects to an unknown card without them; the MiSTer's side is
+    // scripts/drnet, or a Main with the bridge built in. With the network
+    // card fitted, an image mounted in slot 1 waits in the SDRAM unseen.
+    "O[19],Slot 1,Memory card,Network card;",
+    "S2,IMG,Mount card (slot 1);",
     "S1,IMG,Mount card (slot 2);",
-    "T[10],Re-insert card with option;",
+    "T[20],Re-insert slot 1 card with option;",
+    "T[10],Re-insert slot 2 card with option;",
     // A package to install: the file is read into the SDRAM and offered
     // over the serial port as the computer WinPcLink runs on; in Magic
     // Cap, go to the Storeroom and tap the computer. Offered again on
@@ -154,6 +160,9 @@ localparam CONF_STR = {
     // into joystick 0, which is not what a keyboard is for here, and
     // leaves the pad as another player.
     "J,Touch,Touch with option,ON;",
+    // Which of a pad's buttons they are when nothing has been defined for
+    // it: Main guesses from names, and knows A, B and Start but not ours.
+    "jn,A,B,Start;",
     "V,v",`BUILD_DATE
 };
 
@@ -256,22 +265,24 @@ wire pen_down   = ps2_mouse[0] | ps2_mouse[1] | pad[4] | pad[5];
 wire option_key = ps2_mouse[1] | pad[5];
 wire         ioctl_download, ioctl_wr;
 reg   [31:0] sd_lba;
-reg    [1:0] sd_rd, sd_wr;             // slot 0 the RAM image, slot 1 the card
-wire   [1:0] sd_ack, img_mounted;
+reg    [2:0] sd_rd, sd_wr;             // image 0 the RAM, 1 the card in slot 2, 2 the card in slot 1
+wire   [2:0] sd_ack, img_mounted;
 wire         sd_buff_wr, img_readonly;
 wire  [13:0] sd_buff_addr;
 wire   [7:0] sd_buff_dout;
 wire   [7:0] sd_buff_din;
 wire  [63:0] img_size;
 wire         osd_open = OSD_STATUS;      // the framework's: the menu is open
-reg          osd_d, ram_dirty, cimg_d, reins_d;
-wire         ram_written, card_written;
+reg          osd_d, ram_dirty;
+reg    [1:0] cimg_d, reins_d;        // per card slot: [0] slot 1, [1] slot 2
+wire         ram_written;
+wire   [1:0] card_written;               // per slot: [0] slot 1, [1] slot 2
 wire  [24:0] ioctl_addr;
 wire   [7:0] ioctl_dout;
 wire         ioctl_wait;
 wire  [15:0] ioctl_index;
 
-hps_io #(.CONF_STR(CONF_STR), .VDNUM(2)) hps_io
+hps_io #(.CONF_STR(CONF_STR), .VDNUM(3)) hps_io
 (
     .clk_sys        (clk_sys),
     .HPS_BUS        (HPS_BUS),
@@ -287,14 +298,14 @@ hps_io #(.CONF_STR(CONF_STR), .VDNUM(2)) hps_io
     .ioctl_addr     (ioctl_addr),
     .ioctl_dout     (ioctl_dout),
     .ioctl_wait     (ioctl_wait),
-    .sd_lba         ('{sd_lba, sd_lba}),
-    .sd_blk_cnt     ('{6'd31, 6'd31}),     // 16 KB a request: 256 of them for the RAM image
+    .sd_lba         ('{sd_lba, sd_lba, sd_lba}),
+    .sd_blk_cnt     ('{6'd31, 6'd31, 6'd31}),     // 16 KB a request: 256 of them for the RAM image
     .sd_rd          (sd_rd),
     .sd_wr          (sd_wr),
     .sd_ack         (sd_ack),
     .sd_buff_addr   (sd_buff_addr),
     .sd_buff_dout   (sd_buff_dout),
-    .sd_buff_din    ('{sd_buff_din, sd_buff_din}),
+    .sd_buff_din    ('{sd_buff_din, sd_buff_din, sd_buff_din}),
     .sd_buff_wr     (sd_buff_wr),
     .img_mounted    (img_mounted),
     .img_readonly   (img_readonly),
@@ -397,21 +408,36 @@ wire        auto_due = (status[18:17] == 2'd1) ? (auto_secs >= 11'd300)
                      : (status[18:17] == 2'd2) ? (auto_secs >= 11'd900)
                      : (status[18:17] == 2'd3) ? (auto_secs >= 11'd1800) : 1'b0;
 reg  [3:0]  fresh_cnt;
-// Which image the sector machine is moving: 0 the RAM, 1 the card; where
-// it lives in the SDRAM; and how many chunks it is.
-reg         cur;
-localparam [24:0] CARD2_BASE = 25'h0E0_0000;
-reg  [4:0]  card_log2;                // the card's size, 16..21
-reg         card_in;                  // in the slot, as the machine sees it
-reg         card_dirty;               // written since it was last saved
-reg         want_ram_save, want_card_save, want_card_load;
+// Which image the sector machine is moving, numbered as the framework's
+// images are: 0 the RAM, 1 the card in slot 2, 2 the card in slot 1; where
+// it lives in the SDRAM; and how many chunks it is. The cards' own state
+// is per slot, [0] slot 1 and [1] slot 2, as the machine numbers them.
+reg  [1:0]  cur;
+wire        cur_card = cur != 2'd0;
+wire        cur_slot = (cur == 2'd1);     // the slot cur's card is in: 1 slot 2, 0 slot 1
+localparam [24:0] CARD1_BASE = 25'h0C0_0000, CARD2_BASE = 25'h0E0_0000;
+reg  [4:0]  card_log2_0, card_log2_1;     // the cards' sizes, 16..21
+reg  [1:0]  card_in;                  // in the slot, as the machine sees it
+reg  [1:0]  card_dirty;               // written since it was last saved
+reg         want_ram_save;
+reg  [1:0]  want_card_save, want_card_load;
 reg  [1:0]  xfer_kind;                // what the borrow is for: 0 RAM save, 1 card save, 2 card load
+reg         xfer_slot;                // and for a card, which slot's
 reg  [27:0] reins_cnt;
 reg  [1:0]  reins_st;
+reg         reins_slot;               // the slot being re-inserted
 reg         opt_force;                // the option key, held by the core for a re-insertion
-wire [24:0] xfer_base  = cur ? CARD2_BASE : DRAM_BASE;
-wire [7:0]  chunk_last = cur ? (8'd1 << (card_log2 - 5'd14)) - 8'd1 : 8'd255;
-wire        sd_ack_c   = cur ? sd_ack[1] : sd_ack[0];
+wire [4:0]  cur_log2   = cur_slot ? card_log2_1 : card_log2_0;
+wire [24:0] xfer_base  = !cur_card ? DRAM_BASE : cur_slot ? CARD2_BASE : CARD1_BASE;
+wire [7:0]  chunk_last = cur_card ? (8'd1 << (cur_log2 - 5'd14)) - 8'd1 : 8'd255;
+wire        sd_ack_c   = sd_ack[cur];
+wire [2:0]  sd_sel     = 3'd1 << cur;
+// A card image's size, a power of two from 64 KiB to 2 MiB, as log2.
+function [4:0] size_log2(input [63:0] n);
+    size_log2 = (n == 64'd65536) ? 5'd16 : (n == 64'd131072) ? 5'd17
+              : (n == 64'd262144) ? 5'd18 : (n == 64'd524288) ? 5'd19
+              : (n == 64'd1048576) ? 5'd20 : 5'd21;
+endfunction
 reg  [11:0] wi;                       // word within the chunk
 reg  [1:0]  bi;                       // byte within the word
 reg  [2:0]  ss;                       // the sector's own state
@@ -532,9 +558,10 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
         rom_words <= 0; rom_present <= 0; clr_run <= 0; clr_addr <= 0; rom_sum <= 0;
         load_we <= 1; load_burst <= 0; mt_phase <= MT_WRITE; mt_beat <= 0; rom_back <= 0;
         sd_lba <= 0; sd_rd <= 0; sd_wr <= 0; chunk <= 0; wi <= 0; bi <= 0; ss <= 0; gather <= 0;
-        cur <= 0; card_log2 <= 5'd21; card_in <= 0; card_dirty <= 0; xfer_kind <= 0;
+        cur <= 0; card_log2_0 <= 5'd21; card_log2_1 <= 5'd21; card_in <= 0; card_dirty <= 0;
+        xfer_kind <= 0; xfer_slot <= 0;
         want_ram_save <= 0; want_card_save <= 0; want_card_load <= 0;
-        reins_cnt <= 0; reins_st <= 0; opt_force <= 0;
+        reins_cnt <= 0; reins_st <= 0; reins_slot <= 0; opt_force <= 0;
         img_ok <= 0; img_new <= 0; img_d <= 0; save_run <= 0; halt_req <= 0; save_st <= 0; idle_cnt <= 0;
         sd_wait <= 0; img_ro <= 0; save_fail <= 0; osd_d <= 0; ram_dirty <= 0; cimg_d <= 0; reins_d <= 0;
         stop_d <= 0; savebtn_d <= 0;
@@ -585,15 +612,15 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
         end else if (mt_phase == MT_LOAD && (clr_run || save_run)) begin
             // A sector in from the image, then out to the memory.
             case (ss)
-            3'd0: begin sd_lba <= {19'd0, chunk, 5'd0}; sd_rd <= cur ? 2'b10 : 2'b01; sd_wait <= 28'd0; ss <= 3'd1; end
-            3'd1: if (sd_ack_c) begin sd_rd <= 2'b00; ss <= 3'd2; end
+            3'd0: begin sd_lba <= {19'd0, chunk, 5'd0}; sd_rd <= sd_sel; sd_wait <= 28'd0; ss <= 3'd1; end
+            3'd1: if (sd_ack_c) begin sd_rd <= 3'b000; ss <= 3'd2; end
                   else if (sd_wait == 28'd92_000_000) begin
                       // A second without the card answering. For the RAM:
                       // nothing to load, so the memory is cleared instead
                       // and the machine starts clean rather than never.
                       // For a card: it is not there after all.
-                      sd_rd <= 2'b00;
-                      if (cur) begin save_run <= 1'b0; card_in <= 1'b0; end
+                      sd_rd <= 3'b000;
+                      if (cur_card) begin save_run <= 1'b0; card_in[cur_slot] <= 1'b0; end
                       else begin img_ok <= 1'b0; mt_phase <= MT_CLEAR; clr_addr <= DRAM_BASE; end
                   end else sd_wait <= sd_wait + 28'd1;
             3'd2: if (!sd_ack_c) begin wi <= 12'd0; bi <= 2'd0; ss <= 3'd3; end
@@ -617,7 +644,7 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
                     ss    <= 3'd0;
                     if (chunk == chunk_last) begin
                         if (clr_run) clr_run <= 1'b0;
-                        else begin save_run <= 1'b0; card_in <= 1'b1; card_dirty <= 1'b0; end
+                        else begin save_run <= 1'b0; card_in[cur_slot] <= 1'b1; card_dirty[cur_slot] <= 1'b0; end
                     end
                 end else ss <= 3'd3;
             end
@@ -637,17 +664,17 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
                 load_busy  <= 1'b1; rom_req <= 1'b0;
                 if (wi == 12'd4092) ss <= 3'd7;
             end
-            3'd7: begin sd_lba <= {19'd0, chunk, 5'd0}; sd_wr <= cur ? 2'b10 : 2'b01; sd_wait <= 28'd0; ss <= 3'd1; end
-            3'd1: if (sd_ack_c) begin sd_wr <= 2'b00; ss <= 3'd2; end
+            3'd7: begin sd_lba <= {19'd0, chunk, 5'd0}; sd_wr <= sd_sel; sd_wait <= 28'd0; ss <= 3'd1; end
+            3'd1: if (sd_ack_c) begin sd_wr <= 3'b000; ss <= 3'd2; end
                   else if (sd_wait == 28'd92_000_000) begin
                       // The card is not taking it: give the machine back.
-                      sd_wr <= 2'b00; save_run <= 1'b0; save_fail <= save_fail + 8'd1;
+                      sd_wr <= 3'b000; save_run <= 1'b0; save_fail <= save_fail + 8'd1;
                   end else sd_wait <= sd_wait + 28'd1;
             3'd2: if (!sd_ack_c) begin
                 wi <= 12'd0;
                 chunk <= chunk + 8'd1;
                 ss  <= 3'd0;
-                if (chunk == chunk_last) begin save_run <= 1'b0; if (cur) card_dirty <= 1'b0; end
+                if (chunk == chunk_last) begin save_run <= 1'b0; if (cur_card) card_dirty[cur_slot] <= 1'b0; end
             end
             default: ss <= 3'd0;
             endcase
@@ -660,7 +687,7 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
                 MT_ROM:   begin
                     // What the memory held last time, if there is an image;
                     // otherwise nothing.
-                    if (img_ok && !fresh) begin mt_phase <= MT_LOAD; cur <= 1'b0; chunk <= 8'd0; ss <= 3'd0; end
+                    if (img_ok && !fresh) begin mt_phase <= MT_LOAD; cur <= 2'd0; chunk <= 8'd0; ss <= 3'd0; end
                     else begin mt_phase <= MT_CLEAR; clr_addr <= DRAM_BASE; end
                     fresh <= 1'b0;
                 end
@@ -712,7 +739,7 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
             clr_addr <= DRAM_BASE;
             mt_phase <= MT_WRITE;
             save_run <= 1'b0; halt_req <= 1'b0; save_st <= 2'd0;
-            sd_rd <= 2'b00; sd_wr <= 2'b00; ss <= 3'd0; chunk <= 8'd0; wi <= 12'd0; cur <= 1'b0;
+            sd_rd <= 3'b000; sd_wr <= 3'b000; ss <= 3'd0; chunk <= 8'd0; wi <= 12'd0; cur <= 2'd0;
             want_ram_save <= 1'b0; want_card_save <= 1'b0;
             mt_errors <= 32'd0; mt_first <= 32'hFFFF_FFFF; rom_back <= 32'd0;
         end
@@ -721,25 +748,26 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
 
         // An image mounted: remembered, and if the machine is already
         // running, loaded now -- which is a power cycle into it.
-        img_d <= img_mounted[0]; cimg_d <= img_mounted[1];
+        img_d <= img_mounted[0]; cimg_d <= {img_mounted[1], img_mounted[2]};
         if (img_mounted[0] && !img_d) begin
             img_ok  <= (img_size == 64'd4194304);
             img_new <= (img_size == 64'd0);
             img_ro  <= img_readonly;
             if (img_size == 64'd4194304 && rom_present && !ioctl_download && !clr_run && !save_run) begin
-                clr_run <= 1'b1; mt_phase <= MT_LOAD; cur <= 1'b0; chunk <= 8'd0; ss <= 3'd0;
+                clr_run <= 1'b1; mt_phase <= MT_LOAD; cur <= 2'd0; chunk <= 8'd0; ss <= 3'd0;
             end
         end
-        // A card: a power of two from 64 KiB to 2 MiB, loaded into the
-        // card region through the borrow and then present; anything else,
-        // or nothing, is the slot empty.
-        if (img_mounted[1] && !cimg_d) begin
-            card_in <= 1'b0; want_card_load <= 1'b0; want_card_save <= 1'b0;
-            if (img_size >= 64'd65536 && img_size <= 64'd2097152 && (img_size & (img_size - 64'd1)) == 64'd0) begin
-                card_log2 <= (img_size == 64'd65536) ? 5'd16 : (img_size == 64'd131072) ? 5'd17
-                           : (img_size == 64'd262144) ? 5'd18 : (img_size == 64'd524288) ? 5'd19
-                           : (img_size == 64'd1048576) ? 5'd20 : 5'd21;
-                want_card_load <= 1'b1;
+        // A card: a power of two from 64 KiB to 2 MiB, loaded into its
+        // slot's region through the borrow and then present; anything
+        // else, or nothing, is the slot empty. Image 1 is slot 2's, image 2
+        // slot 1's.
+        for (int k = 0; k < 2; k = k + 1) begin
+            if ((k == 0 ? img_mounted[2] : img_mounted[1]) && !cimg_d[k]) begin
+                card_in[k] <= 1'b0; want_card_load[k] <= 1'b0; want_card_save[k] <= 1'b0;
+                if (img_size >= 64'd65536 && img_size <= 64'd2097152 && (img_size & (img_size - 64'd1)) == 64'd0) begin
+                    if (k == 0) card_log2_0 <= size_log2(img_size); else card_log2_1 <= size_log2(img_size);
+                    want_card_load[k] <= 1'b1;
+                end
             end
         end
 
@@ -747,7 +775,10 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
         // core is held, the memory waited for, and then borrowed.
         stop_d <= stopped; savebtn_d <= status[5]; osd_d <= osd_open;
         if (ram_written)  ram_dirty  <= 1'b1;
-        if (card_written) card_dirty <= 1'b1;
+        // Per bit, and only on a write: a whole-vector assignment here
+        // would undo, in the same clock, a save's clearing of the flag.
+        if (card_written[0]) card_dirty[0] <= 1'b1;
+        if (card_written[1]) card_dirty[1] <= 1'b1;
         // What wants doing: the RAM saved when the ROM turns the machine
         // off or on request (and, if the option says, when the OSD opens);
         // the card saved along with it, and always when the OSD opens
@@ -762,14 +793,20 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
             (osd_open && !osd_d && ram_dirty && status[7]) ||
             (auto_due && ram_dirty && !stopped && !save_run)) begin
             want_ram_save <= 1'b1;
-            if (card_in && card_dirty) want_card_save <= 1'b1;
+            if (card_in[0] && card_dirty[0]) want_card_save[0] <= 1'b1;
+            if (card_in[1] && card_dirty[1]) want_card_save[1] <= 1'b1;
         end
-        if (osd_open && !osd_d && card_in && card_dirty) want_card_save <= 1'b1;
+        if (osd_open && !osd_d) begin
+            if (card_in[0] && card_dirty[0]) want_card_save[0] <= 1'b1;
+            if (card_in[1] && card_dirty[1]) want_card_save[1] <= 1'b1;
+        end
         // One at a time, with the core held and the memory waited for.
         case (save_st)
         2'd0: if (rom_ok && !clr_run && !ioctl_download &&
-                  (want_card_load || (want_ram_save && (img_ok || img_new) && !img_ro) || want_card_save)) begin
-                  xfer_kind <= want_card_load ? 2'd2 : want_ram_save ? 2'd0 : 2'd1;
+                  (|want_card_load || (want_ram_save && (img_ok || img_new) && !img_ro) || |want_card_save)) begin
+                  xfer_kind <= |want_card_load ? 2'd2 : want_ram_save ? 2'd0 : 2'd1;
+                  // Slot 1 first, when both have something to do.
+                  xfer_slot <= |want_card_load ? !want_card_load[0] : !want_card_save[0];
                   halt_req <= 1'b1; idle_cnt <= 5'd0; save_st <= 2'd1;
               end
         2'd1: begin
@@ -777,9 +814,9 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
                   if (idle_cnt == 5'd31) begin
                       save_run <= 1'b1; chunk <= 8'd0; wi <= 12'd0; ss <= 3'd0; save_st <= 2'd2;
                       case (xfer_kind)
-                      2'd0: begin mt_phase <= MT_SAVE; cur <= 1'b0; want_ram_save <= 1'b0; ram_dirty <= 1'b0; end
-                      2'd1: begin mt_phase <= MT_SAVE; cur <= 1'b1; want_card_save <= 1'b0; end
-                      default: begin mt_phase <= MT_LOAD; cur <= 1'b1; want_card_load <= 1'b0; end
+                      2'd0: begin mt_phase <= MT_SAVE; cur <= 2'd0; want_ram_save <= 1'b0; ram_dirty <= 1'b0; end
+                      2'd1: begin mt_phase <= MT_SAVE; cur <= xfer_slot ? 2'd1 : 2'd2; want_card_save[xfer_slot] <= 1'b0; end
+                      default: begin mt_phase <= MT_LOAD; cur <= xfer_slot ? 2'd1 : 2'd2; want_card_load[xfer_slot] <= 1'b0; end
                       endcase
                   end
               end
@@ -790,13 +827,14 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
         // Re-insertion with the option key held: out for a tenth of a
         // second, then in with the key down for three, which is how a
         // blank card is offered for setting up.
-        reins_d <= status[10];
+        reins_d <= {status[10], status[20]};
         case (reins_st)
-        2'd0: if (status[10] && !reins_d && card_in) begin card_in <= 1'b0; reins_cnt <= 28'd0; reins_st <= 2'd1; end
+        2'd0: if (status[20] && !reins_d[0] && card_in[0]) begin card_in[0] <= 1'b0; reins_slot <= 1'b0; reins_cnt <= 28'd0; reins_st <= 2'd1; end
+              else if (status[10] && !reins_d[1] && card_in[1]) begin card_in[1] <= 1'b0; reins_slot <= 1'b1; reins_cnt <= 28'd0; reins_st <= 2'd1; end
         2'd1: begin reins_cnt <= reins_cnt + 28'd1;
                     if (reins_cnt == 28'd9_200_000) begin opt_force <= 1'b1; reins_cnt <= 28'd0; reins_st <= 2'd2; end end
         2'd2: begin reins_cnt <= reins_cnt + 28'd1;
-                    if (reins_cnt == 28'd4_600_000) card_in <= 1'b1;            // in, half a second after the key
+                    if (reins_cnt == 28'd4_600_000) card_in[reins_slot] <= 1'b1; // in, half a second after the key
                     if (reins_cnt == 28'd260_000_000) begin opt_force <= 1'b0; reins_st <= 2'd0; end end   // ~2.8 s: the count's width
         default: reins_st <= 2'd0;
         endcase
@@ -819,7 +857,7 @@ assign sdram_dq_i = SDRAM_DQ;
 
 // How far a save or load has got, for the bar the panel shows meanwhile:
 // the RAM is 256 chunks of 16 KB, a card 2^(log2 - 14) of them.
-wire [7:0] xfer_prog = !save_run ? 8'd0 : !cur ? chunk : (chunk << (5'd22 - card_log2));
+wire [7:0] xfer_prog = !save_run ? 8'd0 : !cur_card ? chunk : (chunk << (5'd22 - cur_log2));
 
 // The machine's load gate and borrow, a clock late: from the loader's
 // flags into the peripheral block's interrupt lines was a clock with a
@@ -872,7 +910,7 @@ dr840_machine machine (
     .net_b_addr(net_b_addr), .net_b_q(net_b_q), .net_dbg_tx(), .net_dbg_rx(),
     .trace_stb(trace_stb), .trace_word(trace_word),
     .kbd_attached(~status[4]),
-    .card_present({card_in, 1'b0}), .card_log2_0(5'd21), .card_log2_1(card_log2), .key_tog(key_tog), .key_code(key_code), .key_ext(key_ext), .key_down(key_down),
+    .card_present(card_in), .card_log2_0(card_log2_0), .card_log2_1(card_log2_1), .key_tog(key_tog), .key_code(key_code), .key_ext(key_ext), .key_down(key_down),
     // Held in reset until there is a ROM to run. The loader owns the
     // memory while it is arriving, and before that there is nothing to do.
     .load_en(load_en_q),
@@ -916,7 +954,7 @@ dr840_status #(.CLK_HZ(92_000_000)) status_line (
     .v9({img_ok, img_ro, clr_run, save_run, halt_req, save_st, mt_phase[2:0], ss, |sd_rd, |sd_wr, sd_ack_c, save_fail[2:0],
          // and whether the ROM read back as it was sent: a 6 MB image once
          // arrived with one bit wrong, and ran to a white screen.
-         (rom_back != rom_sum), card_in, card_dirty, 2'd0, chunk}),
+         (rom_back != rom_sum), card_in[1], card_dirty[1], card_in[0], card_dirty[0], chunk}),
     // K, L: the package link's state and the package's length, and the
     // package summed as it was loaded.
     // K's middle bits: the network card fitted, and its daemon there.

@@ -59,7 +59,7 @@ module dr840_machine (
     output wire        mem_idle,     // nothing of the board's in the memory
     output wire        stopped,      // the core, held by the ROM's power-off
     output reg         ram_written,  // a word of the RAM changed just now
-    output reg         card_written, // or of the card's memory
+    output reg  [1:0]  card_written, // a write to a card's memory: [0] slot 1, [1] slot 2
     input  wire [24:0] load_addr,
     input  wire [31:0] load_data,
     input  wire        load_req,
@@ -399,8 +399,11 @@ module dr840_machine (
     // third of a nanosecond over.
     always @(posedge clk) if (cen) begin
         ram_written  <= !lend && bram_req && bram_we && ram_ack && bram_addr < 25'h0C0_0000;
-        card_written <= !lend && bram_req && bram_we && ram_ack && bram_addr >= 25'h0C0_0000
-                        && bram_addr < 25'h100_0000;
+        // Per slot: slot 1's card from 0C00000, slot 2's from 0E00000.
+        card_written[0] <= !lend && bram_req && bram_we && ram_ack && bram_addr >= 25'h0C0_0000
+                           && bram_addr < 25'h0E0_0000;
+        card_written[1] <= !lend && bram_req && bram_we && ram_ack && bram_addr >= 25'h0E0_0000
+                           && bram_addr < 25'h100_0000;
     end
     assign load_rdata = ram_rdata;
 
