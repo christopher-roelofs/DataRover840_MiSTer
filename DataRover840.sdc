@@ -172,3 +172,7 @@ set_multicycle_path -hold  -end 1 -from [get_registers {*dr840_ne2000:nic|*}] -t
 # And the OSD's network-card setting, registered on those edges and static.
 set_multicycle_path -setup -end 2 -from [get_registers {*dr840_machine:machine|net_card_q}]
 set_multicycle_path -hold  -end 1 -from [get_registers {*dr840_machine:machine|net_card_q}]
+# Inside it, the receive verdict's first stage: from the offer and the ring
+# registers to the verdict's parts, all of which change on enabled edges only.
+set_multicycle_path -setup -end 2 -from [get_registers {*dr840_ne2000:nic|off_* *dr840_ne2000:nic|curr* *dr840_ne2000:nic|bnry* *dr840_ne2000:nic|pstart* *dr840_ne2000:nic|pstop* *dr840_ne2000:nic|rcr* *dr840_ne2000:nic|mar* *dr840_ne2000:nic|par* *dr840_ne2000:nic|cr*}] -to [get_registers {*dr840_ne2000:nic|v_*}]
+set_multicycle_path -hold  -end 1 -from [get_registers {*dr840_ne2000:nic|off_* *dr840_ne2000:nic|curr* *dr840_ne2000:nic|bnry* *dr840_ne2000:nic|pstart* *dr840_ne2000:nic|pstop* *dr840_ne2000:nic|rcr* *dr840_ne2000:nic|mar* *dr840_ne2000:nic|par* *dr840_ne2000:nic|cr*}] -to [get_registers {*dr840_ne2000:nic|v_*}]
