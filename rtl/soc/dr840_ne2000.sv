@@ -84,8 +84,11 @@ module dr840_ne2000 #(
     // Two banks of 8 KB: even bytes and odd. Port A is the CPU's remote
     // DMA, reading ahead at RSAR and RSAR+1; port B is receive's writes and
     // the bridge's transmit reads.
-    reg [7:0] ram_e [0:8191];
-    reg [7:0] ram_o [0:8191];
+    // Nothing here reads a byte in the cycle it is written -- the read-ahead
+    // is taken again on the next -- so the RAMs need no read-during-write
+    // behaviour, and without saying so Quartus builds them from logic.
+    (* ramstyle = "no_rw_check" *) reg [7:0] ram_e [0:8191];
+    (* ramstyle = "no_rw_check" *) reg [7:0] ram_o [0:8191];
 
     // The byte after RSAR, wrapped at PSTOP as the DMA wraps.
     wire [15:0] rsar_n = (pstop > pstart && rsar + 16'd1 == {pstop, 8'd0}) ? {pstart, 8'd0} : rsar + 16'd1;
