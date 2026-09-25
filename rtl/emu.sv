@@ -123,15 +123,15 @@ localparam CONF_STR = {
 
     "P2,Power & Saving;",
     "P2-;",
-    // Where the power comes from. A MiSTer is on the mains with no
-    // battery, which is the default: the AC adaptor in and the main
-    // battery reading nothing, so Magic Cap draws a plug in its title bar
-    // (and says once that it has no main battery). With a battery as well
-    // the gauge shows the charging bolt. On the adaptor Magic Cap never
-    // turns itself off when idle; on Battery it does, and the next option
-    // says what happens then. Bits 22:21; bit 16, the old two-way
-    // setting, is unused.
-    "P2O[22:21],Power,AC adaptor,AC + battery,Battery;",
+    // Where the power comes from. By default the AC adaptor with a
+    // battery fitted: the gauge shows the charging bolt. The adaptor alone
+    // is the main battery reading nothing, and Magic Cap draws a plug in
+    // its title bar -- but also says at every boot that it has no main
+    // battery, which is why it is not the default. On the adaptor Magic
+    // Cap never turns itself off when idle; on Battery it does, and the
+    // next option says what happens then. Bits 22:21; bit 16, the old
+    // two-way setting, is unused.
+    "P2O[22:21],Power,AC + battery,AC adaptor,Battery;",
     // Magic Cap turns the machine off after it has sat idle. A MiSTer has
     // no battery to save, so by default the core presses the ON button
     // for it once the RAM has been written: an autosave and a blink,
@@ -925,7 +925,7 @@ dr840_machine machine (
     // been running for two seconds.
     .clk(clk_sys), .rst_n(rst_n), .boot_monitor(status[2] | (option_key & opt_ok) | opt_force),
     .pen_down(pen_down), .pen_px(pen_px), .pen_py(pen_py), .on_button(on_button), .ac_in(status[22:21] != 2'd2),
-    .no_battery(status[22:21] == 2'd0),
+    .no_battery(status[22:21] == 2'd1),
     .net_card(status[19]), .net_cen(net_cen),
     .net_tx_req(net_tx_req), .net_tx_base(net_tx_base), .net_tx_len(net_tx_len),
     .net_tx_done(net_tx_done), .net_tx_ok(net_tx_ok),

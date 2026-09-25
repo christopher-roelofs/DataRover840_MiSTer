@@ -39,12 +39,12 @@ goes through, the MiSTer's keyboard is a Magic Bus keyboard, and the boot
 sound plays. After the machine has sat idle Magic Cap turns it off; by
 default the core then presses the ON button for it (there is no battery to
 save), and F4 or the joystick's ON button is that button. Power
-(OSD: Power & Saving) is the AC adaptor with no battery by default, which
-is what a MiSTer is: the adaptor is the TX39's PWRINT pin, and the main
-battery is the codec's AD2, both found by driving each input the ROM
-watches in the reference emulator. With AD2 reading nothing on the
-adaptor, Magic Cap draws a plug in its title bar and says once that it
-has no main battery; "AC + battery" gives the charging bolt instead. On
+(OSD: Power & Saving) is the AC adaptor with a battery by default, and
+Magic Cap's gauge shows its charging bolt: the adaptor is the TX39's
+PWRINT pin, and the main battery is the codec's AD2, both found by driving
+each input the ROM watches in the reference emulator. "AC adaptor" alone
+is AD2 reading nothing: Magic Cap draws a plug in its title bar, and says
+at every boot that it has no main battery. On
 the adaptor Magic Cap never turns itself off when idle, as the real
 machine on its charger does not; on Battery it does, and "Idle power-off"
 says whether it wakes again.
@@ -728,7 +728,7 @@ is fitted). Settings are on pages:
 
 - **Display**: resolution (the panel's 480x320, or 640x480 in a bezel)
   and the LCD's colours.
-- **Power & Saving**: AC adaptor, AC adaptor with a battery, or battery, what happens after Magic
+- **Power & Saving**: AC adaptor with a battery, AC adaptor alone, or battery, what happens after Magic
   Cap's idle power-off, autosaves, "Save RAM now" and "Start fresh".
 - **Cards & Packages**: re-inserting a card with the option key held (to
   set up a blank one), the package link's speed, and offering the package
