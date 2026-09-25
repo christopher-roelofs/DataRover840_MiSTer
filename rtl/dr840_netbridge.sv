@@ -63,6 +63,11 @@ module dr840_netbridge (
     input  wire [63:0] ddr_dout,
     input  wire        ddr_dout_ready,
 
+    // Slot 1's accesses, logged to 0x38100000 as 64-bit words, the count
+    // at 0x38 (see dr840_tx39.sv's trace_word).
+    input  wire        trace_stb,
+    input  wire [63:0] trace_word,
+
     output reg         link,          // the daemon is there
     output reg  [31:0] dbg_tx,        // frames handed to it
     output reg  [31:0] dbg_rx         // and taken from it
@@ -76,7 +81,7 @@ module dr840_netbridge (
                      S_RX_LEN = 5'd10, S_RX_W0 = 5'd11, S_RX_OFFER = 5'd12, S_RX_ANS = 5'd13,
                      S_RX_WORD = 5'd14, S_RX_BYTE = 5'd15, S_RX_TAIL = 5'd16,
                      S_READ = 5'd17, S_WRITE = 5'd18, S_HELLO = 5'd19, S_HELLO_W = 5'd20,
-                     S_POLLE = 5'd21, S_START = 5'd22;
+                     S_POLLE = 5'd21, S_START = 5'd22, S_TRACE = 5'd23;
     reg [4:0]  st, ret;
     reg [31:0] tx_head, tx_tail, rx_head, rx_tail;
     reg [19:0] poll_cnt;
@@ -86,6 +91,11 @@ module dr840_netbridge (
     reg [2:0]  lanes;
     reg        pulse_wait;
     reg        magic_ok;
+    // The trace: a small queue, drained into the DDR when the bridge is idle.
+    reg [63:0] tq [0:63];
+    reg [5:0]  tq_w, tq_r;
+    reg [31:0] t_count;
+    always @(posedge clk) if (trace_stb && enable) tq[tq_w] <= trace_word;
     reg [31:0] epoch;
 
     // A frame slot's word address.
@@ -102,8 +112,9 @@ module dr840_netbridge (
             link <= 1'b0; dbg_tx <= 32'd0; dbg_rx <= 32'd0;
             tx_head <= 32'd0; tx_tail <= 32'd0; rx_head <= 32'd0; rx_tail <= 32'd0;
             poll_cnt <= 20'd0; n <= 11'd0; acc <= 64'd0; bw <= 2'd0; lanes <= 3'd0; pulse_wait <= 1'b0;
-            magic_ok <= 1'b0; epoch <= 32'd0;
+            magic_ok <= 1'b0; epoch <= 32'd0; tq_w <= 6'd0; tq_r <= 6'd0; t_count <= 32'd0;
         end else begin
+            if (trace_stb && enable && (tq_w + 6'd1 != tq_r)) tq_w <= tq_w + 6'd1;
             // Strobes to the NIC last until an enabled edge has seen them.
             if (cen) begin tx_done <= 1'b0; rx_offer <= 1'b0; rx_byte <= 1'b0; end
             if (!enable) begin
@@ -138,10 +149,18 @@ module dr840_netbridge (
                 end else if (link && rx_head != rx_tail && !rx_busy) begin
                     ddr_addr <= slot_word(16'h9000, rx_tail, 11'd0); ddr_rd <= 1'b1;
                     st <= S_READ; ret <= S_RX_LEN;
+                end else if (tq_r != tq_w) begin
+                    ddr_addr <= BASE + 29'h0002_0000 + {16'd0, t_count[12:0]};   // 0x38100000, 8192 words
+                    ddr_din <= tq[tq_r]; ddr_we <= 1'b1; st <= S_WRITE; ret <= S_TRACE;
                 end else if (poll_cnt[15:0] == 16'd0) begin
                     // Every 0.7 ms: the magic, the daemon's two counters.
                     ddr_addr <= BASE; ddr_rd <= 1'b1; st <= S_READ; ret <= S_POLL0;
                 end
+            end
+            S_TRACE: begin
+                tq_r <= tq_r + 6'd1; t_count <= t_count + 32'd1;
+                ddr_addr <= BASE + 29'd7; ddr_din <= {32'd0, t_count + 32'd1};
+                ddr_we <= 1'b1; st <= S_WRITE; ret <= S_IDLE;
             end
             S_POLL0: begin
                 magic_ok <= (acc[31:0] == MAGIC);

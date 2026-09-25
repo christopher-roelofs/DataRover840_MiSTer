@@ -38,7 +38,7 @@ module tb_net (
         .rx_offer(rx_offer), .rx_len(rx_len), .rx_dst(rx_dst), .rx_answer(rx_answer), .rx_take(rx_take),
         .rx_byte(rx_byte), .rx_data(rx_data), .rx_busy(rx_busy), .b_addr(b_addr), .b_q(b_q),
         .ddr_busy(ddr_busy), .ddr_addr(ddr_addr), .ddr_rd(ddr_rd), .ddr_we(ddr_we), .ddr_din(ddr_din),
-        .ddr_dout(ddr_dout), .ddr_dout_ready(ddr_dout_ready),
+        .ddr_dout(ddr_dout), .ddr_dout_ready(ddr_dout_ready), .trace_stb(1'b0), .trace_word(64'd0),
         .link(link), .dbg_tx(frames_tx), .dbg_rx(frames_rx));
 endmodule
 `default_nettype wire

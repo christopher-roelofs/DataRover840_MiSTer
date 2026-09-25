@@ -97,6 +97,8 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_net___024root final : public VerilatedMod
         CData/*2:0*/ tb_net__DOT__br__DOT__lanes;
         CData/*0:0*/ tb_net__DOT__br__DOT__pulse_wait;
         CData/*0:0*/ tb_net__DOT__br__DOT__magic_ok;
+        CData/*5:0*/ tb_net__DOT__br__DOT__tq_w;
+        CData/*5:0*/ tb_net__DOT__br__DOT__tq_r;
         CData/*7:0*/ __Vfunc_tb_net__DOT__nic__DOT__prom__1__Vfuncout;
         CData/*4:0*/ __Vfunc_tb_net__DOT__nic__DOT__prom__1__a;
         CData/*7:0*/ __Vfunc_tb_net__DOT__nic__DOT__prom__3__Vfuncout;
@@ -144,10 +146,10 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_net___024root final : public VerilatedMod
         SData/*15:0*/ tb_net__DOT__nic__DOT__rbcr;
         SData/*15:0*/ tb_net__DOT__nic__DOT__tbcr;
         SData/*15:0*/ tb_net__DOT__nic__DOT__rsar_n;
-        SData/*12:0*/ tb_net__DOT__nic__DOT__wa_e_i;
-        SData/*12:0*/ tb_net__DOT__nic__DOT__wa_o_i;
     };
     struct {
+        SData/*12:0*/ tb_net__DOT__nic__DOT__wa_e_i;
+        SData/*12:0*/ tb_net__DOT__nic__DOT__wa_o_i;
         SData/*13:0*/ tb_net__DOT__nic__DOT__wb_a;
         SData/*13:0*/ tb_net__DOT__nic__DOT__pb_a;
         SData/*12:0*/ tb_net__DOT__nic__DOT__pa_e;
@@ -183,6 +185,7 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_net___024root final : public VerilatedMod
         IData/*31:0*/ tb_net__DOT__br__DOT__rx_head;
         IData/*31:0*/ tb_net__DOT__br__DOT__rx_tail;
         IData/*19:0*/ tb_net__DOT__br__DOT__poll_cnt;
+        IData/*31:0*/ tb_net__DOT__br__DOT__t_count;
         IData/*31:0*/ tb_net__DOT__br__DOT__epoch;
         IData/*31:0*/ __Vdly__tb_net__DOT__nic__DOT__r_crc;
         IData/*31:0*/ __VactIterCount;
@@ -197,6 +200,7 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_net___024root final : public VerilatedMod
         VlUnpacked<CData/*7:0*/, 3> tb_net__DOT__nic__DOT__tally;
         VlUnpacked<CData/*7:0*/, 8192> tb_net__DOT__nic__DOT__ram_e;
         VlUnpacked<CData/*7:0*/, 8192> tb_net__DOT__nic__DOT__ram_o;
+        VlUnpacked<QData/*63:0*/, 64> tb_net__DOT__br__DOT__tq;
     };
     VlTriggerVec<1> __VstlTriggered;
     VlTriggerVec<1> __VicoTriggered;

@@ -246,7 +246,7 @@ module tb_sdram #(
         .snd_tog(snd_tog), .snd_addr(snd_addr), .codec_b(codec_b),
         .vid_ctrl1(dbg_vid_ctrl1), .vid_ctrl2(vid_ctrl2), .vid_ctrl3(dbg_vid_ctrl3),
         .dbg_tx_bytes(dbg_tx_bytes), .dbg_io_reads(),
-        .dbg_tx_stb(dbg_tx_stb), .dbg_tx_data(dbg_tx_data)
+        .dbg_tx_stb(dbg_tx_stb), .dbg_tx_data(dbg_tx_data), .trace_stb(), .trace_word()
     );
 
     wire        io_ack_mux   = tx39_en ? t_ack   : io_ack;

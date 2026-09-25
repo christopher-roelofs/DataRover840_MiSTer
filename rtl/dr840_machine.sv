@@ -54,6 +54,8 @@ module dr840_machine (
     output wire [7:0]  net_b_q,
     output wire [31:0] net_dbg_tx,
     output wire [31:0] net_dbg_rx,
+    output wire        trace_stb,     // slot 1's accesses, for the bridge to log
+    output wire [63:0] trace_word,
     output wire        mem_idle,     // nothing of the board's in the memory
     output wire        stopped,      // the core, held by the ROM's power-off
     output reg         ram_written,  // a word of the RAM changed just now
@@ -364,7 +366,8 @@ module dr840_machine (
         .irq_out(soc_irq), .dbg_pending(),
         .vid_ctrl1(vid_ctrl1), .vid_ctrl2(vid_ctrl2), .vid_ctrl3(vid_ctrl3),
         .dbg_tx_bytes(obs_uart_bytes), .dbg_io_reads(obs_io),
-        .dbg_tx_stb(), .dbg_tx_data(u_tx_data)
+        .dbg_tx_stb(), .dbg_tx_data(u_tx_data),
+        .trace_stb(trace_stb), .trace_word(trace_word)
     );
 
     // The loader takes the memory while it is running; the board has it

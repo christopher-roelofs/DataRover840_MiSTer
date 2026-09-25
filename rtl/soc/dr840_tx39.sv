@@ -142,7 +142,12 @@ module dr840_tx39 #(
     // this says what the machine is trying to print without decoding a
     // waveform to find out.
     output reg         dbg_tx_stb,
-    output reg  [7:0]  dbg_tx_data
+    output reg  [7:0]  dbg_tx_data,
+    // A trace of slot 1: every access to its card's window A and its
+    // controller's registers, one strobe each -- {we, controller, be,
+    // offset, data} -- for dr840_netbridge.sv to write into the DDR.
+    output reg         trace_stb,
+    output reg  [63:0] trace_word
 );
 
     // ---------------------------------------------------------- decode
@@ -945,6 +950,11 @@ module dr840_tx39 #(
 
     reg [31:0] rd_q;
     reg [2:0]  rd_src;
+    always @(posedge clk) begin
+        trace_stb <= io_start && ((is_cardA && !cardA_slot) || (is_glacier && !gl_slot));
+        if (io_start)
+            trace_word <= {io_we, is_glacier, io_be, 2'b00, io_addr[23:0], io_we ? io_wdata : rd_live};
+    end
     always @(posedge clk) if (io_start) begin
         rd_q   <= rd_live;
         rd_src <= !rd_is_rf          ? RD_LIVE

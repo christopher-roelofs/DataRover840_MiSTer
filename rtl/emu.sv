@@ -931,6 +931,8 @@ wire [10:0] net_tx_len, net_rx_len;
 wire [47:0] net_rx_dst;
 wire [7:0]  net_rx_data, net_b_q;
 wire [31:0] net_frames_tx, net_frames_rx;
+wire        trace_stb;
+wire [63:0] trace_word;
 dr840_netbridge netbridge (
     .clk(clk_sys), .cen(net_cen), .rst_n(rst_n), .enable(status[19]),
     .tx_req(net_tx_req), .tx_base(net_tx_base), .tx_len(net_tx_len),
@@ -941,6 +943,7 @@ dr840_netbridge netbridge (
     .b_addr(net_b_addr), .b_q(net_b_q),
     .ddr_busy(DDRAM_BUSY), .ddr_addr(DDRAM_ADDR), .ddr_rd(DDRAM_RD), .ddr_we(DDRAM_WE),
     .ddr_din(DDRAM_DIN), .ddr_dout(DDRAM_DOUT), .ddr_dout_ready(DDRAM_DOUT_READY),
+    .trace_stb(trace_stb), .trace_word(trace_word),
     .link(net_link), .dbg_tx(net_frames_tx), .dbg_rx(net_frames_rx)
 );
 
@@ -960,6 +963,7 @@ dr840_machine machine (
     .net_rx_answer(net_rx_answer), .net_rx_take(net_rx_take),
     .net_rx_byte(net_rx_byte), .net_rx_data(net_rx_data), .net_rx_busy(net_rx_busy),
     .net_b_addr(net_b_addr), .net_b_q(net_b_q), .net_dbg_tx(), .net_dbg_rx(),
+    .trace_stb(trace_stb), .trace_word(trace_word),
     .kbd_attached(~status[4]),
     .card_present({card_in, 1'b0}), .card_log2_0(5'd21), .card_log2_1(card_log2), .key_tog(key_tog), .key_code(key_code), .key_ext(key_ext), .key_down(key_down),
     // Held in reset until there is a ROM to run. The loader owns the
