@@ -1,11 +1,8 @@
 //
 // emu.sv - the MiSTer top level.
 //
-// What exists: the R3900 with its caches, the board's address decode, the
-// SDRAM controller, and the ROM arriving from the HPS. What does not: every
-// peripheral. The guest therefore cannot draw anything or print anything,
-// so the video is a debug display rather than the machine's own -- see
-// dr840_hud.sv.
+// The ROM, RAM image, card and package loaders; the OSD; the status line
+// on the serial port; and the machine itself (dr840_machine.sv).
 //
 module emu
 (
@@ -70,6 +67,13 @@ wire native = ~status[14] & ~status[3];
 assign VIDEO_ARX = native ? 13'd3 : 13'd4;
 assign VIDEO_ARY = native ? 13'd2 : 13'd3;
 
+// The OSD, laid out as other cores do it: what is mounted and loaded at
+// the top, settings on pages. Every label and value fits the OSD's width
+// (about 28 characters; longer is cut off). The status bits are the ones
+// they have always been, so a saved configuration still means the same;
+// bit 3, the debug display that was, is unused.
+// status_menumask bit 0 is the network card: H0 hides what slot 1's
+// memory card has no use for while the network card is fitted.
 localparam CONF_STR = {
     "DataRover840;;",
     "-;",
@@ -80,80 +84,99 @@ localparam CONF_STR = {
     // FS: a file with a save, which the MiSTer keeps as
     // saves/DataRover840/<name>.sav and mounts on the image slot itself,
     // so a ROM picked from the browser brings its own RAM.
-    "FS1,ROMIMABIN,Load DataRover ROM;",
-    "-;",
-    // The option button, held at reset, takes the ROM to the IDT monitor
-    // instead of Magic Cap. Takes effect on the next reset.
-    "O[2],Boot,Magic Cap,IDT monitor;",
-    "O[3],Display,LCD,Debug;",
-    "O[9:8],Panel,Off,Grey,Green;",
-    // The panel's own 480x320 for the framework's scaler -- its video
-    // settings choose the size, and shadow_masks/ has the LCD grid for
-    // 3x and 4x -- or the old 640x480 with the panel in a bezel.
-    "O[14],Screen,480x320 (3:2),640x480 with bezel;",
-    // A Magic Bus AT keyboard, driven by the PS/2 keyboard; its discovery
-    // by the ROM matches the reference's access for access.
-    "O[4],Keyboard,On,Off;",
-    "-;",
+    "FS1,ROMIMABIN,Load ROM;",
     // The RAM, kept. A DataRover's four megabytes are battery-backed and
     // hold everything the user has; here they are an image on the card,
     // read in before the core starts and written back when Magic Cap turns
     // the machine off, or on request. The .mgl mounts it.
     "S0,SAV,Mount RAM image;",
+    // A package to install: the file is read into the SDRAM and offered
+    // over the serial port as the computer WinPcLink runs on; in Magic
+    // Cap, go to the Storeroom and tap the computer. .pkg, and .mc2 --
+    // the Web Browser is one (three characters each, run together).
+    "F2,PKGMC2,Install package;",
+    "-;",
     // Memory cards: a raw image of the card's common memory, the
     // reference emulator's own format (--sram1, --sram2), formatted by
-    // Magic Cap itself. A blank one needs the option key held as it goes
-    // in, which is what the re-insert entries do. Slot 2's image is the
-    // framework's image 1 and slot 1's is image 2, so that .mgl files
-    // written for slot 2 before slot 1 had cards still mount it there.
+    // Magic Cap itself. Slot 2's image is the framework's image 1 and slot
+    // 1's is image 2, so that .mgl files written for slot 2 before slot 1
+    // had cards still mount it there.
     // Slot 1 holds a memory card, or instead an NE2000 network card --
     // Magic Cap needs the WCPack and Ne2000 packages installed to use it,
     // and objects to an unknown card without them; the MiSTer's side is
     // scripts/drnet, or a Main with the bridge built in. With the network
     // card fitted, an image mounted in slot 1 waits in the SDRAM unseen.
     "O[19],Slot 1,Memory card,Network card;",
-    "S2,IMG,Mount card (slot 1);",
-    "S1,IMG,Mount card (slot 2);",
-    "T[20],Re-insert slot 1 card with option;",
-    "T[10],Re-insert slot 2 card with option;",
-    // A package to install: the file is read into the SDRAM and offered
-    // over the serial port as the computer WinPcLink runs on; in Magic
-    // Cap, go to the Storeroom and tap the computer. Offered again on
-    // request, for another RAM image.
-    // .pkg, and .mc2 -- the Web Browser is one (the extensions are three
-    // characters each, run together).
-    "F2,PKGMC2,Install package;",
-    "T[11],Offer package again;",
-    // The device's UART runs the link at 19200 baud, which a real PC
-    // could not change either; this link is not a wire, and hands the
-    // bytes over four times as fast, which is as fast as Magic Cap keeps
-    // up with (dr840_pclink.sv). Slower, if a package ever needs it.
-    "O[13:12],Package link speed,4x,2x,19200 as the device;",
-    "T[5],Save RAM now;",
-    // A reset that ignores the save: the RAM cleared, Magic Cap set up
-    // from nothing. The save is overwritten by the next one.
-    "T[15],Start fresh (clear RAM);",
+    "H0S2,IMG,Mount slot 1 card;",
+    "S1,IMG,Mount slot 2 card;",
+    "-;",
+
+    "P1,Display;",
+    "P1-;",
+    // The panel's own 480x320 for the framework's scaler -- its video
+    // settings choose the size, and shadow_masks/ has the LCD grid for
+    // 3x and 4x -- or the old 640x480 with the panel in a bezel.
+    "P1O[14],Resolution,480x320,640x480 bezel;",
+    // The screen's colours: black and white, or a grey LCD's or the
+    // green backlight's, the reference's tints.
+    "P1O[9:8],LCD color,Black & white,Grey,Green;",
+
+    "P2,Power & Saving;",
+    "P2-;",
+    // Where the power comes from. A MiSTer is on the mains with no
+    // battery, which is the default: the AC adaptor in and the main
+    // battery reading nothing, so Magic Cap draws a plug in its title bar
+    // (and says once that it has no main battery). With a battery as well
+    // the gauge shows the charging bolt. On the adaptor Magic Cap never
+    // turns itself off when idle; on Battery it does, and the next option
+    // says what happens then. Bits 22:21; bit 16, the old two-way
+    // setting, is unused.
+    "P2O[22:21],Power,AC adaptor,AC + battery,Battery;",
     // Magic Cap turns the machine off after it has sat idle. A MiSTer has
     // no battery to save, so by default the core presses the ON button
     // for it once the RAM has been written: an autosave and a blink,
     // rather than a dark screen.
-    "O[6],After idle power-off,Wake at once,Stay off;",
-    // The AC adaptor, plugged in or not: Magic Cap's battery gauge shows
-    // a lightning bolt while it is, and it never turns itself off when
-    // idle -- which is how to have a machine that does not sleep. On
-    // Battery it sleeps, and the option above says what happens then.
-    "O[16],Power,AC adaptor,Battery;",
+    "P2O[6],Idle power-off,Wake,Stay off;",
     // As the console cores do it: opening the OSD saves, if anything in
     // the RAM has changed since the last save. Off by default: a save is
     // two seconds with the machine held, which is not what opening a menu
     // should cost.
-    "O[7],Autosave on OSD,Off,On;",
+    "P2O[7],Autosave on OSD,Off,On;",
     // A save every so often, if anything has changed since the last; off
     // by default, since a save holds the machine for two seconds.
-    "O[18:17],Autosave every,Off,5 minutes,15 minutes,30 minutes;",
+    "P2O[18:17],Autosave every,Off,5 min,15 min,30 min;",
+    "P2-;",
+    "P2T[5],Save RAM now;",
+    // A reset that ignores the save: the RAM cleared, Magic Cap set up
+    // from nothing. The save is overwritten by the next one.
+    "P2T[15],Start fresh (clear RAM);",
+
+    "P3,Cards & Packages;",
+    "P3-;",
+    // Out and back in with the option key held, which is how Magic Cap
+    // is asked to set up (format) a blank card.
+    "H0P3T[20],Re-insert slot 1 (option);",
+    "P3T[10],Re-insert slot 2 (option);",
+    "P3-;",
+    // The device's UART runs the link at 19200 baud, which a real PC
+    // could not change either; this link is not a wire, and hands the
+    // bytes over four times as fast, which is as fast as Magic Cap keeps
+    // up with (dr840_pclink.sv). Slower, if a package ever needs it.
+    "P3O[13:12],Package speed,4x,2x,1x (19200);",
+    // The package offered again, for another RAM image.
+    "P3T[11],Offer package again;",
+
+    "P4,System;",
+    "P4-;",
+    // A Magic Bus AT keyboard, driven by the PS/2 keyboard; its discovery
+    // by the ROM matches the reference's access for access.
+    "P4O[4],Keyboard,On,Off;",
+    // The option button, held at reset, takes the ROM to the IDT monitor
+    // instead of Magic Cap. Takes effect on the next reset.
+    "P4O[2],Boot,Magic Cap,IDT monitor;",
+
     "-;",
-    "T[0],Reset;",
-    "R[0],Reset and close OSD;",
+    "R[0],Reset;",
     // A joystick is the pen too: the stick moves it, A touches, B touches
     // with the option key held, and the third button is the ON button.
     // "J," and not "J1,": the 1 makes the framework turn the keyboard
@@ -288,6 +311,7 @@ hps_io #(.CONF_STR(CONF_STR), .VDNUM(3)) hps_io
     .HPS_BUS        (HPS_BUS),
     .buttons        (buttons),
     .status         (status),
+    .status_menumask({15'd0, status[19]}),
     .ps2_mouse      (ps2_mouse),
     .ps2_key        (ps2_key),
     .joystick_0     (joystick_0),
@@ -900,7 +924,8 @@ dr840_machine machine (
     // cannot do it by accident: the button counts only once the ROM has
     // been running for two seconds.
     .clk(clk_sys), .rst_n(rst_n), .boot_monitor(status[2] | (option_key & opt_ok) | opt_force),
-    .pen_down(pen_down), .pen_px(pen_px), .pen_py(pen_py), .on_button(on_button), .ac_in(~status[16]),
+    .pen_down(pen_down), .pen_px(pen_px), .pen_py(pen_py), .on_button(on_button), .ac_in(status[22:21] != 2'd2),
+    .no_battery(status[22:21] == 2'd0),
     .net_card(status[19]), .net_cen(net_cen),
     .net_tx_req(net_tx_req), .net_tx_base(net_tx_base), .net_tx_len(net_tx_len),
     .net_tx_done(net_tx_done), .net_tx_ok(net_tx_ok),
@@ -971,26 +996,15 @@ assign UART_TXD = status[2] ? guest_txd : status_txd;
 
 assign CLK_VIDEO = clk_sys;
 
-// The machine's own screen, or the debug display over it. Both run the
-// same 640x480 raster from the same clock, so switching is a mux.
-wire       lcd_ce, lcd_hs, lcd_vs, lcd_de, hud_ce, hud_hs, hud_vs, hud_de;
-wire [7:0] lcd_r, lcd_g, lcd_b, hud_r, hud_g, hud_b;
-wire       show_hud = status[3];
-assign CE_PIXEL = show_hud ? hud_ce : lcd_ce;
-assign VGA_HS   = show_hud ? hud_hs : lcd_hs;
-assign VGA_VS   = show_hud ? hud_vs : lcd_vs;
-assign VGA_DE   = show_hud ? hud_de : lcd_de;
-assign VGA_R    = show_hud ? hud_r  : lcd_r;
-assign VGA_G    = show_hud ? hud_g  : lcd_g;
-assign VGA_B    = show_hud ? hud_b  : lcd_b;
-
-dr840_hud hud (
-    .clk(clk_sys), .rst_n(rst_n),
-    .ce_pix(hud_ce), .hs(hud_hs), .vs(hud_vs), .de(hud_de),
-    .r(hud_r), .g(hud_g), .b(hud_b),
-    .v0(obs_pc), .v1(obs_insn), .v2(obs_retired), .v3(obs_resets),
-    .v4(obs_exc), .v5(rom_sum), .v6(obs_dmiss), .v7(obs_io),
-    .v8(rom_words), .v9(obs_uart)
-);
+// The machine's own screen.
+wire       lcd_ce, lcd_hs, lcd_vs, lcd_de;
+wire [7:0] lcd_r, lcd_g, lcd_b;
+assign CE_PIXEL = lcd_ce;
+assign VGA_HS   = lcd_hs;
+assign VGA_VS   = lcd_vs;
+assign VGA_DE   = lcd_de;
+assign VGA_R    = lcd_r;
+assign VGA_G    = lcd_g;
+assign VGA_B    = lcd_b;
 
 endmodule

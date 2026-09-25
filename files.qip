@@ -14,7 +14,6 @@ set_global_assignment -name SYSTEMVERILOG_FILE rtl/soc/dr840_snd.sv
 set_global_assignment -name SYSTEMVERILOG_FILE rtl/soc/dr840_mbus.sv
 set_global_assignment -name SYSTEMVERILOG_FILE rtl/soc/dr840_lcd.sv
 set_global_assignment -name SYSTEMVERILOG_FILE rtl/dr840_status.sv
-set_global_assignment -name SYSTEMVERILOG_FILE rtl/dr840_hud.sv
 set_global_assignment -name SYSTEMVERILOG_FILE rtl/dr840_machine.sv
 set_global_assignment -name SYSTEMVERILOG_FILE rtl/emu.sv
 

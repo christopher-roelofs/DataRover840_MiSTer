@@ -69,6 +69,7 @@ module dr840_tx39 #(
     // and draws the lightning bolt in its battery gauge -- found by
     // driving each input the ROM watches in the reference emulator.
     input  wire        ac_in,
+    input  wire        no_battery,     // AD2 reads nothing: see dr840_sib.sv
 
     // The PC Cards: which slots hold a memory card, and its size as a
     // power of two (log2 of the bytes: 16 for 64 KiB, 21 for 2 MiB).
@@ -318,7 +319,7 @@ module dr840_tx39 #(
         .clk(clk), .rst_n(rst_n),
         .wr(io_start && is_tx39 && io_we && is_sib), .off(off), .wdata(io_wdata),
         .rdata(sib_rdata), .int1_set(sib_set),
-        .pen_down(pen_down), .pen_x(pen_x), .pen_y(pen_y),
+        .pen_down(pen_down), .pen_x(pen_x), .pen_y(pen_y), .no_battery(no_battery),
         .snd_tog(snd_tog), .snd_addr(snd_addr), .codec_b(codec_b)
     );
 

@@ -56,6 +56,10 @@ module dr840_sib #(
     input  wire        pen_down,
     input  wire [9:0]  pen_x,
     input  wire [9:0]  pen_y,
+    // No main battery fitted: AD2 reads nothing. On the AC adaptor Magic
+    // Cap then draws a plug in place of its gauge, and says once that the
+    // communicator will shut off if the cord is pulled.
+    input  wire        no_battery,
 
     // The sound: toggles as each sample is consumed, with its address (the
     // ring's base as written, plus the offset), and the codec's control
@@ -173,7 +177,7 @@ module dr840_sib #(
     always @(*) begin
         case (inp)
         3'd4, 3'd5: adc_sample = 10'd0;
-        3'd6:       adc_sample = AUX_MAIN_BATTERY[9:0];
+        3'd6:       adc_sample = no_battery ? 10'd0 : AUX_MAIN_BATTERY[9:0];
         3'd7:       adc_sample = AUX_BACKUP_BATTERY[9:0];
         default:
             if (!pen_down && ((x_driven && !meas_x) || (y_driven && meas_x)))

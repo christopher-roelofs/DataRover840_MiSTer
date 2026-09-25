@@ -12,7 +12,7 @@ static uint32_t stat() { d->off = 0x088; d->eval(); return d->rdata; }
 int main(int argc, char **argv) {
     Verilated::commandArgs(argc, argv);
     d = new Vdr840_sib;
-    d->rst_n = 0; d->wr = 0; d->off = 0; d->wdata = 0; d->pen_down = 0; d->pen_x = 0; d->pen_y = 0;
+    d->rst_n = 0; d->wr = 0; d->off = 0; d->wdata = 0; d->pen_down = 0; d->pen_x = 0; d->pen_y = 0; d->no_battery = 0;
     clocks(4); d->rst_n = 1; clocks(4);
     d->pen_down = 1; d->pen_x = 461; d->pen_y = 431;          // (240,160) on the reference's calibration
     clocks(64);

@@ -105,6 +105,7 @@ module dr840_machine (
     // it is, and the codec sees it in its own counts.
     input  wire        on_button,      // the ON button
     input  wire        ac_in,          // the AC adaptor plugged in
+    input  wire        no_battery,     // and no main battery fitted
     // The Magic Bus keyboard.
     input  wire        kbd_attached,
     input  wire        key_tog,
@@ -359,7 +360,7 @@ module dr840_machine (
         .tx_tog(u_tx_tog), .rx_in_tog(u_rx_tog), .rx_in_data(u_rx_data),
         .rx_full(u_rx_full), .uart_on(u_on), .bit_clocks(u_bit_clocks),
         .pen_down(pen_down), .pen_x(pen_x), .pen_y(pen_y),
-        .on_button(on_button), .cpu_stop(cpu_stop), .ac_in(ac_in),
+        .on_button(on_button), .cpu_stop(cpu_stop), .ac_in(ac_in), .no_battery(no_battery),
         .kbd_attached(kbd_attached), .key_tog(key_tog), .key_code(key_code),
         .key_ext(key_ext), .key_down(key_down),
         .kmem_addr(ka), .kmem_req(kreq), .kmem_we(kwe), .kmem_wdata(kwd), .kmem_ack(kack),

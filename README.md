@@ -8,7 +8,7 @@ the device's own 4.3 MB ROM, as the hardware would.
 
 **Magic Cap boots.** Load the core on a MiSTer with the DataRover ROM and
 the panel shows the rabbit coming out of the hat, then the splash: "Magic
-Cap -- Touch the screen to begin". Hold the option (OSD: Boot) and it takes
+Cap -- Touch the screen to begin". Hold the option (OSD: System, Boot) and it takes
 the ROM's other path instead, the IDT monitor, whose banner comes out of
 the serial port byte-identical to the reference emulator's, through the
 `<IDT>` prompt (`scripts/serial`). Underneath that: **the CPU matches the
@@ -38,13 +38,16 @@ and no button at all. Calibration
 goes through, the MiSTer's keyboard is a Magic Bus keyboard, and the boot
 sound plays. After the machine has sat idle Magic Cap turns it off; by
 default the core then presses the ON button for it (there is no battery to
-save), and F4 or the joystick's ON button is that button. The AC
-adaptor is plugged in by default (OSD: Power), which is what a MiSTer is,
-and Magic Cap's battery gauge shows its lightning bolt; it is the TX39's
-PWRINT pin, found by driving each input the ROM watches in the reference
-emulator until the gauge changed. On the adaptor Magic Cap never turns
-itself off when idle, as the real machine on its charger does not; on
-Battery it does, and "After idle power-off" says whether it wakes again.
+save), and F4 or the joystick's ON button is that button. Power
+(OSD: Power & Saving) is the AC adaptor with no battery by default, which
+is what a MiSTer is: the adaptor is the TX39's PWRINT pin, and the main
+battery is the codec's AD2, both found by driving each input the ROM
+watches in the reference emulator. With AD2 reading nothing on the
+adaptor, Magic Cap draws a plug in its title bar and says once that it
+has no main battery; "AC + battery" gives the charging bolt instead. On
+the adaptor Magic Cap never turns itself off when idle, as the real
+machine on its charger does not; on Battery it does, and "Idle power-off"
+says whether it wakes again.
 
 **And remembers.** The four megabytes of RAM -- everything the user has --
 are a MiSTer save file, `saves/DataRover840/<rom>.sav`, written when Magic
@@ -57,7 +60,7 @@ filling meanwhile. "Autosave every" (off by default) adds a save every 5,
 the file to be replaced by the next save. The USA, Japanese
 and Rosemary SDK ROMs are three menu entries, each with its own save. The
 panel can be shown in black and white, as a grey STN or in the green of a
-PIC-2000's lit panel, and `shadow_masks/` holds the LCD grid for the
+PIC-2000's lit panel (OSD: LCD color), and `shadow_masks/` holds the LCD grid for the
 framework's video settings at the panel's 3x and 4x integer scales.
 
 **And takes cards, in both slots.** A memory card is a raw image of its
@@ -72,7 +75,7 @@ the framework's image 1 and slot 1's image 2, so an .mgl written for slot
 arrive, the ROM reads its CIS and probes its size exactly as the reference
 does (the ROM's whole probing of a formatted card matches the reference's
 access for access), and Magic Cap formats a blank one itself when it goes
-in with the option key held, which the OSD's re-insert entry does.
+in with the option key held, which the OSD's re-insert entries do.
 `scripts/mkcard` makes a blank one.
 
 **And installs packages.** Magic Cap gets its software over the serial
@@ -434,34 +437,14 @@ that looks exactly like a CPU bug.
 The panel: 480x320 at 2 bits per pixel, as a raster of its own size at
 59.96 Hz and a 3:2 aspect for the framework's scaler, whose video settings
 choose the size on the screen -- integer 3x or 4x with the LCD grid from
-`shadow_masks/`, or filled (`rtl/soc/dr840_lcd.sv`). The OSD's Screen
-option has the older 640x480 raster with the panel in a bezel instead,
-which is also what the debug display draws in. The LCD controller is a
+`shadow_masks/`, or filled (`rtl/soc/dr840_lcd.sv`). The OSD's Resolution
+option has the older 640x480 raster with the panel in a bezel instead.
+The LCD controller is a
 scanout of the framebuffer VIDEOCTRL3 names, a line at a time into a line
 buffer, fetched through the board's arbiter as its third and last
 requester. A set bit is ink; INVVID flips it. Until the ROM enables the
 controller the panel is a flat grey, which is what an unpowered LCD looks
 like too.
-
-The OSD's Display option swaps in a debug display instead: ten 32-bit
-values in hex (`rtl/dr840_hud.sv`).
-
-| row | |
-|---|---|
-| 0 | the last retired PC |
-| 1 | the instruction at it |
-| 2 | instructions retired |
-| 3 | times the core has been let out of reset |
-| 4 | exceptions taken since |
-| 5, 6 | data cache hits, misses |
-| 7 | device reads |
-| 8 | ROM words loaded |
-| 9 | bytes sent on UART A |
-
-Row 2 climbing means the core is fetching from SDRAM and executing. Row 9
-stopping at 0x179 (377) means the banner is out and the monitor is waiting
-at its prompt. Row 8 at zero means no ROM has been loaded yet, and the core
-is held in reset until one is.
 
 ## Clocking
 
@@ -658,7 +641,7 @@ rtl/soc/dr840_pclink.sv the PC side of the package link, on UART A
 rtl/soc/dr840_ne2000.sv the network card: an NE2000
 rtl/dr840_netbridge.sv  its frames through the DDR to scripts/drnet
 rtl/dr840_machine.sv    the machine: clock enable, loader mux, core, board, SoC
-rtl/emu.sv              the MiSTer top: ROM loader, UART pins, debug display
+rtl/emu.sv              the MiSTer top: loaders, OSD, status line
 scripts/deploy          builds a boot on the MiSTer; scripts/serial reads it
 sim/lcd/             the panel's scanout against the framebuffer it scans
 sim/pclink/          the package link against a port of the reference's PC side
@@ -736,3 +719,18 @@ have come from anywhere else:
    path but nothing yet drives an IP line from outside the block.
 3. The network card in slot 2, should anyone want a memory card in slot 1
    and the network together.
+
+## The OSD
+
+Media at the top: the ROM, the RAM image, a package to install, and the
+two card slots (slot 1's memory card entries hide while the network card
+is fitted). Settings are on pages:
+
+- **Display**: resolution (the panel's 480x320, or 640x480 in a bezel)
+  and the LCD's colours.
+- **Power & Saving**: AC adaptor, AC adaptor with a battery, or battery, what happens after Magic
+  Cap's idle power-off, autosaves, "Save RAM now" and "Start fresh".
+- **Cards & Packages**: re-inserting a card with the option key held (to
+  set up a blank one), the package link's speed, and offering the package
+  again.
+- **System**: the keyboard, and booting to the IDT monitor.
