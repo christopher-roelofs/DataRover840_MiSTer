@@ -64,7 +64,9 @@ class alignas(VL_CACHE_LINE_BYTES) Vdr840_ne2000___024root final : public Verila
         CData/*7:0*/ dr840_ne2000__DOT__b1;
         CData/*0:0*/ dr840_ne2000__DOT__dma_rd_ok;
         CData/*0:0*/ dr840_ne2000__DOT__dma_wr_ok;
+        CData/*7:0*/ dr840_ne2000__DOT__mhash__Vstatic__by;
         CData/*0:0*/ dr840_ne2000__DOT__off_q;
+        CData/*5:0*/ dr840_ne2000__DOT__off_hash;
         CData/*0:0*/ dr840_ne2000__DOT__o_acc;
         CData/*0:0*/ dr840_ne2000__DOT__o_ring_ok;
         CData/*0:0*/ dr840_ne2000__DOT__o_bnry_in;
@@ -78,10 +80,10 @@ class alignas(VL_CACHE_LINE_BYTES) Vdr840_ne2000___024root final : public Verila
         CData/*0:0*/ dr840_ne2000__DOT__tx_copied_ok;
         CData/*7:0*/ dr840_ne2000__DOT__v;
         CData/*0:0*/ dr840_ne2000__DOT__started;
-        CData/*7:0*/ dr840_ne2000__DOT__iset;
-        CData/*7:0*/ dr840_ne2000__DOT__iclr;
     };
     struct {
+        CData/*7:0*/ dr840_ne2000__DOT__iset;
+        CData/*7:0*/ dr840_ne2000__DOT__iclr;
         CData/*0:0*/ dr840_ne2000__DOT__nreset;
         CData/*7:0*/ dr840_ne2000__DOT____Vlvbound_h66bf5d70__0;
         CData/*7:0*/ dr840_ne2000__DOT____Vlvbound_h9fb8493e__0;
@@ -144,15 +146,16 @@ class alignas(VL_CACHE_LINE_BYTES) Vdr840_ne2000___024root final : public Verila
         SData/*15:0*/ dr840_ne2000__DOT__tx_wait;
         SData/*15:0*/ __Vdly__dr840_ne2000__DOT__rbcr;
         SData/*15:0*/ __Vdly__dr840_ne2000__DOT__tx_wait;
-        SData/*10:0*/ __Vdly__dr840_ne2000__DOT__r_len;
-        SData/*10:0*/ __Vdly__dr840_ne2000__DOT__r_n;
     };
     struct {
+        SData/*10:0*/ __Vdly__dr840_ne2000__DOT__r_len;
+        SData/*10:0*/ __Vdly__dr840_ne2000__DOT__r_n;
         SData/*10:0*/ __Vdly__dr840_ne2000__DOT__r_pad;
         SData/*11:0*/ __Vdly__dr840_ne2000__DOT__r_cnt;
         SData/*15:0*/ __Vdly__dr840_ne2000__DOT__r_ptr;
         VL_OUT(dbg_tx,31,0);
         VL_OUT(dbg_rx,31,0);
+        IData/*31:0*/ dr840_ne2000__DOT__mhash__Vstatic__c;
         IData/*31:0*/ dr840_ne2000__DOT__crc8__Vstatic__x;
         IData/*31:0*/ dr840_ne2000__DOT__r_crc;
         IData/*31:0*/ __Vdly__dr840_ne2000__DOT__r_crc;

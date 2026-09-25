@@ -236,6 +236,10 @@ VL_INLINE_OPT void Vtb_net___024root___nba_sequent__TOP__0(Vtb_net___024root* vl
     Vtb_net__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
     VL_DEBUG_IF(VL_DBG_MSGF("+    Vtb_net___024root___nba_sequent__TOP__0\n"); );
     // Init
+    CData/*5:0*/ __Vfunc_tb_net__DOT__nic__DOT__mhash__4__Vfuncout;
+    __Vfunc_tb_net__DOT__nic__DOT__mhash__4__Vfuncout = 0;
+    QData/*47:0*/ __Vfunc_tb_net__DOT__nic__DOT__mhash__4__d;
+    __Vfunc_tb_net__DOT__nic__DOT__mhash__4__d = 0;
     IData/*28:0*/ __Vfunc_tb_net__DOT__br__DOT__slot_word__7__Vfuncout;
     __Vfunc_tb_net__DOT__br__DOT__slot_word__7__Vfuncout = 0;
     IData/*31:0*/ __Vfunc_tb_net__DOT__br__DOT__slot_word__7__ctr;
@@ -352,6 +356,532 @@ VL_INLINE_OPT void Vtb_net___024root___nba_sequent__TOP__0(Vtb_net___024root* vl
     if (vlSelf->rst_n) {
         vlSelf->__Vdly__tb_net__DOT__cen = (1U & (~ (IData)(vlSelf->tb_net__DOT__cen)));
         if (vlSelf->tb_net__DOT__cen) {
+            if (((IData)(vlSelf->tb_net__DOT__rx_offer) 
+                 & (~ (IData)(vlSelf->tb_net__DOT__rx_busy)))) {
+                __Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
+                    = vlSelf->tb_net__DOT__rx_dst;
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by 
+                    = (0xffU & (IData)((__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
+                                        >> 0x28U)));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                    = ((1U & (IData)(vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by))
+                        ? 0xfffffffeU : 0xfb3ee249U);
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by 
+                    = (0xffU & (IData)((__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
+                                        >> 0x28U)));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                    = ((1U & ((vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                               >> 0x1fU) ^ ((IData)(vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
+                                            >> 1U)))
+                        ? (0x4c11db7U ^ (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                                         << 1U)) : 
+                       (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                        << 1U));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by 
+                    = (0xffU & (IData)((__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
+                                        >> 0x28U)));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                    = ((1U & ((vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                               >> 0x1fU) ^ ((IData)(vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
+                                            >> 2U)))
+                        ? (0x4c11db7U ^ (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                                         << 1U)) : 
+                       (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                        << 1U));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by 
+                    = (0xffU & (IData)((__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
+                                        >> 0x28U)));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                    = ((1U & ((vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                               >> 0x1fU) ^ ((IData)(vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
+                                            >> 3U)))
+                        ? (0x4c11db7U ^ (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                                         << 1U)) : 
+                       (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                        << 1U));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by 
+                    = (0xffU & (IData)((__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
+                                        >> 0x28U)));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                    = ((1U & ((vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                               >> 0x1fU) ^ ((IData)(vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
+                                            >> 4U)))
+                        ? (0x4c11db7U ^ (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                                         << 1U)) : 
+                       (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                        << 1U));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by 
+                    = (0xffU & (IData)((__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
+                                        >> 0x28U)));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                    = ((1U & ((vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                               >> 0x1fU) ^ ((IData)(vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
+                                            >> 5U)))
+                        ? (0x4c11db7U ^ (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                                         << 1U)) : 
+                       (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                        << 1U));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by 
+                    = (0xffU & (IData)((__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
+                                        >> 0x28U)));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                    = ((1U & ((vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                               >> 0x1fU) ^ ((IData)(vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
+                                            >> 6U)))
+                        ? (0x4c11db7U ^ (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                                         << 1U)) : 
+                       (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                        << 1U));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by 
+                    = (0xffU & (IData)((__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
+                                        >> 0x28U)));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                    = (((vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                         >> 0x1fU) ^ ((IData)(vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
+                                      >> 7U)) ? (0x4c11db7U 
+                                                 ^ 
+                                                 (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                                                  << 1U))
+                        : (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                           << 1U));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by 
+                    = (0xffU & (IData)((__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
+                                        >> 0x20U)));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                    = ((1U & ((vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                               >> 0x1fU) ^ (IData)(vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by)))
+                        ? (0x4c11db7U ^ (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                                         << 1U)) : 
+                       (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                        << 1U));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by 
+                    = (0xffU & (IData)((__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
+                                        >> 0x20U)));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                    = ((1U & ((vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                               >> 0x1fU) ^ ((IData)(vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
+                                            >> 1U)))
+                        ? (0x4c11db7U ^ (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                                         << 1U)) : 
+                       (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                        << 1U));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by 
+                    = (0xffU & (IData)((__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
+                                        >> 0x20U)));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                    = ((1U & ((vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                               >> 0x1fU) ^ ((IData)(vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
+                                            >> 2U)))
+                        ? (0x4c11db7U ^ (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                                         << 1U)) : 
+                       (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                        << 1U));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by 
+                    = (0xffU & (IData)((__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
+                                        >> 0x20U)));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                    = ((1U & ((vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                               >> 0x1fU) ^ ((IData)(vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
+                                            >> 3U)))
+                        ? (0x4c11db7U ^ (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                                         << 1U)) : 
+                       (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                        << 1U));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by 
+                    = (0xffU & (IData)((__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
+                                        >> 0x20U)));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                    = ((1U & ((vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                               >> 0x1fU) ^ ((IData)(vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
+                                            >> 4U)))
+                        ? (0x4c11db7U ^ (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                                         << 1U)) : 
+                       (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                        << 1U));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by 
+                    = (0xffU & (IData)((__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
+                                        >> 0x20U)));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                    = ((1U & ((vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                               >> 0x1fU) ^ ((IData)(vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
+                                            >> 5U)))
+                        ? (0x4c11db7U ^ (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                                         << 1U)) : 
+                       (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                        << 1U));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by 
+                    = (0xffU & (IData)((__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
+                                        >> 0x20U)));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                    = ((1U & ((vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                               >> 0x1fU) ^ ((IData)(vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
+                                            >> 6U)))
+                        ? (0x4c11db7U ^ (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                                         << 1U)) : 
+                       (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                        << 1U));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by 
+                    = (0xffU & (IData)((__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
+                                        >> 0x20U)));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                    = (((vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                         >> 0x1fU) ^ ((IData)(vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
+                                      >> 7U)) ? (0x4c11db7U 
+                                                 ^ 
+                                                 (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                                                  << 1U))
+                        : (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                           << 1U));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by 
+                    = (0xffU & (IData)((__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
+                                        >> 0x18U)));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                    = ((1U & ((vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                               >> 0x1fU) ^ (IData)(vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by)))
+                        ? (0x4c11db7U ^ (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                                         << 1U)) : 
+                       (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                        << 1U));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by 
+                    = (0xffU & (IData)((__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
+                                        >> 0x18U)));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                    = ((1U & ((vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                               >> 0x1fU) ^ ((IData)(vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
+                                            >> 1U)))
+                        ? (0x4c11db7U ^ (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                                         << 1U)) : 
+                       (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                        << 1U));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by 
+                    = (0xffU & (IData)((__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
+                                        >> 0x18U)));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                    = ((1U & ((vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                               >> 0x1fU) ^ ((IData)(vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
+                                            >> 2U)))
+                        ? (0x4c11db7U ^ (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                                         << 1U)) : 
+                       (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                        << 1U));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by 
+                    = (0xffU & (IData)((__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
+                                        >> 0x18U)));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                    = ((1U & ((vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                               >> 0x1fU) ^ ((IData)(vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
+                                            >> 3U)))
+                        ? (0x4c11db7U ^ (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                                         << 1U)) : 
+                       (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                        << 1U));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by 
+                    = (0xffU & (IData)((__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
+                                        >> 0x18U)));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                    = ((1U & ((vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                               >> 0x1fU) ^ ((IData)(vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
+                                            >> 4U)))
+                        ? (0x4c11db7U ^ (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                                         << 1U)) : 
+                       (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                        << 1U));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by 
+                    = (0xffU & (IData)((__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
+                                        >> 0x18U)));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                    = ((1U & ((vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                               >> 0x1fU) ^ ((IData)(vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
+                                            >> 5U)))
+                        ? (0x4c11db7U ^ (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                                         << 1U)) : 
+                       (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                        << 1U));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by 
+                    = (0xffU & (IData)((__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
+                                        >> 0x18U)));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                    = ((1U & ((vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                               >> 0x1fU) ^ ((IData)(vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
+                                            >> 6U)))
+                        ? (0x4c11db7U ^ (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                                         << 1U)) : 
+                       (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                        << 1U));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by 
+                    = (0xffU & (IData)((__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
+                                        >> 0x18U)));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                    = (((vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                         >> 0x1fU) ^ ((IData)(vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
+                                      >> 7U)) ? (0x4c11db7U 
+                                                 ^ 
+                                                 (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                                                  << 1U))
+                        : (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                           << 1U));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by 
+                    = (0xffU & (IData)((__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
+                                        >> 0x10U)));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                    = ((1U & ((vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                               >> 0x1fU) ^ (IData)(vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by)))
+                        ? (0x4c11db7U ^ (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                                         << 1U)) : 
+                       (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                        << 1U));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by 
+                    = (0xffU & (IData)((__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
+                                        >> 0x10U)));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                    = ((1U & ((vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                               >> 0x1fU) ^ ((IData)(vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
+                                            >> 1U)))
+                        ? (0x4c11db7U ^ (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                                         << 1U)) : 
+                       (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                        << 1U));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by 
+                    = (0xffU & (IData)((__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
+                                        >> 0x10U)));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                    = ((1U & ((vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                               >> 0x1fU) ^ ((IData)(vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
+                                            >> 2U)))
+                        ? (0x4c11db7U ^ (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                                         << 1U)) : 
+                       (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                        << 1U));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by 
+                    = (0xffU & (IData)((__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
+                                        >> 0x10U)));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                    = ((1U & ((vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                               >> 0x1fU) ^ ((IData)(vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
+                                            >> 3U)))
+                        ? (0x4c11db7U ^ (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                                         << 1U)) : 
+                       (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                        << 1U));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by 
+                    = (0xffU & (IData)((__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
+                                        >> 0x10U)));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                    = ((1U & ((vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                               >> 0x1fU) ^ ((IData)(vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
+                                            >> 4U)))
+                        ? (0x4c11db7U ^ (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                                         << 1U)) : 
+                       (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                        << 1U));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by 
+                    = (0xffU & (IData)((__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
+                                        >> 0x10U)));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                    = ((1U & ((vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                               >> 0x1fU) ^ ((IData)(vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
+                                            >> 5U)))
+                        ? (0x4c11db7U ^ (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                                         << 1U)) : 
+                       (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                        << 1U));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by 
+                    = (0xffU & (IData)((__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
+                                        >> 0x10U)));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                    = ((1U & ((vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                               >> 0x1fU) ^ ((IData)(vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
+                                            >> 6U)))
+                        ? (0x4c11db7U ^ (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                                         << 1U)) : 
+                       (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                        << 1U));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by 
+                    = (0xffU & (IData)((__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
+                                        >> 0x10U)));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                    = (((vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                         >> 0x1fU) ^ ((IData)(vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
+                                      >> 7U)) ? (0x4c11db7U 
+                                                 ^ 
+                                                 (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                                                  << 1U))
+                        : (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                           << 1U));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by 
+                    = (0xffU & (IData)((__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
+                                        >> 8U)));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                    = ((1U & ((vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                               >> 0x1fU) ^ (IData)(vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by)))
+                        ? (0x4c11db7U ^ (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                                         << 1U)) : 
+                       (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                        << 1U));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by 
+                    = (0xffU & (IData)((__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
+                                        >> 8U)));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                    = ((1U & ((vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                               >> 0x1fU) ^ ((IData)(vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
+                                            >> 1U)))
+                        ? (0x4c11db7U ^ (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                                         << 1U)) : 
+                       (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                        << 1U));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by 
+                    = (0xffU & (IData)((__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
+                                        >> 8U)));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                    = ((1U & ((vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                               >> 0x1fU) ^ ((IData)(vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
+                                            >> 2U)))
+                        ? (0x4c11db7U ^ (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                                         << 1U)) : 
+                       (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                        << 1U));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by 
+                    = (0xffU & (IData)((__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
+                                        >> 8U)));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                    = ((1U & ((vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                               >> 0x1fU) ^ ((IData)(vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
+                                            >> 3U)))
+                        ? (0x4c11db7U ^ (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                                         << 1U)) : 
+                       (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                        << 1U));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by 
+                    = (0xffU & (IData)((__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
+                                        >> 8U)));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                    = ((1U & ((vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                               >> 0x1fU) ^ ((IData)(vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
+                                            >> 4U)))
+                        ? (0x4c11db7U ^ (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                                         << 1U)) : 
+                       (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                        << 1U));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by 
+                    = (0xffU & (IData)((__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
+                                        >> 8U)));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                    = ((1U & ((vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                               >> 0x1fU) ^ ((IData)(vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
+                                            >> 5U)))
+                        ? (0x4c11db7U ^ (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                                         << 1U)) : 
+                       (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                        << 1U));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by 
+                    = (0xffU & (IData)((__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
+                                        >> 8U)));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                    = ((1U & ((vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                               >> 0x1fU) ^ ((IData)(vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
+                                            >> 6U)))
+                        ? (0x4c11db7U ^ (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                                         << 1U)) : 
+                       (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                        << 1U));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by 
+                    = (0xffU & (IData)((__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
+                                        >> 8U)));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                    = (((vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                         >> 0x1fU) ^ ((IData)(vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
+                                      >> 7U)) ? (0x4c11db7U 
+                                                 ^ 
+                                                 (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                                                  << 1U))
+                        : (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                           << 1U));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by 
+                    = (0xffU & (IData)(__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                    = ((1U & ((vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                               >> 0x1fU) ^ (IData)(vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by)))
+                        ? (0x4c11db7U ^ (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                                         << 1U)) : 
+                       (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                        << 1U));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by 
+                    = (0xffU & (IData)(__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                    = ((1U & ((vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                               >> 0x1fU) ^ ((IData)(vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
+                                            >> 1U)))
+                        ? (0x4c11db7U ^ (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                                         << 1U)) : 
+                       (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                        << 1U));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by 
+                    = (0xffU & (IData)(__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                    = ((1U & ((vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                               >> 0x1fU) ^ ((IData)(vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
+                                            >> 2U)))
+                        ? (0x4c11db7U ^ (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                                         << 1U)) : 
+                       (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                        << 1U));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by 
+                    = (0xffU & (IData)(__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                    = ((1U & ((vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                               >> 0x1fU) ^ ((IData)(vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
+                                            >> 3U)))
+                        ? (0x4c11db7U ^ (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                                         << 1U)) : 
+                       (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                        << 1U));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by 
+                    = (0xffU & (IData)(__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                    = ((1U & ((vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                               >> 0x1fU) ^ ((IData)(vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
+                                            >> 4U)))
+                        ? (0x4c11db7U ^ (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                                         << 1U)) : 
+                       (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                        << 1U));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by 
+                    = (0xffU & (IData)(__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                    = ((1U & ((vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                               >> 0x1fU) ^ ((IData)(vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
+                                            >> 5U)))
+                        ? (0x4c11db7U ^ (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                                         << 1U)) : 
+                       (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                        << 1U));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by 
+                    = (0xffU & (IData)(__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                    = ((1U & ((vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                               >> 0x1fU) ^ ((IData)(vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
+                                            >> 6U)))
+                        ? (0x4c11db7U ^ (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                                         << 1U)) : 
+                       (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                        << 1U));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by 
+                    = (0xffU & (IData)(__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d));
+                vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                    = (((vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                         >> 0x1fU) ^ ((IData)(vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
+                                      >> 7U)) ? (0x4c11db7U 
+                                                 ^ 
+                                                 (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                                                  << 1U))
+                        : (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                           << 1U));
+                __Vfunc_tb_net__DOT__nic__DOT__mhash__4__Vfuncout 
+                    = (vlSelf->tb_net__DOT__nic__DOT__mhash__Vstatic__c 
+                       >> 0x1aU);
+                vlSelf->tb_net__DOT__nic__DOT__off_hash 
+                    = __Vfunc_tb_net__DOT__nic__DOT__mhash__4__Vfuncout;
+            }
             vlSelf->__Vdly__tb_net__DOT__tx_done = 0U;
             vlSelf->__Vdly__tb_net__DOT__rx_offer = 0U;
             vlSelf->__Vdly__tb_net__DOT__rx_byte = 0U;
@@ -730,6 +1260,7 @@ VL_INLINE_OPT void Vtb_net___024root___nba_sequent__TOP__0(Vtb_net___024root* vl
         }
     } else {
         vlSelf->__Vdly__tb_net__DOT__cen = 0U;
+        vlSelf->tb_net__DOT__nic__DOT__off_hash = 0U;
         vlSelf->__Vdly__tb_net__DOT__tx_done = 0U;
         vlSelf->tb_net__DOT__b_addr = 0U;
         vlSelf->frames_tx = 0U;
@@ -882,18 +1413,8 @@ VL_INLINE_OPT void Vtb_net___024root___nba_sequent__TOP__2(Vtb_net___024root* vl
     Vtb_net__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
     VL_DEBUG_IF(VL_DBG_MSGF("+    Vtb_net___024root___nba_sequent__TOP__2\n"); );
     // Init
-    IData/*31:0*/ tb_net__DOT__nic__DOT__mhash__Vstatic__c;
-    tb_net__DOT__nic__DOT__mhash__Vstatic__c = 0;
-    CData/*7:0*/ tb_net__DOT__nic__DOT__mhash__Vstatic__by;
-    tb_net__DOT__nic__DOT__mhash__Vstatic__by = 0;
-    CData/*5:0*/ tb_net__DOT__nic__DOT__o_hash;
-    tb_net__DOT__nic__DOT__o_hash = 0;
     SData/*8:0*/ tb_net__DOT__nic__DOT__o_next0;
     tb_net__DOT__nic__DOT__o_next0 = 0;
-    CData/*5:0*/ __Vfunc_tb_net__DOT__nic__DOT__mhash__4__Vfuncout;
-    __Vfunc_tb_net__DOT__nic__DOT__mhash__4__Vfuncout = 0;
-    QData/*47:0*/ __Vfunc_tb_net__DOT__nic__DOT__mhash__4__d;
-    __Vfunc_tb_net__DOT__nic__DOT__mhash__4__d = 0;
     IData/*31:0*/ __Vfunc_tb_net__DOT__nic__DOT__crc8__5__Vfuncout;
     __Vfunc_tb_net__DOT__nic__DOT__crc8__5__Vfuncout = 0;
     IData/*31:0*/ __Vfunc_tb_net__DOT__nic__DOT__crc8__5__c;
@@ -1372,10 +1893,10 @@ VL_INLINE_OPT void Vtb_net___024root___nba_sequent__TOP__2(Vtb_net___024root* vl
             }
             if (((IData)(vlSelf->tb_net__DOT__rx_offer) 
                  & (~ (IData)(vlSelf->tb_net__DOT__rx_busy)))) {
-                vlSelf->tb_net__DOT__nic__DOT__off_len 
-                    = vlSelf->tb_net__DOT__rx_len;
                 vlSelf->tb_net__DOT__nic__DOT__off_dst 
                     = vlSelf->tb_net__DOT__rx_dst;
+                vlSelf->tb_net__DOT__nic__DOT__off_len 
+                    = vlSelf->tb_net__DOT__rx_len;
             }
             if ((4U & (IData)(vlSelf->tb_net__DOT__nic__DOT__r_st))) {
                 if ((1U & (~ ((IData)(vlSelf->tb_net__DOT__nic__DOT__r_st) 
@@ -1618,8 +2139,8 @@ VL_INLINE_OPT void Vtb_net___024root___nba_sequent__TOP__2(Vtb_net___024root* vl
         vlSelf->__Vdly__tb_net__DOT__nic__DOT__r_group = 0U;
         vlSelf->tb_net__DOT__nic__DOT__dbg_tx = 0U;
         vlSelf->__Vdlyvset__tb_net__DOT__nic__DOT__par__v2 = 1U;
-        vlSelf->tb_net__DOT__nic__DOT__off_len = 0U;
         vlSelf->tb_net__DOT__nic__DOT__off_dst = 0ULL;
+        vlSelf->tb_net__DOT__nic__DOT__off_len = 0U;
     }
     vlSelf->tb_net__DOT__tx_ok = vlSelf->__Vdly__tb_net__DOT__tx_ok;
     vlSelf->tb_net__DOT__rx_byte = vlSelf->__Vdly__tb_net__DOT__rx_byte;
@@ -1772,8 +2293,8 @@ VL_INLINE_OPT void Vtb_net___024root___nba_sequent__TOP__2(Vtb_net___024root* vl
                                                  : 
                                                 ((IData)(1U) 
                                                  + (IData)(vlSelf->tb_net__DOT__nic__DOT__rsar))));
-    vlSelf->tb_net__DOT__rx_len = vlSelf->__Vdly__tb_net__DOT__rx_len;
     vlSelf->tb_net__DOT__rx_dst = vlSelf->__Vdly__tb_net__DOT__rx_dst;
+    vlSelf->tb_net__DOT__rx_len = vlSelf->__Vdly__tb_net__DOT__rx_len;
     vlSelf->tb_net__DOT__rx_offer = vlSelf->__Vdly__tb_net__DOT__rx_offer;
     vlSelf->tb_net__DOT__rx_busy = ((0U != (IData)(vlSelf->tb_net__DOT__nic__DOT__r_st)) 
                                     | (IData)(vlSelf->tb_net__DOT__nic__DOT__off_q));
@@ -1796,846 +2317,6 @@ VL_INLINE_OPT void Vtb_net___024root___nba_sequent__TOP__2(Vtb_net___024root* vl
                                                     ? (IData)(vlSelf->tb_net__DOT__nic__DOT__rsar)
                                                     : (IData)(vlSelf->tb_net__DOT__nic__DOT__rsar_n)) 
                                                   >> 1U)));
-    vlSelf->tb_net__DOT__nic__DOT__o_pad = ((0x3cU 
-                                             > (IData)(vlSelf->tb_net__DOT__nic__DOT__off_len))
-                                             ? 0x3cU
-                                             : (IData)(vlSelf->tb_net__DOT__nic__DOT__off_len));
-    vlSelf->cen_o = vlSelf->tb_net__DOT__cen;
-    vlSelf->tb_net__DOT____Vcellinp__nic__acc = ((IData)(vlSelf->acc) 
-                                                 & (IData)(vlSelf->tb_net__DOT__cen));
-    __Vfunc_tb_net__DOT__nic__DOT__mhash__4__d = vlSelf->tb_net__DOT__nic__DOT__off_dst;
-    tb_net__DOT__nic__DOT__mhash__Vstatic__by = (0xffU 
-                                                 & (IData)(
-                                                           (__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
-                                                            >> 0x28U)));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__c = ((1U 
-                                                 & (IData)(tb_net__DOT__nic__DOT__mhash__Vstatic__by))
-                                                 ? 0xfffffffeU
-                                                 : 0xfb3ee249U);
-    tb_net__DOT__nic__DOT__mhash__Vstatic__by = (0xffU 
-                                                 & (IData)(
-                                                           (__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
-                                                            >> 0x28U)));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__c = ((1U 
-                                                 & ((tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                     >> 0x1fU) 
-                                                    ^ 
-                                                    ((IData)(tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
-                                                     >> 1U)))
-                                                 ? 
-                                                (0x4c11db7U 
-                                                 ^ 
-                                                 (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  << 1U))
-                                                 : 
-                                                (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                 << 1U));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__by = (0xffU 
-                                                 & (IData)(
-                                                           (__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
-                                                            >> 0x28U)));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__c = ((1U 
-                                                 & ((tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                     >> 0x1fU) 
-                                                    ^ 
-                                                    ((IData)(tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
-                                                     >> 2U)))
-                                                 ? 
-                                                (0x4c11db7U 
-                                                 ^ 
-                                                 (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  << 1U))
-                                                 : 
-                                                (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                 << 1U));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__by = (0xffU 
-                                                 & (IData)(
-                                                           (__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
-                                                            >> 0x28U)));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__c = ((1U 
-                                                 & ((tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                     >> 0x1fU) 
-                                                    ^ 
-                                                    ((IData)(tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
-                                                     >> 3U)))
-                                                 ? 
-                                                (0x4c11db7U 
-                                                 ^ 
-                                                 (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  << 1U))
-                                                 : 
-                                                (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                 << 1U));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__by = (0xffU 
-                                                 & (IData)(
-                                                           (__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
-                                                            >> 0x28U)));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__c = ((1U 
-                                                 & ((tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                     >> 0x1fU) 
-                                                    ^ 
-                                                    ((IData)(tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
-                                                     >> 4U)))
-                                                 ? 
-                                                (0x4c11db7U 
-                                                 ^ 
-                                                 (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  << 1U))
-                                                 : 
-                                                (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                 << 1U));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__by = (0xffU 
-                                                 & (IData)(
-                                                           (__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
-                                                            >> 0x28U)));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__c = ((1U 
-                                                 & ((tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                     >> 0x1fU) 
-                                                    ^ 
-                                                    ((IData)(tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
-                                                     >> 5U)))
-                                                 ? 
-                                                (0x4c11db7U 
-                                                 ^ 
-                                                 (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  << 1U))
-                                                 : 
-                                                (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                 << 1U));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__by = (0xffU 
-                                                 & (IData)(
-                                                           (__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
-                                                            >> 0x28U)));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__c = ((1U 
-                                                 & ((tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                     >> 0x1fU) 
-                                                    ^ 
-                                                    ((IData)(tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
-                                                     >> 6U)))
-                                                 ? 
-                                                (0x4c11db7U 
-                                                 ^ 
-                                                 (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  << 1U))
-                                                 : 
-                                                (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                 << 1U));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__by = (0xffU 
-                                                 & (IData)(
-                                                           (__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
-                                                            >> 0x28U)));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__c = (((tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  >> 0x1fU) 
-                                                 ^ 
-                                                 ((IData)(tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
-                                                  >> 7U))
-                                                 ? 
-                                                (0x4c11db7U 
-                                                 ^ 
-                                                 (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  << 1U))
-                                                 : 
-                                                (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                 << 1U));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__by = (0xffU 
-                                                 & (IData)(
-                                                           (__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
-                                                            >> 0x20U)));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__c = ((1U 
-                                                 & ((tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                     >> 0x1fU) 
-                                                    ^ (IData)(tb_net__DOT__nic__DOT__mhash__Vstatic__by)))
-                                                 ? 
-                                                (0x4c11db7U 
-                                                 ^ 
-                                                 (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  << 1U))
-                                                 : 
-                                                (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                 << 1U));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__by = (0xffU 
-                                                 & (IData)(
-                                                           (__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
-                                                            >> 0x20U)));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__c = ((1U 
-                                                 & ((tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                     >> 0x1fU) 
-                                                    ^ 
-                                                    ((IData)(tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
-                                                     >> 1U)))
-                                                 ? 
-                                                (0x4c11db7U 
-                                                 ^ 
-                                                 (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  << 1U))
-                                                 : 
-                                                (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                 << 1U));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__by = (0xffU 
-                                                 & (IData)(
-                                                           (__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
-                                                            >> 0x20U)));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__c = ((1U 
-                                                 & ((tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                     >> 0x1fU) 
-                                                    ^ 
-                                                    ((IData)(tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
-                                                     >> 2U)))
-                                                 ? 
-                                                (0x4c11db7U 
-                                                 ^ 
-                                                 (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  << 1U))
-                                                 : 
-                                                (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                 << 1U));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__by = (0xffU 
-                                                 & (IData)(
-                                                           (__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
-                                                            >> 0x20U)));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__c = ((1U 
-                                                 & ((tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                     >> 0x1fU) 
-                                                    ^ 
-                                                    ((IData)(tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
-                                                     >> 3U)))
-                                                 ? 
-                                                (0x4c11db7U 
-                                                 ^ 
-                                                 (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  << 1U))
-                                                 : 
-                                                (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                 << 1U));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__by = (0xffU 
-                                                 & (IData)(
-                                                           (__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
-                                                            >> 0x20U)));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__c = ((1U 
-                                                 & ((tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                     >> 0x1fU) 
-                                                    ^ 
-                                                    ((IData)(tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
-                                                     >> 4U)))
-                                                 ? 
-                                                (0x4c11db7U 
-                                                 ^ 
-                                                 (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  << 1U))
-                                                 : 
-                                                (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                 << 1U));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__by = (0xffU 
-                                                 & (IData)(
-                                                           (__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
-                                                            >> 0x20U)));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__c = ((1U 
-                                                 & ((tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                     >> 0x1fU) 
-                                                    ^ 
-                                                    ((IData)(tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
-                                                     >> 5U)))
-                                                 ? 
-                                                (0x4c11db7U 
-                                                 ^ 
-                                                 (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  << 1U))
-                                                 : 
-                                                (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                 << 1U));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__by = (0xffU 
-                                                 & (IData)(
-                                                           (__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
-                                                            >> 0x20U)));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__c = ((1U 
-                                                 & ((tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                     >> 0x1fU) 
-                                                    ^ 
-                                                    ((IData)(tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
-                                                     >> 6U)))
-                                                 ? 
-                                                (0x4c11db7U 
-                                                 ^ 
-                                                 (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  << 1U))
-                                                 : 
-                                                (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                 << 1U));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__by = (0xffU 
-                                                 & (IData)(
-                                                           (__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
-                                                            >> 0x20U)));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__c = (((tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  >> 0x1fU) 
-                                                 ^ 
-                                                 ((IData)(tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
-                                                  >> 7U))
-                                                 ? 
-                                                (0x4c11db7U 
-                                                 ^ 
-                                                 (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  << 1U))
-                                                 : 
-                                                (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                 << 1U));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__by = (0xffU 
-                                                 & (IData)(
-                                                           (__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
-                                                            >> 0x18U)));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__c = ((1U 
-                                                 & ((tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                     >> 0x1fU) 
-                                                    ^ (IData)(tb_net__DOT__nic__DOT__mhash__Vstatic__by)))
-                                                 ? 
-                                                (0x4c11db7U 
-                                                 ^ 
-                                                 (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  << 1U))
-                                                 : 
-                                                (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                 << 1U));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__by = (0xffU 
-                                                 & (IData)(
-                                                           (__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
-                                                            >> 0x18U)));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__c = ((1U 
-                                                 & ((tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                     >> 0x1fU) 
-                                                    ^ 
-                                                    ((IData)(tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
-                                                     >> 1U)))
-                                                 ? 
-                                                (0x4c11db7U 
-                                                 ^ 
-                                                 (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  << 1U))
-                                                 : 
-                                                (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                 << 1U));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__by = (0xffU 
-                                                 & (IData)(
-                                                           (__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
-                                                            >> 0x18U)));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__c = ((1U 
-                                                 & ((tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                     >> 0x1fU) 
-                                                    ^ 
-                                                    ((IData)(tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
-                                                     >> 2U)))
-                                                 ? 
-                                                (0x4c11db7U 
-                                                 ^ 
-                                                 (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  << 1U))
-                                                 : 
-                                                (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                 << 1U));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__by = (0xffU 
-                                                 & (IData)(
-                                                           (__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
-                                                            >> 0x18U)));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__c = ((1U 
-                                                 & ((tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                     >> 0x1fU) 
-                                                    ^ 
-                                                    ((IData)(tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
-                                                     >> 3U)))
-                                                 ? 
-                                                (0x4c11db7U 
-                                                 ^ 
-                                                 (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  << 1U))
-                                                 : 
-                                                (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                 << 1U));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__by = (0xffU 
-                                                 & (IData)(
-                                                           (__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
-                                                            >> 0x18U)));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__c = ((1U 
-                                                 & ((tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                     >> 0x1fU) 
-                                                    ^ 
-                                                    ((IData)(tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
-                                                     >> 4U)))
-                                                 ? 
-                                                (0x4c11db7U 
-                                                 ^ 
-                                                 (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  << 1U))
-                                                 : 
-                                                (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                 << 1U));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__by = (0xffU 
-                                                 & (IData)(
-                                                           (__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
-                                                            >> 0x18U)));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__c = ((1U 
-                                                 & ((tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                     >> 0x1fU) 
-                                                    ^ 
-                                                    ((IData)(tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
-                                                     >> 5U)))
-                                                 ? 
-                                                (0x4c11db7U 
-                                                 ^ 
-                                                 (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  << 1U))
-                                                 : 
-                                                (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                 << 1U));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__by = (0xffU 
-                                                 & (IData)(
-                                                           (__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
-                                                            >> 0x18U)));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__c = ((1U 
-                                                 & ((tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                     >> 0x1fU) 
-                                                    ^ 
-                                                    ((IData)(tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
-                                                     >> 6U)))
-                                                 ? 
-                                                (0x4c11db7U 
-                                                 ^ 
-                                                 (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  << 1U))
-                                                 : 
-                                                (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                 << 1U));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__by = (0xffU 
-                                                 & (IData)(
-                                                           (__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
-                                                            >> 0x18U)));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__c = (((tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  >> 0x1fU) 
-                                                 ^ 
-                                                 ((IData)(tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
-                                                  >> 7U))
-                                                 ? 
-                                                (0x4c11db7U 
-                                                 ^ 
-                                                 (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  << 1U))
-                                                 : 
-                                                (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                 << 1U));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__by = (0xffU 
-                                                 & (IData)(
-                                                           (__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
-                                                            >> 0x10U)));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__c = ((1U 
-                                                 & ((tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                     >> 0x1fU) 
-                                                    ^ (IData)(tb_net__DOT__nic__DOT__mhash__Vstatic__by)))
-                                                 ? 
-                                                (0x4c11db7U 
-                                                 ^ 
-                                                 (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  << 1U))
-                                                 : 
-                                                (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                 << 1U));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__by = (0xffU 
-                                                 & (IData)(
-                                                           (__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
-                                                            >> 0x10U)));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__c = ((1U 
-                                                 & ((tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                     >> 0x1fU) 
-                                                    ^ 
-                                                    ((IData)(tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
-                                                     >> 1U)))
-                                                 ? 
-                                                (0x4c11db7U 
-                                                 ^ 
-                                                 (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  << 1U))
-                                                 : 
-                                                (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                 << 1U));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__by = (0xffU 
-                                                 & (IData)(
-                                                           (__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
-                                                            >> 0x10U)));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__c = ((1U 
-                                                 & ((tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                     >> 0x1fU) 
-                                                    ^ 
-                                                    ((IData)(tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
-                                                     >> 2U)))
-                                                 ? 
-                                                (0x4c11db7U 
-                                                 ^ 
-                                                 (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  << 1U))
-                                                 : 
-                                                (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                 << 1U));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__by = (0xffU 
-                                                 & (IData)(
-                                                           (__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
-                                                            >> 0x10U)));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__c = ((1U 
-                                                 & ((tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                     >> 0x1fU) 
-                                                    ^ 
-                                                    ((IData)(tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
-                                                     >> 3U)))
-                                                 ? 
-                                                (0x4c11db7U 
-                                                 ^ 
-                                                 (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  << 1U))
-                                                 : 
-                                                (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                 << 1U));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__by = (0xffU 
-                                                 & (IData)(
-                                                           (__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
-                                                            >> 0x10U)));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__c = ((1U 
-                                                 & ((tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                     >> 0x1fU) 
-                                                    ^ 
-                                                    ((IData)(tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
-                                                     >> 4U)))
-                                                 ? 
-                                                (0x4c11db7U 
-                                                 ^ 
-                                                 (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  << 1U))
-                                                 : 
-                                                (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                 << 1U));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__by = (0xffU 
-                                                 & (IData)(
-                                                           (__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
-                                                            >> 0x10U)));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__c = ((1U 
-                                                 & ((tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                     >> 0x1fU) 
-                                                    ^ 
-                                                    ((IData)(tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
-                                                     >> 5U)))
-                                                 ? 
-                                                (0x4c11db7U 
-                                                 ^ 
-                                                 (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  << 1U))
-                                                 : 
-                                                (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                 << 1U));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__by = (0xffU 
-                                                 & (IData)(
-                                                           (__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
-                                                            >> 0x10U)));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__c = ((1U 
-                                                 & ((tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                     >> 0x1fU) 
-                                                    ^ 
-                                                    ((IData)(tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
-                                                     >> 6U)))
-                                                 ? 
-                                                (0x4c11db7U 
-                                                 ^ 
-                                                 (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  << 1U))
-                                                 : 
-                                                (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                 << 1U));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__by = (0xffU 
-                                                 & (IData)(
-                                                           (__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
-                                                            >> 0x10U)));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__c = (((tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  >> 0x1fU) 
-                                                 ^ 
-                                                 ((IData)(tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
-                                                  >> 7U))
-                                                 ? 
-                                                (0x4c11db7U 
-                                                 ^ 
-                                                 (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  << 1U))
-                                                 : 
-                                                (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                 << 1U));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__by = (0xffU 
-                                                 & (IData)(
-                                                           (__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
-                                                            >> 8U)));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__c = ((1U 
-                                                 & ((tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                     >> 0x1fU) 
-                                                    ^ (IData)(tb_net__DOT__nic__DOT__mhash__Vstatic__by)))
-                                                 ? 
-                                                (0x4c11db7U 
-                                                 ^ 
-                                                 (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  << 1U))
-                                                 : 
-                                                (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                 << 1U));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__by = (0xffU 
-                                                 & (IData)(
-                                                           (__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
-                                                            >> 8U)));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__c = ((1U 
-                                                 & ((tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                     >> 0x1fU) 
-                                                    ^ 
-                                                    ((IData)(tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
-                                                     >> 1U)))
-                                                 ? 
-                                                (0x4c11db7U 
-                                                 ^ 
-                                                 (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  << 1U))
-                                                 : 
-                                                (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                 << 1U));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__by = (0xffU 
-                                                 & (IData)(
-                                                           (__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
-                                                            >> 8U)));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__c = ((1U 
-                                                 & ((tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                     >> 0x1fU) 
-                                                    ^ 
-                                                    ((IData)(tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
-                                                     >> 2U)))
-                                                 ? 
-                                                (0x4c11db7U 
-                                                 ^ 
-                                                 (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  << 1U))
-                                                 : 
-                                                (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                 << 1U));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__by = (0xffU 
-                                                 & (IData)(
-                                                           (__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
-                                                            >> 8U)));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__c = ((1U 
-                                                 & ((tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                     >> 0x1fU) 
-                                                    ^ 
-                                                    ((IData)(tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
-                                                     >> 3U)))
-                                                 ? 
-                                                (0x4c11db7U 
-                                                 ^ 
-                                                 (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  << 1U))
-                                                 : 
-                                                (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                 << 1U));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__by = (0xffU 
-                                                 & (IData)(
-                                                           (__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
-                                                            >> 8U)));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__c = ((1U 
-                                                 & ((tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                     >> 0x1fU) 
-                                                    ^ 
-                                                    ((IData)(tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
-                                                     >> 4U)))
-                                                 ? 
-                                                (0x4c11db7U 
-                                                 ^ 
-                                                 (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  << 1U))
-                                                 : 
-                                                (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                 << 1U));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__by = (0xffU 
-                                                 & (IData)(
-                                                           (__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
-                                                            >> 8U)));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__c = ((1U 
-                                                 & ((tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                     >> 0x1fU) 
-                                                    ^ 
-                                                    ((IData)(tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
-                                                     >> 5U)))
-                                                 ? 
-                                                (0x4c11db7U 
-                                                 ^ 
-                                                 (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  << 1U))
-                                                 : 
-                                                (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                 << 1U));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__by = (0xffU 
-                                                 & (IData)(
-                                                           (__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
-                                                            >> 8U)));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__c = ((1U 
-                                                 & ((tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                     >> 0x1fU) 
-                                                    ^ 
-                                                    ((IData)(tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
-                                                     >> 6U)))
-                                                 ? 
-                                                (0x4c11db7U 
-                                                 ^ 
-                                                 (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  << 1U))
-                                                 : 
-                                                (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                 << 1U));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__by = (0xffU 
-                                                 & (IData)(
-                                                           (__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d 
-                                                            >> 8U)));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__c = (((tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  >> 0x1fU) 
-                                                 ^ 
-                                                 ((IData)(tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
-                                                  >> 7U))
-                                                 ? 
-                                                (0x4c11db7U 
-                                                 ^ 
-                                                 (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  << 1U))
-                                                 : 
-                                                (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                 << 1U));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__by = (0xffU 
-                                                 & (IData)(__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__c = ((1U 
-                                                 & ((tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                     >> 0x1fU) 
-                                                    ^ (IData)(tb_net__DOT__nic__DOT__mhash__Vstatic__by)))
-                                                 ? 
-                                                (0x4c11db7U 
-                                                 ^ 
-                                                 (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  << 1U))
-                                                 : 
-                                                (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                 << 1U));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__by = (0xffU 
-                                                 & (IData)(__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__c = ((1U 
-                                                 & ((tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                     >> 0x1fU) 
-                                                    ^ 
-                                                    ((IData)(tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
-                                                     >> 1U)))
-                                                 ? 
-                                                (0x4c11db7U 
-                                                 ^ 
-                                                 (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  << 1U))
-                                                 : 
-                                                (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                 << 1U));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__by = (0xffU 
-                                                 & (IData)(__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__c = ((1U 
-                                                 & ((tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                     >> 0x1fU) 
-                                                    ^ 
-                                                    ((IData)(tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
-                                                     >> 2U)))
-                                                 ? 
-                                                (0x4c11db7U 
-                                                 ^ 
-                                                 (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  << 1U))
-                                                 : 
-                                                (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                 << 1U));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__by = (0xffU 
-                                                 & (IData)(__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__c = ((1U 
-                                                 & ((tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                     >> 0x1fU) 
-                                                    ^ 
-                                                    ((IData)(tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
-                                                     >> 3U)))
-                                                 ? 
-                                                (0x4c11db7U 
-                                                 ^ 
-                                                 (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  << 1U))
-                                                 : 
-                                                (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                 << 1U));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__by = (0xffU 
-                                                 & (IData)(__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__c = ((1U 
-                                                 & ((tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                     >> 0x1fU) 
-                                                    ^ 
-                                                    ((IData)(tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
-                                                     >> 4U)))
-                                                 ? 
-                                                (0x4c11db7U 
-                                                 ^ 
-                                                 (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  << 1U))
-                                                 : 
-                                                (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                 << 1U));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__by = (0xffU 
-                                                 & (IData)(__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__c = ((1U 
-                                                 & ((tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                     >> 0x1fU) 
-                                                    ^ 
-                                                    ((IData)(tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
-                                                     >> 5U)))
-                                                 ? 
-                                                (0x4c11db7U 
-                                                 ^ 
-                                                 (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  << 1U))
-                                                 : 
-                                                (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                 << 1U));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__by = (0xffU 
-                                                 & (IData)(__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__c = ((1U 
-                                                 & ((tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                     >> 0x1fU) 
-                                                    ^ 
-                                                    ((IData)(tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
-                                                     >> 6U)))
-                                                 ? 
-                                                (0x4c11db7U 
-                                                 ^ 
-                                                 (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  << 1U))
-                                                 : 
-                                                (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                 << 1U));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__by = (0xffU 
-                                                 & (IData)(__Vfunc_tb_net__DOT__nic__DOT__mhash__4__d));
-    tb_net__DOT__nic__DOT__mhash__Vstatic__c = (((tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  >> 0x1fU) 
-                                                 ^ 
-                                                 ((IData)(tb_net__DOT__nic__DOT__mhash__Vstatic__by) 
-                                                  >> 7U))
-                                                 ? 
-                                                (0x4c11db7U 
-                                                 ^ 
-                                                 (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                  << 1U))
-                                                 : 
-                                                (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-                                                 << 1U));
-    __Vfunc_tb_net__DOT__nic__DOT__mhash__4__Vfuncout 
-        = (tb_net__DOT__nic__DOT__mhash__Vstatic__c 
-           >> 0x1aU);
-    tb_net__DOT__nic__DOT__o_hash = __Vfunc_tb_net__DOT__nic__DOT__mhash__4__Vfuncout;
-    tb_net__DOT__nic__DOT__o_next0 = (0x1ffU & ((IData)(vlSelf->tb_net__DOT__nic__DOT__curr) 
-                                                + (0xffU 
-                                                   & VL_SHIFTR_III(12,12,32, 
-                                                                   (0xfffU 
-                                                                    & ((IData)(0x107U) 
-                                                                       + (IData)(vlSelf->tb_net__DOT__nic__DOT__o_pad))), 8U))));
     vlSelf->tb_net__DOT__nic__DOT__o_acc = (1U & ((0xffffffffffffULL 
                                                    == vlSelf->tb_net__DOT__nic__DOT__off_dst)
                                                    ? 
@@ -2652,11 +2333,11 @@ VL_INLINE_OPT void Vtb_net___024root___nba_sequent__TOP__2(Vtb_net___024root* vl
                                                     & (vlSelf->tb_net__DOT__nic__DOT__mar
                                                        [
                                                        (7U 
-                                                        & ((IData)(tb_net__DOT__nic__DOT__o_hash) 
+                                                        & ((IData)(vlSelf->tb_net__DOT__nic__DOT__off_hash) 
                                                            >> 3U))] 
                                                        >> 
                                                        (7U 
-                                                        & (IData)(tb_net__DOT__nic__DOT__o_hash))))
+                                                        & (IData)(vlSelf->tb_net__DOT__nic__DOT__off_hash))))
                                                     : 
                                                    (((IData)(vlSelf->tb_net__DOT__nic__DOT__rcr) 
                                                      >> 4U) 
@@ -2682,6 +2363,19 @@ VL_INLINE_OPT void Vtb_net___024root___nba_sequent__TOP__2(Vtb_net___024root* vl
                                                                                 << 8U) 
                                                                                 | vlSelf->tb_net__DOT__nic__DOT__par
                                                                                 [5U]))))))))))));
+    vlSelf->cen_o = vlSelf->tb_net__DOT__cen;
+    vlSelf->tb_net__DOT____Vcellinp__nic__acc = ((IData)(vlSelf->acc) 
+                                                 & (IData)(vlSelf->tb_net__DOT__cen));
+    vlSelf->tb_net__DOT__nic__DOT__o_pad = ((0x3cU 
+                                             > (IData)(vlSelf->tb_net__DOT__nic__DOT__off_len))
+                                             ? 0x3cU
+                                             : (IData)(vlSelf->tb_net__DOT__nic__DOT__off_len));
+    tb_net__DOT__nic__DOT__o_next0 = (0x1ffU & ((IData)(vlSelf->tb_net__DOT__nic__DOT__curr) 
+                                                + (0xffU 
+                                                   & VL_SHIFTR_III(12,12,32, 
+                                                                   (0xfffU 
+                                                                    & ((IData)(0x107U) 
+                                                                       + (IData)(vlSelf->tb_net__DOT__nic__DOT__o_pad))), 8U))));
     vlSelf->tb_net__DOT__nic__DOT__o_next = (0xffU 
                                              & (((IData)(tb_net__DOT__nic__DOT__o_next0) 
                                                  >= (IData)(vlSelf->tb_net__DOT__nic__DOT__pstop))

@@ -220,9 +220,10 @@ module dr840_ne2000 #(
     reg        off_q;
     reg [10:0] off_len;
     reg [47:0] off_dst;
+    reg [5:0]  off_hash;        // taken with the offer: the CRC is long
     wire       o_bcast = (off_dst == 48'hFFFF_FFFF_FFFF);
     wire       o_group = off_dst[40];
-    wire [5:0] o_hash  = mhash(off_dst);
+    wire [5:0] o_hash  = off_hash;
     wire [7:0] o_marb  = mar[o_hash[5:3]];
     wire       o_par   = (off_dst == {par[0], par[1], par[2], par[3], par[4], par[5]});
     wire       o_acc   = o_bcast ? rcr[2] : o_group ? (rcr[3] && o_marb[o_hash[2:0]]) : (rcr[4] || o_par);
@@ -271,7 +272,7 @@ module dr840_ne2000 #(
             wb <= 1'b0; wb_a <= 14'd0; wb_d <= 8'd0;
             tx_req <= 1'b0; tx_base <= 14'd0; tx_len <= 11'd0; tx_wait <= 16'd0;
             tx_copied <= 1'b0; tx_copied_ok <= 1'b0;
-            off_q <= 1'b0; off_len <= 11'd0; off_dst <= 48'd0; rx_answer <= 1'b0; rx_take <= 1'b0;
+            off_q <= 1'b0; off_len <= 11'd0; off_dst <= 48'd0; off_hash <= 6'd0; rx_answer <= 1'b0; rx_take <= 1'b0;
             r_st <= R_IDLE; r_ptr <= 16'd0; r_n <= 11'd0; r_len <= 11'd0; r_pad <= 11'd0;
             r_cnt <= 12'd0; r_next <= 8'd0; r_page <= 8'd0; r_group <= 1'b0; r_crc <= 32'd0; r_k <= 2'd0;
             dbg_tx <= 32'd0; dbg_rx <= 32'd0;
@@ -393,7 +394,7 @@ module dr840_ne2000 #(
 
                 // -------------------------------------------- receive
                 if (rx_offer && !rx_busy) begin
-                    off_q <= 1'b1; off_len <= rx_len; off_dst <= rx_dst;
+                    off_q <= 1'b1; off_len <= rx_len; off_dst <= rx_dst; off_hash <= mhash(rx_dst);
                 end
                 if (off_q) begin
                     off_q <= 1'b0;

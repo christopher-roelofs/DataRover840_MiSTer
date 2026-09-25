@@ -291,6 +291,11 @@ module dr840_machine (
 
     // The LCD controller: scans the framebuffer out of the SDRAM through
     // the board, onto a 640x480 raster.
+    // The network card's OSD setting, registered: it is static, and from the
+    // pin through the card decode into the caches was three nanoseconds over.
+    reg net_card_q;
+    always @(posedge clk) if (cen) net_card_q <= net_card;
+
     // The network card: an NE2000, reset with the core.
     wire        nic_acc, nic_we, nic_wide, nic_reset, nic_irq;
     wire [4:0]  nic_port;
@@ -331,7 +336,7 @@ module dr840_machine (
         .amem_addr(aa), .amem_req(areq), .amem_ack(aack), .amem_rdata(ard),
         .kmem_addr(ka), .kmem_req(kreq), .kmem_we(kwe), .kmem_wdata(kwd), .kmem_ack(kack),
         .pmem_addr(pa), .pmem_req(preq), .pmem_we(pwe), .pmem_wdata(pwd), .pmem_ack(pack), .pmem_rdata(prd),
-        .card_present({card_present[1], card_present[0] & ~net_card}), .card_mask0((22'd1 << card_log2_0) - 22'd1),
+        .card_present({card_present[1], card_present[0] & ~net_card_q}), .card_mask0((22'd1 << card_log2_0) - 22'd1),
         .card_mask1((22'd1 << card_log2_1) - 22'd1),
         .ram_addr(bram_addr), .ram_req(bram_req), .ram_burst(bram_burst),
         .ram_we(bram_we), .ram_be(bram_be), .ram_wdata(bram_wdata),
@@ -359,9 +364,9 @@ module dr840_machine (
         .key_ext(key_ext), .key_down(key_down),
         .kmem_addr(ka), .kmem_req(kreq), .kmem_we(kwe), .kmem_wdata(kwd), .kmem_ack(kack),
         // Slot 1 holds a card when the network card is fitted, too.
-        .card_present({card_present[1], card_present[0] | net_card}),
+        .card_present({card_present[1], card_present[0] | net_card_q}),
         .card_log2_0(card_log2_0), .card_log2_1(card_log2_1),
-        .net_card(net_card), .nic_acc(nic_acc), .nic_we(nic_we), .nic_port(nic_port),
+        .net_card(net_card_q), .nic_acc(nic_acc), .nic_we(nic_we), .nic_port(nic_port),
         .nic_wide(nic_wide), .nic_wdata(nic_wdata), .nic_rdata(nic_rdata),
         .nic_reset(nic_reset), .nic_irq(nic_irq),
         .snd_tog(snd_tog), .snd_addr(snd_addr), .codec_b(codec_b),

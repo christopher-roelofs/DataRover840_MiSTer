@@ -70,7 +70,9 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_net___024root final : public VerilatedMod
         CData/*7:0*/ tb_net__DOT__nic__DOT__b1;
         CData/*0:0*/ tb_net__DOT__nic__DOT__dma_rd_ok;
         CData/*0:0*/ tb_net__DOT__nic__DOT__dma_wr_ok;
+        CData/*7:0*/ tb_net__DOT__nic__DOT__mhash__Vstatic__by;
         CData/*0:0*/ tb_net__DOT__nic__DOT__off_q;
+        CData/*5:0*/ tb_net__DOT__nic__DOT__off_hash;
         CData/*0:0*/ tb_net__DOT__nic__DOT__o_acc;
         CData/*0:0*/ tb_net__DOT__nic__DOT__o_ring_ok;
         CData/*0:0*/ tb_net__DOT__nic__DOT__o_bnry_in;
@@ -78,10 +80,10 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_net___024root final : public VerilatedMod
         CData/*2:0*/ tb_net__DOT__nic__DOT__r_st;
         CData/*7:0*/ tb_net__DOT__nic__DOT__r_next;
         CData/*7:0*/ tb_net__DOT__nic__DOT__r_page;
-        CData/*0:0*/ tb_net__DOT__nic__DOT__r_group;
-        CData/*1:0*/ tb_net__DOT__nic__DOT__r_k;
     };
     struct {
+        CData/*0:0*/ tb_net__DOT__nic__DOT__r_group;
+        CData/*1:0*/ tb_net__DOT__nic__DOT__r_k;
         CData/*0:0*/ tb_net__DOT__nic__DOT__tx_copied;
         CData/*0:0*/ tb_net__DOT__nic__DOT__tx_copied_ok;
         CData/*7:0*/ tb_net__DOT__nic__DOT__v;
@@ -144,10 +146,10 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_net___024root final : public VerilatedMod
         SData/*10:0*/ tb_net__DOT__rx_len;
         SData/*15:0*/ tb_net__DOT__nic__DOT__rsar;
         SData/*15:0*/ tb_net__DOT__nic__DOT__rbcr;
-        SData/*15:0*/ tb_net__DOT__nic__DOT__tbcr;
-        SData/*15:0*/ tb_net__DOT__nic__DOT__rsar_n;
     };
     struct {
+        SData/*15:0*/ tb_net__DOT__nic__DOT__tbcr;
+        SData/*15:0*/ tb_net__DOT__nic__DOT__rsar_n;
         SData/*12:0*/ tb_net__DOT__nic__DOT__wa_e_i;
         SData/*12:0*/ tb_net__DOT__nic__DOT__wa_o_i;
         SData/*13:0*/ tb_net__DOT__nic__DOT__wb_a;
@@ -178,6 +180,7 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_net___024root final : public VerilatedMod
         VL_OUT(frames_rx,31,0);
         IData/*31:0*/ tb_net__DOT__nic__DOT__dbg_tx;
         IData/*31:0*/ tb_net__DOT__nic__DOT__dbg_rx;
+        IData/*31:0*/ tb_net__DOT__nic__DOT__mhash__Vstatic__c;
         IData/*31:0*/ tb_net__DOT__nic__DOT__crc8__Vstatic__x;
         IData/*31:0*/ tb_net__DOT__nic__DOT__r_crc;
         IData/*31:0*/ tb_net__DOT__br__DOT__tx_head;

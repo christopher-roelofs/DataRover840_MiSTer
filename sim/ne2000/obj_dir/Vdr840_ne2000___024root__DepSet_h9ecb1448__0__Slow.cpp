@@ -78,12 +78,6 @@ VL_ATTR_COLD void Vdr840_ne2000___024root___stl_sequent__TOP__0(Vdr840_ne2000___
     Vdr840_ne2000__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
     VL_DEBUG_IF(VL_DBG_MSGF("+    Vdr840_ne2000___024root___stl_sequent__TOP__0\n"); );
     // Init
-    IData/*31:0*/ dr840_ne2000__DOT__mhash__Vstatic__c;
-    dr840_ne2000__DOT__mhash__Vstatic__c = 0;
-    CData/*7:0*/ dr840_ne2000__DOT__mhash__Vstatic__by;
-    dr840_ne2000__DOT__mhash__Vstatic__by = 0;
-    CData/*5:0*/ dr840_ne2000__DOT__o_hash;
-    dr840_ne2000__DOT__o_hash = 0;
     SData/*8:0*/ dr840_ne2000__DOT__o_next0;
     dr840_ne2000__DOT__o_next0 = 0;
     CData/*7:0*/ __Vfunc_dr840_ne2000__DOT__space__0__Vfuncout;
@@ -98,10 +92,6 @@ VL_ATTR_COLD void Vdr840_ne2000___024root___stl_sequent__TOP__0(Vdr840_ne2000___
     __Vfunc_dr840_ne2000__DOT__space__2__a = 0;
     CData/*7:0*/ __Vfunc_dr840_ne2000__DOT__space__2__ram_byte;
     __Vfunc_dr840_ne2000__DOT__space__2__ram_byte = 0;
-    CData/*5:0*/ __Vfunc_dr840_ne2000__DOT__mhash__4__Vfuncout;
-    __Vfunc_dr840_ne2000__DOT__mhash__4__Vfuncout = 0;
-    QData/*47:0*/ __Vfunc_dr840_ne2000__DOT__mhash__4__d;
-    __Vfunc_dr840_ne2000__DOT__mhash__4__d = 0;
     // Body
     vlSelf->irq = (0U != (0x7fU & ((IData)(vlSelf->dr840_ne2000__DOT__imr) 
                                    & (IData)(vlSelf->dr840_ne2000__DOT__isr))));
@@ -157,686 +147,52 @@ VL_ATTR_COLD void Vdr840_ne2000___024root___stl_sequent__TOP__0(Vdr840_ne2000___
                                                + (0xffU 
                                                   & ((IData)(vlSelf->dr840_ne2000__DOT__bnry) 
                                                      - (IData)(vlSelf->dr840_ne2000__DOT__pstart))))));
+    vlSelf->dr840_ne2000__DOT__o_acc = (1U & ((0xffffffffffffULL 
+                                               == vlSelf->dr840_ne2000__DOT__off_dst)
+                                               ? ((IData)(vlSelf->dr840_ne2000__DOT__rcr) 
+                                                  >> 2U)
+                                               : ((1U 
+                                                   & (IData)(
+                                                             (vlSelf->dr840_ne2000__DOT__off_dst 
+                                                              >> 0x28U)))
+                                                   ? 
+                                                  (((IData)(vlSelf->dr840_ne2000__DOT__rcr) 
+                                                    >> 3U) 
+                                                   & (vlSelf->dr840_ne2000__DOT__mar
+                                                      [
+                                                      (7U 
+                                                       & ((IData)(vlSelf->dr840_ne2000__DOT__off_hash) 
+                                                          >> 3U))] 
+                                                      >> 
+                                                      (7U 
+                                                       & (IData)(vlSelf->dr840_ne2000__DOT__off_hash))))
+                                                   : 
+                                                  (((IData)(vlSelf->dr840_ne2000__DOT__rcr) 
+                                                    >> 4U) 
+                                                   | (vlSelf->dr840_ne2000__DOT__off_dst 
+                                                      == 
+                                                      (((QData)((IData)(
+                                                                        vlSelf->dr840_ne2000__DOT__par
+                                                                        [0U])) 
+                                                        << 0x28U) 
+                                                       | (((QData)((IData)(
+                                                                           vlSelf->dr840_ne2000__DOT__par
+                                                                           [1U])) 
+                                                           << 0x20U) 
+                                                          | (QData)((IData)(
+                                                                            ((vlSelf->dr840_ne2000__DOT__par
+                                                                              [2U] 
+                                                                              << 0x18U) 
+                                                                             | ((vlSelf->dr840_ne2000__DOT__par
+                                                                                [3U] 
+                                                                                << 0x10U) 
+                                                                                | ((vlSelf->dr840_ne2000__DOT__par
+                                                                                [4U] 
+                                                                                << 8U) 
+                                                                                | vlSelf->dr840_ne2000__DOT__par
+                                                                                [5U]))))))))))));
     vlSelf->dr840_ne2000__DOT__o_pad = ((0x3cU > (IData)(vlSelf->dr840_ne2000__DOT__off_len))
                                          ? 0x3cU : (IData)(vlSelf->dr840_ne2000__DOT__off_len));
-    __Vfunc_dr840_ne2000__DOT__mhash__4__d = vlSelf->dr840_ne2000__DOT__off_dst;
-    dr840_ne2000__DOT__mhash__Vstatic__by = (0xffU 
-                                             & (IData)(
-                                                       (__Vfunc_dr840_ne2000__DOT__mhash__4__d 
-                                                        >> 0x28U)));
-    dr840_ne2000__DOT__mhash__Vstatic__c = ((1U & (IData)(dr840_ne2000__DOT__mhash__Vstatic__by))
-                                             ? 0xfffffffeU
-                                             : 0xfb3ee249U);
-    dr840_ne2000__DOT__mhash__Vstatic__by = (0xffU 
-                                             & (IData)(
-                                                       (__Vfunc_dr840_ne2000__DOT__mhash__4__d 
-                                                        >> 0x28U)));
-    dr840_ne2000__DOT__mhash__Vstatic__c = ((1U & (
-                                                   (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                    >> 0x1fU) 
-                                                   ^ 
-                                                   ((IData)(dr840_ne2000__DOT__mhash__Vstatic__by) 
-                                                    >> 1U)))
-                                             ? (0x4c11db7U 
-                                                ^ (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                   << 1U))
-                                             : (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                << 1U));
-    dr840_ne2000__DOT__mhash__Vstatic__by = (0xffU 
-                                             & (IData)(
-                                                       (__Vfunc_dr840_ne2000__DOT__mhash__4__d 
-                                                        >> 0x28U)));
-    dr840_ne2000__DOT__mhash__Vstatic__c = ((1U & (
-                                                   (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                    >> 0x1fU) 
-                                                   ^ 
-                                                   ((IData)(dr840_ne2000__DOT__mhash__Vstatic__by) 
-                                                    >> 2U)))
-                                             ? (0x4c11db7U 
-                                                ^ (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                   << 1U))
-                                             : (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                << 1U));
-    dr840_ne2000__DOT__mhash__Vstatic__by = (0xffU 
-                                             & (IData)(
-                                                       (__Vfunc_dr840_ne2000__DOT__mhash__4__d 
-                                                        >> 0x28U)));
-    dr840_ne2000__DOT__mhash__Vstatic__c = ((1U & (
-                                                   (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                    >> 0x1fU) 
-                                                   ^ 
-                                                   ((IData)(dr840_ne2000__DOT__mhash__Vstatic__by) 
-                                                    >> 3U)))
-                                             ? (0x4c11db7U 
-                                                ^ (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                   << 1U))
-                                             : (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                << 1U));
-    dr840_ne2000__DOT__mhash__Vstatic__by = (0xffU 
-                                             & (IData)(
-                                                       (__Vfunc_dr840_ne2000__DOT__mhash__4__d 
-                                                        >> 0x28U)));
-    dr840_ne2000__DOT__mhash__Vstatic__c = ((1U & (
-                                                   (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                    >> 0x1fU) 
-                                                   ^ 
-                                                   ((IData)(dr840_ne2000__DOT__mhash__Vstatic__by) 
-                                                    >> 4U)))
-                                             ? (0x4c11db7U 
-                                                ^ (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                   << 1U))
-                                             : (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                << 1U));
-    dr840_ne2000__DOT__mhash__Vstatic__by = (0xffU 
-                                             & (IData)(
-                                                       (__Vfunc_dr840_ne2000__DOT__mhash__4__d 
-                                                        >> 0x28U)));
-    dr840_ne2000__DOT__mhash__Vstatic__c = ((1U & (
-                                                   (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                    >> 0x1fU) 
-                                                   ^ 
-                                                   ((IData)(dr840_ne2000__DOT__mhash__Vstatic__by) 
-                                                    >> 5U)))
-                                             ? (0x4c11db7U 
-                                                ^ (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                   << 1U))
-                                             : (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                << 1U));
-    dr840_ne2000__DOT__mhash__Vstatic__by = (0xffU 
-                                             & (IData)(
-                                                       (__Vfunc_dr840_ne2000__DOT__mhash__4__d 
-                                                        >> 0x28U)));
-    dr840_ne2000__DOT__mhash__Vstatic__c = ((1U & (
-                                                   (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                    >> 0x1fU) 
-                                                   ^ 
-                                                   ((IData)(dr840_ne2000__DOT__mhash__Vstatic__by) 
-                                                    >> 6U)))
-                                             ? (0x4c11db7U 
-                                                ^ (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                   << 1U))
-                                             : (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                << 1U));
-    dr840_ne2000__DOT__mhash__Vstatic__by = (0xffU 
-                                             & (IData)(
-                                                       (__Vfunc_dr840_ne2000__DOT__mhash__4__d 
-                                                        >> 0x28U)));
-    dr840_ne2000__DOT__mhash__Vstatic__c = (((dr840_ne2000__DOT__mhash__Vstatic__c 
-                                              >> 0x1fU) 
-                                             ^ ((IData)(dr840_ne2000__DOT__mhash__Vstatic__by) 
-                                                >> 7U))
-                                             ? (0x4c11db7U 
-                                                ^ (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                   << 1U))
-                                             : (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                << 1U));
-    dr840_ne2000__DOT__mhash__Vstatic__by = (0xffU 
-                                             & (IData)(
-                                                       (__Vfunc_dr840_ne2000__DOT__mhash__4__d 
-                                                        >> 0x20U)));
-    dr840_ne2000__DOT__mhash__Vstatic__c = ((1U & (
-                                                   (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                    >> 0x1fU) 
-                                                   ^ (IData)(dr840_ne2000__DOT__mhash__Vstatic__by)))
-                                             ? (0x4c11db7U 
-                                                ^ (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                   << 1U))
-                                             : (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                << 1U));
-    dr840_ne2000__DOT__mhash__Vstatic__by = (0xffU 
-                                             & (IData)(
-                                                       (__Vfunc_dr840_ne2000__DOT__mhash__4__d 
-                                                        >> 0x20U)));
-    dr840_ne2000__DOT__mhash__Vstatic__c = ((1U & (
-                                                   (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                    >> 0x1fU) 
-                                                   ^ 
-                                                   ((IData)(dr840_ne2000__DOT__mhash__Vstatic__by) 
-                                                    >> 1U)))
-                                             ? (0x4c11db7U 
-                                                ^ (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                   << 1U))
-                                             : (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                << 1U));
-    dr840_ne2000__DOT__mhash__Vstatic__by = (0xffU 
-                                             & (IData)(
-                                                       (__Vfunc_dr840_ne2000__DOT__mhash__4__d 
-                                                        >> 0x20U)));
-    dr840_ne2000__DOT__mhash__Vstatic__c = ((1U & (
-                                                   (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                    >> 0x1fU) 
-                                                   ^ 
-                                                   ((IData)(dr840_ne2000__DOT__mhash__Vstatic__by) 
-                                                    >> 2U)))
-                                             ? (0x4c11db7U 
-                                                ^ (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                   << 1U))
-                                             : (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                << 1U));
-    dr840_ne2000__DOT__mhash__Vstatic__by = (0xffU 
-                                             & (IData)(
-                                                       (__Vfunc_dr840_ne2000__DOT__mhash__4__d 
-                                                        >> 0x20U)));
-    dr840_ne2000__DOT__mhash__Vstatic__c = ((1U & (
-                                                   (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                    >> 0x1fU) 
-                                                   ^ 
-                                                   ((IData)(dr840_ne2000__DOT__mhash__Vstatic__by) 
-                                                    >> 3U)))
-                                             ? (0x4c11db7U 
-                                                ^ (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                   << 1U))
-                                             : (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                << 1U));
-    dr840_ne2000__DOT__mhash__Vstatic__by = (0xffU 
-                                             & (IData)(
-                                                       (__Vfunc_dr840_ne2000__DOT__mhash__4__d 
-                                                        >> 0x20U)));
-    dr840_ne2000__DOT__mhash__Vstatic__c = ((1U & (
-                                                   (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                    >> 0x1fU) 
-                                                   ^ 
-                                                   ((IData)(dr840_ne2000__DOT__mhash__Vstatic__by) 
-                                                    >> 4U)))
-                                             ? (0x4c11db7U 
-                                                ^ (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                   << 1U))
-                                             : (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                << 1U));
-    dr840_ne2000__DOT__mhash__Vstatic__by = (0xffU 
-                                             & (IData)(
-                                                       (__Vfunc_dr840_ne2000__DOT__mhash__4__d 
-                                                        >> 0x20U)));
-    dr840_ne2000__DOT__mhash__Vstatic__c = ((1U & (
-                                                   (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                    >> 0x1fU) 
-                                                   ^ 
-                                                   ((IData)(dr840_ne2000__DOT__mhash__Vstatic__by) 
-                                                    >> 5U)))
-                                             ? (0x4c11db7U 
-                                                ^ (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                   << 1U))
-                                             : (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                << 1U));
-    dr840_ne2000__DOT__mhash__Vstatic__by = (0xffU 
-                                             & (IData)(
-                                                       (__Vfunc_dr840_ne2000__DOT__mhash__4__d 
-                                                        >> 0x20U)));
-    dr840_ne2000__DOT__mhash__Vstatic__c = ((1U & (
-                                                   (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                    >> 0x1fU) 
-                                                   ^ 
-                                                   ((IData)(dr840_ne2000__DOT__mhash__Vstatic__by) 
-                                                    >> 6U)))
-                                             ? (0x4c11db7U 
-                                                ^ (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                   << 1U))
-                                             : (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                << 1U));
-    dr840_ne2000__DOT__mhash__Vstatic__by = (0xffU 
-                                             & (IData)(
-                                                       (__Vfunc_dr840_ne2000__DOT__mhash__4__d 
-                                                        >> 0x20U)));
-    dr840_ne2000__DOT__mhash__Vstatic__c = (((dr840_ne2000__DOT__mhash__Vstatic__c 
-                                              >> 0x1fU) 
-                                             ^ ((IData)(dr840_ne2000__DOT__mhash__Vstatic__by) 
-                                                >> 7U))
-                                             ? (0x4c11db7U 
-                                                ^ (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                   << 1U))
-                                             : (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                << 1U));
-    dr840_ne2000__DOT__mhash__Vstatic__by = (0xffU 
-                                             & (IData)(
-                                                       (__Vfunc_dr840_ne2000__DOT__mhash__4__d 
-                                                        >> 0x18U)));
-    dr840_ne2000__DOT__mhash__Vstatic__c = ((1U & (
-                                                   (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                    >> 0x1fU) 
-                                                   ^ (IData)(dr840_ne2000__DOT__mhash__Vstatic__by)))
-                                             ? (0x4c11db7U 
-                                                ^ (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                   << 1U))
-                                             : (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                << 1U));
-    dr840_ne2000__DOT__mhash__Vstatic__by = (0xffU 
-                                             & (IData)(
-                                                       (__Vfunc_dr840_ne2000__DOT__mhash__4__d 
-                                                        >> 0x18U)));
-    dr840_ne2000__DOT__mhash__Vstatic__c = ((1U & (
-                                                   (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                    >> 0x1fU) 
-                                                   ^ 
-                                                   ((IData)(dr840_ne2000__DOT__mhash__Vstatic__by) 
-                                                    >> 1U)))
-                                             ? (0x4c11db7U 
-                                                ^ (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                   << 1U))
-                                             : (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                << 1U));
-    dr840_ne2000__DOT__mhash__Vstatic__by = (0xffU 
-                                             & (IData)(
-                                                       (__Vfunc_dr840_ne2000__DOT__mhash__4__d 
-                                                        >> 0x18U)));
-    dr840_ne2000__DOT__mhash__Vstatic__c = ((1U & (
-                                                   (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                    >> 0x1fU) 
-                                                   ^ 
-                                                   ((IData)(dr840_ne2000__DOT__mhash__Vstatic__by) 
-                                                    >> 2U)))
-                                             ? (0x4c11db7U 
-                                                ^ (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                   << 1U))
-                                             : (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                << 1U));
-    dr840_ne2000__DOT__mhash__Vstatic__by = (0xffU 
-                                             & (IData)(
-                                                       (__Vfunc_dr840_ne2000__DOT__mhash__4__d 
-                                                        >> 0x18U)));
-    dr840_ne2000__DOT__mhash__Vstatic__c = ((1U & (
-                                                   (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                    >> 0x1fU) 
-                                                   ^ 
-                                                   ((IData)(dr840_ne2000__DOT__mhash__Vstatic__by) 
-                                                    >> 3U)))
-                                             ? (0x4c11db7U 
-                                                ^ (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                   << 1U))
-                                             : (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                << 1U));
-    dr840_ne2000__DOT__mhash__Vstatic__by = (0xffU 
-                                             & (IData)(
-                                                       (__Vfunc_dr840_ne2000__DOT__mhash__4__d 
-                                                        >> 0x18U)));
-    dr840_ne2000__DOT__mhash__Vstatic__c = ((1U & (
-                                                   (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                    >> 0x1fU) 
-                                                   ^ 
-                                                   ((IData)(dr840_ne2000__DOT__mhash__Vstatic__by) 
-                                                    >> 4U)))
-                                             ? (0x4c11db7U 
-                                                ^ (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                   << 1U))
-                                             : (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                << 1U));
-    dr840_ne2000__DOT__mhash__Vstatic__by = (0xffU 
-                                             & (IData)(
-                                                       (__Vfunc_dr840_ne2000__DOT__mhash__4__d 
-                                                        >> 0x18U)));
-    dr840_ne2000__DOT__mhash__Vstatic__c = ((1U & (
-                                                   (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                    >> 0x1fU) 
-                                                   ^ 
-                                                   ((IData)(dr840_ne2000__DOT__mhash__Vstatic__by) 
-                                                    >> 5U)))
-                                             ? (0x4c11db7U 
-                                                ^ (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                   << 1U))
-                                             : (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                << 1U));
-    dr840_ne2000__DOT__mhash__Vstatic__by = (0xffU 
-                                             & (IData)(
-                                                       (__Vfunc_dr840_ne2000__DOT__mhash__4__d 
-                                                        >> 0x18U)));
-    dr840_ne2000__DOT__mhash__Vstatic__c = ((1U & (
-                                                   (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                    >> 0x1fU) 
-                                                   ^ 
-                                                   ((IData)(dr840_ne2000__DOT__mhash__Vstatic__by) 
-                                                    >> 6U)))
-                                             ? (0x4c11db7U 
-                                                ^ (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                   << 1U))
-                                             : (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                << 1U));
-    dr840_ne2000__DOT__mhash__Vstatic__by = (0xffU 
-                                             & (IData)(
-                                                       (__Vfunc_dr840_ne2000__DOT__mhash__4__d 
-                                                        >> 0x18U)));
-    dr840_ne2000__DOT__mhash__Vstatic__c = (((dr840_ne2000__DOT__mhash__Vstatic__c 
-                                              >> 0x1fU) 
-                                             ^ ((IData)(dr840_ne2000__DOT__mhash__Vstatic__by) 
-                                                >> 7U))
-                                             ? (0x4c11db7U 
-                                                ^ (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                   << 1U))
-                                             : (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                << 1U));
-    dr840_ne2000__DOT__mhash__Vstatic__by = (0xffU 
-                                             & (IData)(
-                                                       (__Vfunc_dr840_ne2000__DOT__mhash__4__d 
-                                                        >> 0x10U)));
-    dr840_ne2000__DOT__mhash__Vstatic__c = ((1U & (
-                                                   (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                    >> 0x1fU) 
-                                                   ^ (IData)(dr840_ne2000__DOT__mhash__Vstatic__by)))
-                                             ? (0x4c11db7U 
-                                                ^ (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                   << 1U))
-                                             : (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                << 1U));
-    dr840_ne2000__DOT__mhash__Vstatic__by = (0xffU 
-                                             & (IData)(
-                                                       (__Vfunc_dr840_ne2000__DOT__mhash__4__d 
-                                                        >> 0x10U)));
-    dr840_ne2000__DOT__mhash__Vstatic__c = ((1U & (
-                                                   (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                    >> 0x1fU) 
-                                                   ^ 
-                                                   ((IData)(dr840_ne2000__DOT__mhash__Vstatic__by) 
-                                                    >> 1U)))
-                                             ? (0x4c11db7U 
-                                                ^ (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                   << 1U))
-                                             : (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                << 1U));
-    dr840_ne2000__DOT__mhash__Vstatic__by = (0xffU 
-                                             & (IData)(
-                                                       (__Vfunc_dr840_ne2000__DOT__mhash__4__d 
-                                                        >> 0x10U)));
-    dr840_ne2000__DOT__mhash__Vstatic__c = ((1U & (
-                                                   (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                    >> 0x1fU) 
-                                                   ^ 
-                                                   ((IData)(dr840_ne2000__DOT__mhash__Vstatic__by) 
-                                                    >> 2U)))
-                                             ? (0x4c11db7U 
-                                                ^ (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                   << 1U))
-                                             : (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                << 1U));
-    dr840_ne2000__DOT__mhash__Vstatic__by = (0xffU 
-                                             & (IData)(
-                                                       (__Vfunc_dr840_ne2000__DOT__mhash__4__d 
-                                                        >> 0x10U)));
-    dr840_ne2000__DOT__mhash__Vstatic__c = ((1U & (
-                                                   (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                    >> 0x1fU) 
-                                                   ^ 
-                                                   ((IData)(dr840_ne2000__DOT__mhash__Vstatic__by) 
-                                                    >> 3U)))
-                                             ? (0x4c11db7U 
-                                                ^ (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                   << 1U))
-                                             : (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                << 1U));
-    dr840_ne2000__DOT__mhash__Vstatic__by = (0xffU 
-                                             & (IData)(
-                                                       (__Vfunc_dr840_ne2000__DOT__mhash__4__d 
-                                                        >> 0x10U)));
-    dr840_ne2000__DOT__mhash__Vstatic__c = ((1U & (
-                                                   (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                    >> 0x1fU) 
-                                                   ^ 
-                                                   ((IData)(dr840_ne2000__DOT__mhash__Vstatic__by) 
-                                                    >> 4U)))
-                                             ? (0x4c11db7U 
-                                                ^ (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                   << 1U))
-                                             : (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                << 1U));
-    dr840_ne2000__DOT__mhash__Vstatic__by = (0xffU 
-                                             & (IData)(
-                                                       (__Vfunc_dr840_ne2000__DOT__mhash__4__d 
-                                                        >> 0x10U)));
-    dr840_ne2000__DOT__mhash__Vstatic__c = ((1U & (
-                                                   (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                    >> 0x1fU) 
-                                                   ^ 
-                                                   ((IData)(dr840_ne2000__DOT__mhash__Vstatic__by) 
-                                                    >> 5U)))
-                                             ? (0x4c11db7U 
-                                                ^ (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                   << 1U))
-                                             : (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                << 1U));
-    dr840_ne2000__DOT__mhash__Vstatic__by = (0xffU 
-                                             & (IData)(
-                                                       (__Vfunc_dr840_ne2000__DOT__mhash__4__d 
-                                                        >> 0x10U)));
-    dr840_ne2000__DOT__mhash__Vstatic__c = ((1U & (
-                                                   (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                    >> 0x1fU) 
-                                                   ^ 
-                                                   ((IData)(dr840_ne2000__DOT__mhash__Vstatic__by) 
-                                                    >> 6U)))
-                                             ? (0x4c11db7U 
-                                                ^ (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                   << 1U))
-                                             : (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                << 1U));
-    dr840_ne2000__DOT__mhash__Vstatic__by = (0xffU 
-                                             & (IData)(
-                                                       (__Vfunc_dr840_ne2000__DOT__mhash__4__d 
-                                                        >> 0x10U)));
-    dr840_ne2000__DOT__mhash__Vstatic__c = (((dr840_ne2000__DOT__mhash__Vstatic__c 
-                                              >> 0x1fU) 
-                                             ^ ((IData)(dr840_ne2000__DOT__mhash__Vstatic__by) 
-                                                >> 7U))
-                                             ? (0x4c11db7U 
-                                                ^ (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                   << 1U))
-                                             : (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                << 1U));
-    dr840_ne2000__DOT__mhash__Vstatic__by = (0xffU 
-                                             & (IData)(
-                                                       (__Vfunc_dr840_ne2000__DOT__mhash__4__d 
-                                                        >> 8U)));
-    dr840_ne2000__DOT__mhash__Vstatic__c = ((1U & (
-                                                   (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                    >> 0x1fU) 
-                                                   ^ (IData)(dr840_ne2000__DOT__mhash__Vstatic__by)))
-                                             ? (0x4c11db7U 
-                                                ^ (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                   << 1U))
-                                             : (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                << 1U));
-    dr840_ne2000__DOT__mhash__Vstatic__by = (0xffU 
-                                             & (IData)(
-                                                       (__Vfunc_dr840_ne2000__DOT__mhash__4__d 
-                                                        >> 8U)));
-    dr840_ne2000__DOT__mhash__Vstatic__c = ((1U & (
-                                                   (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                    >> 0x1fU) 
-                                                   ^ 
-                                                   ((IData)(dr840_ne2000__DOT__mhash__Vstatic__by) 
-                                                    >> 1U)))
-                                             ? (0x4c11db7U 
-                                                ^ (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                   << 1U))
-                                             : (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                << 1U));
-    dr840_ne2000__DOT__mhash__Vstatic__by = (0xffU 
-                                             & (IData)(
-                                                       (__Vfunc_dr840_ne2000__DOT__mhash__4__d 
-                                                        >> 8U)));
-    dr840_ne2000__DOT__mhash__Vstatic__c = ((1U & (
-                                                   (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                    >> 0x1fU) 
-                                                   ^ 
-                                                   ((IData)(dr840_ne2000__DOT__mhash__Vstatic__by) 
-                                                    >> 2U)))
-                                             ? (0x4c11db7U 
-                                                ^ (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                   << 1U))
-                                             : (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                << 1U));
-    dr840_ne2000__DOT__mhash__Vstatic__by = (0xffU 
-                                             & (IData)(
-                                                       (__Vfunc_dr840_ne2000__DOT__mhash__4__d 
-                                                        >> 8U)));
-    dr840_ne2000__DOT__mhash__Vstatic__c = ((1U & (
-                                                   (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                    >> 0x1fU) 
-                                                   ^ 
-                                                   ((IData)(dr840_ne2000__DOT__mhash__Vstatic__by) 
-                                                    >> 3U)))
-                                             ? (0x4c11db7U 
-                                                ^ (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                   << 1U))
-                                             : (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                << 1U));
-    dr840_ne2000__DOT__mhash__Vstatic__by = (0xffU 
-                                             & (IData)(
-                                                       (__Vfunc_dr840_ne2000__DOT__mhash__4__d 
-                                                        >> 8U)));
-    dr840_ne2000__DOT__mhash__Vstatic__c = ((1U & (
-                                                   (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                    >> 0x1fU) 
-                                                   ^ 
-                                                   ((IData)(dr840_ne2000__DOT__mhash__Vstatic__by) 
-                                                    >> 4U)))
-                                             ? (0x4c11db7U 
-                                                ^ (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                   << 1U))
-                                             : (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                << 1U));
-    dr840_ne2000__DOT__mhash__Vstatic__by = (0xffU 
-                                             & (IData)(
-                                                       (__Vfunc_dr840_ne2000__DOT__mhash__4__d 
-                                                        >> 8U)));
-    dr840_ne2000__DOT__mhash__Vstatic__c = ((1U & (
-                                                   (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                    >> 0x1fU) 
-                                                   ^ 
-                                                   ((IData)(dr840_ne2000__DOT__mhash__Vstatic__by) 
-                                                    >> 5U)))
-                                             ? (0x4c11db7U 
-                                                ^ (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                   << 1U))
-                                             : (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                << 1U));
-    dr840_ne2000__DOT__mhash__Vstatic__by = (0xffU 
-                                             & (IData)(
-                                                       (__Vfunc_dr840_ne2000__DOT__mhash__4__d 
-                                                        >> 8U)));
-    dr840_ne2000__DOT__mhash__Vstatic__c = ((1U & (
-                                                   (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                    >> 0x1fU) 
-                                                   ^ 
-                                                   ((IData)(dr840_ne2000__DOT__mhash__Vstatic__by) 
-                                                    >> 6U)))
-                                             ? (0x4c11db7U 
-                                                ^ (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                   << 1U))
-                                             : (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                << 1U));
-    dr840_ne2000__DOT__mhash__Vstatic__by = (0xffU 
-                                             & (IData)(
-                                                       (__Vfunc_dr840_ne2000__DOT__mhash__4__d 
-                                                        >> 8U)));
-    dr840_ne2000__DOT__mhash__Vstatic__c = (((dr840_ne2000__DOT__mhash__Vstatic__c 
-                                              >> 0x1fU) 
-                                             ^ ((IData)(dr840_ne2000__DOT__mhash__Vstatic__by) 
-                                                >> 7U))
-                                             ? (0x4c11db7U 
-                                                ^ (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                   << 1U))
-                                             : (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                << 1U));
-    dr840_ne2000__DOT__mhash__Vstatic__by = (0xffU 
-                                             & (IData)(__Vfunc_dr840_ne2000__DOT__mhash__4__d));
-    dr840_ne2000__DOT__mhash__Vstatic__c = ((1U & (
-                                                   (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                    >> 0x1fU) 
-                                                   ^ (IData)(dr840_ne2000__DOT__mhash__Vstatic__by)))
-                                             ? (0x4c11db7U 
-                                                ^ (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                   << 1U))
-                                             : (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                << 1U));
-    dr840_ne2000__DOT__mhash__Vstatic__by = (0xffU 
-                                             & (IData)(__Vfunc_dr840_ne2000__DOT__mhash__4__d));
-    dr840_ne2000__DOT__mhash__Vstatic__c = ((1U & (
-                                                   (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                    >> 0x1fU) 
-                                                   ^ 
-                                                   ((IData)(dr840_ne2000__DOT__mhash__Vstatic__by) 
-                                                    >> 1U)))
-                                             ? (0x4c11db7U 
-                                                ^ (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                   << 1U))
-                                             : (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                << 1U));
-    dr840_ne2000__DOT__mhash__Vstatic__by = (0xffU 
-                                             & (IData)(__Vfunc_dr840_ne2000__DOT__mhash__4__d));
-    dr840_ne2000__DOT__mhash__Vstatic__c = ((1U & (
-                                                   (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                    >> 0x1fU) 
-                                                   ^ 
-                                                   ((IData)(dr840_ne2000__DOT__mhash__Vstatic__by) 
-                                                    >> 2U)))
-                                             ? (0x4c11db7U 
-                                                ^ (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                   << 1U))
-                                             : (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                << 1U));
-    dr840_ne2000__DOT__mhash__Vstatic__by = (0xffU 
-                                             & (IData)(__Vfunc_dr840_ne2000__DOT__mhash__4__d));
-    dr840_ne2000__DOT__mhash__Vstatic__c = ((1U & (
-                                                   (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                    >> 0x1fU) 
-                                                   ^ 
-                                                   ((IData)(dr840_ne2000__DOT__mhash__Vstatic__by) 
-                                                    >> 3U)))
-                                             ? (0x4c11db7U 
-                                                ^ (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                   << 1U))
-                                             : (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                << 1U));
-    dr840_ne2000__DOT__mhash__Vstatic__by = (0xffU 
-                                             & (IData)(__Vfunc_dr840_ne2000__DOT__mhash__4__d));
-    dr840_ne2000__DOT__mhash__Vstatic__c = ((1U & (
-                                                   (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                    >> 0x1fU) 
-                                                   ^ 
-                                                   ((IData)(dr840_ne2000__DOT__mhash__Vstatic__by) 
-                                                    >> 4U)))
-                                             ? (0x4c11db7U 
-                                                ^ (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                   << 1U))
-                                             : (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                << 1U));
-    dr840_ne2000__DOT__mhash__Vstatic__by = (0xffU 
-                                             & (IData)(__Vfunc_dr840_ne2000__DOT__mhash__4__d));
-    dr840_ne2000__DOT__mhash__Vstatic__c = ((1U & (
-                                                   (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                    >> 0x1fU) 
-                                                   ^ 
-                                                   ((IData)(dr840_ne2000__DOT__mhash__Vstatic__by) 
-                                                    >> 5U)))
-                                             ? (0x4c11db7U 
-                                                ^ (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                   << 1U))
-                                             : (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                << 1U));
-    dr840_ne2000__DOT__mhash__Vstatic__by = (0xffU 
-                                             & (IData)(__Vfunc_dr840_ne2000__DOT__mhash__4__d));
-    dr840_ne2000__DOT__mhash__Vstatic__c = ((1U & (
-                                                   (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                    >> 0x1fU) 
-                                                   ^ 
-                                                   ((IData)(dr840_ne2000__DOT__mhash__Vstatic__by) 
-                                                    >> 6U)))
-                                             ? (0x4c11db7U 
-                                                ^ (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                   << 1U))
-                                             : (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                << 1U));
-    dr840_ne2000__DOT__mhash__Vstatic__by = (0xffU 
-                                             & (IData)(__Vfunc_dr840_ne2000__DOT__mhash__4__d));
-    dr840_ne2000__DOT__mhash__Vstatic__c = (((dr840_ne2000__DOT__mhash__Vstatic__c 
-                                              >> 0x1fU) 
-                                             ^ ((IData)(dr840_ne2000__DOT__mhash__Vstatic__by) 
-                                                >> 7U))
-                                             ? (0x4c11db7U 
-                                                ^ (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                   << 1U))
-                                             : (dr840_ne2000__DOT__mhash__Vstatic__c 
-                                                << 1U));
-    __Vfunc_dr840_ne2000__DOT__mhash__4__Vfuncout = 
-        (dr840_ne2000__DOT__mhash__Vstatic__c >> 0x1aU);
-    dr840_ne2000__DOT__o_hash = __Vfunc_dr840_ne2000__DOT__mhash__4__Vfuncout;
     vlSelf->dr840_ne2000__DOT__dma_rd_ok = (IData)(
                                                    ((8U 
                                                      == 
@@ -896,50 +252,6 @@ VL_ATTR_COLD void Vdr840_ne2000___024root___stl_sequent__TOP__0(Vdr840_ne2000___
                                                                (0xfffU 
                                                                 & ((IData)(0x107U) 
                                                                    + (IData)(vlSelf->dr840_ne2000__DOT__o_pad))), 8U))));
-    vlSelf->dr840_ne2000__DOT__o_acc = (1U & ((0xffffffffffffULL 
-                                               == vlSelf->dr840_ne2000__DOT__off_dst)
-                                               ? ((IData)(vlSelf->dr840_ne2000__DOT__rcr) 
-                                                  >> 2U)
-                                               : ((1U 
-                                                   & (IData)(
-                                                             (vlSelf->dr840_ne2000__DOT__off_dst 
-                                                              >> 0x28U)))
-                                                   ? 
-                                                  (((IData)(vlSelf->dr840_ne2000__DOT__rcr) 
-                                                    >> 3U) 
-                                                   & (vlSelf->dr840_ne2000__DOT__mar
-                                                      [
-                                                      (7U 
-                                                       & ((IData)(dr840_ne2000__DOT__o_hash) 
-                                                          >> 3U))] 
-                                                      >> 
-                                                      (7U 
-                                                       & (IData)(dr840_ne2000__DOT__o_hash))))
-                                                   : 
-                                                  (((IData)(vlSelf->dr840_ne2000__DOT__rcr) 
-                                                    >> 4U) 
-                                                   | (vlSelf->dr840_ne2000__DOT__off_dst 
-                                                      == 
-                                                      (((QData)((IData)(
-                                                                        vlSelf->dr840_ne2000__DOT__par
-                                                                        [0U])) 
-                                                        << 0x28U) 
-                                                       | (((QData)((IData)(
-                                                                           vlSelf->dr840_ne2000__DOT__par
-                                                                           [1U])) 
-                                                           << 0x20U) 
-                                                          | (QData)((IData)(
-                                                                            ((vlSelf->dr840_ne2000__DOT__par
-                                                                              [2U] 
-                                                                              << 0x18U) 
-                                                                             | ((vlSelf->dr840_ne2000__DOT__par
-                                                                                [3U] 
-                                                                                << 0x10U) 
-                                                                                | ((vlSelf->dr840_ne2000__DOT__par
-                                                                                [4U] 
-                                                                                << 8U) 
-                                                                                | vlSelf->dr840_ne2000__DOT__par
-                                                                                [5U]))))))))))));
     vlSelf->dr840_ne2000__DOT__pa_e = (0x1fffU & ((IData)(vlSelf->dr840_ne2000__DOT__wa_e)
                                                    ? (IData)(vlSelf->dr840_ne2000__DOT__wa_e_i)
                                                    : 
@@ -1341,10 +653,13 @@ VL_ATTR_COLD void Vdr840_ne2000___024root___ctor_var_reset(Vdr840_ne2000___024ro
     vlSelf->dr840_ne2000__DOT__b1 = VL_RAND_RESET_I(8);
     vlSelf->dr840_ne2000__DOT__dma_rd_ok = VL_RAND_RESET_I(1);
     vlSelf->dr840_ne2000__DOT__dma_wr_ok = VL_RAND_RESET_I(1);
+    vlSelf->dr840_ne2000__DOT__mhash__Vstatic__c = VL_RAND_RESET_I(32);
+    vlSelf->dr840_ne2000__DOT__mhash__Vstatic__by = VL_RAND_RESET_I(8);
     vlSelf->dr840_ne2000__DOT__crc8__Vstatic__x = VL_RAND_RESET_I(32);
     vlSelf->dr840_ne2000__DOT__off_q = VL_RAND_RESET_I(1);
     vlSelf->dr840_ne2000__DOT__off_len = VL_RAND_RESET_I(11);
     vlSelf->dr840_ne2000__DOT__off_dst = VL_RAND_RESET_Q(48);
+    vlSelf->dr840_ne2000__DOT__off_hash = VL_RAND_RESET_I(6);
     vlSelf->dr840_ne2000__DOT__o_acc = VL_RAND_RESET_I(1);
     vlSelf->dr840_ne2000__DOT__o_pad = VL_RAND_RESET_I(11);
     vlSelf->dr840_ne2000__DOT__o_ring_ok = VL_RAND_RESET_I(1);
