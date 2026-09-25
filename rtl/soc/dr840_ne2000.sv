@@ -238,6 +238,13 @@ module dr840_ne2000 #(
 
     // Storing: the frame from page CURR + 4, the padding, the FCS, then
     // the four-byte header at the page's start.
+    // The verdict's parts, a stage before the verdict: from the length to
+    // the page count to the room left to the tally was too long for a clock.
+    reg        off_q2, v_bad, v_acc, v_ring, v_room, v_group;
+    reg [10:0] v_pad;
+    reg [11:0] v_cnt;
+    reg [7:0]  v_next;
+
     localparam [2:0] R_IDLE = 3'd0, R_DATA = 3'd1, R_PAD = 3'd2, R_FCS = 3'd3, R_HDR = 3'd4;
     reg [2:0]  r_st;
     reg [15:0] r_ptr;           // the next byte's address
@@ -247,7 +254,7 @@ module dr840_ne2000 #(
     reg        r_group;
     reg [31:0] r_crc;
     reg [1:0]  r_k;
-    assign rx_busy = (r_st != R_IDLE) || off_q;
+    assign rx_busy = (r_st != R_IDLE) || off_q || off_q2;
     wire [15:0] r_ptr_n = (r_ptr + 16'd1 == {pstop, 8'd0}) ? {pstart, 8'd0} : r_ptr + 16'd1;
 
     // ------------------------------------------------------------ transmit
@@ -273,6 +280,8 @@ module dr840_ne2000 #(
             tx_req <= 1'b0; tx_base <= 14'd0; tx_len <= 11'd0; tx_wait <= 16'd0;
             tx_copied <= 1'b0; tx_copied_ok <= 1'b0;
             off_q <= 1'b0; off_len <= 11'd0; off_dst <= 48'd0; off_hash <= 6'd0; rx_answer <= 1'b0; rx_take <= 1'b0;
+            off_q2 <= 1'b0; v_bad <= 1'b0; v_acc <= 1'b0; v_ring <= 1'b0; v_room <= 1'b0; v_group <= 1'b0;
+            v_pad <= 11'd0; v_cnt <= 12'd0; v_next <= 8'd0;
             r_st <= R_IDLE; r_ptr <= 16'd0; r_n <= 11'd0; r_len <= 11'd0; r_pad <= 11'd0;
             r_cnt <= 12'd0; r_next <= 8'd0; r_page <= 8'd0; r_group <= 1'b0; r_crc <= 32'd0; r_k <= 2'd0;
             dbg_tx <= 32'd0; dbg_rx <= 32'd0;
@@ -397,25 +406,33 @@ module dr840_ne2000 #(
                     off_q <= 1'b1; off_len <= rx_len; off_dst <= rx_dst; off_hash <= mhash(rx_dst);
                 end
                 if (off_q) begin
-                    off_q <= 1'b0;
+                    off_q <= 1'b0; off_q2 <= 1'b1;
+                    v_bad  <= (cr[1:0] != 2'b10 || off_len < 11'd14 || off_len > 11'd1518);
+                    v_acc  <= o_acc;
+                    v_ring <= o_ring_ok;
+                    v_room <= !(o_bnry_in && {1'b0, o_pages} >= o_avail);
+                    v_pad  <= o_pad; v_cnt <= o_cnt; v_next <= o_next; v_group <= o_group;
+                end
+                if (off_q2) begin
+                    off_q2 <= 1'b0;
                     rx_answer <= 1'b1; rx_take <= 1'b0;
-                    if (cr[1:0] != 2'b10 || off_len < 11'd14 || off_len > 11'd1518) begin
+                    if (v_bad) begin
                         // not started, or not a frame: dropped unseen
-                    end else if (!o_acc) begin
+                    end else if (!v_acc) begin
                         // filtered
                     end else if (rcr[5]) begin
                         if (tally[2] == 8'h7F) iset = iset | 8'h20;
                         tally[2] <= tally[2] + 8'd1;
-                    end else if (!o_ring_ok) begin
+                    end else if (!v_ring) begin
                         // unsupported ring
-                    end else if (isr[4] || (o_bnry_in && {1'b0, o_pages} >= o_avail)) begin
+                    end else if (isr[4] || !v_room) begin
                         iset = iset | 8'h10; rsr <= 8'h10;
                         if (tally[2] == 8'h7F) iset = iset | 8'h20;
                         tally[2] <= tally[2] + 8'd1;
                     end else begin
                         rx_take <= 1'b1;
-                        r_st <= R_DATA; r_len <= off_len; r_n <= 11'd0; r_pad <= o_pad;
-                        r_cnt <= o_cnt; r_next <= o_next; r_page <= curr; r_group <= o_group;
+                        r_st <= R_DATA; r_len <= off_len; r_n <= 11'd0; r_pad <= v_pad;
+                        r_cnt <= v_cnt; r_next <= v_next; r_page <= curr; r_group <= v_group;
                         r_ptr <= {curr, 8'd4}; r_crc <= 32'hFFFF_FFFF; r_k <= 2'd0;
                     end
                 end

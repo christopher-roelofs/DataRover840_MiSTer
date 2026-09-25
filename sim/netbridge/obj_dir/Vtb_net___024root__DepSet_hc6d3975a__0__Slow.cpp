@@ -98,8 +98,6 @@ VL_ATTR_COLD void Vtb_net___024root___stl_sequent__TOP__0(Vtb_net___024root* vlS
                                                  & (IData)(vlSelf->tb_net__DOT__cen));
     vlSelf->irq = (0U != (0x7fU & ((IData)(vlSelf->tb_net__DOT__nic__DOT__imr) 
                                    & (IData)(vlSelf->tb_net__DOT__nic__DOT__isr))));
-    vlSelf->tb_net__DOT__rx_busy = ((0U != (IData)(vlSelf->tb_net__DOT__nic__DOT__r_st)) 
-                                    | (IData)(vlSelf->tb_net__DOT__nic__DOT__off_q));
     vlSelf->tb_net__DOT__nic__DOT__dma_wr_ok = (IData)(
                                                        ((0x10U 
                                                          == 
@@ -107,6 +105,9 @@ VL_ATTR_COLD void Vtb_net___024root___stl_sequent__TOP__0(Vtb_net___024root* vlS
                                                           & (IData)(vlSelf->tb_net__DOT__nic__DOT__cr))) 
                                                         & (0U 
                                                            != (IData)(vlSelf->tb_net__DOT__nic__DOT__rbcr))));
+    vlSelf->tb_net__DOT__rx_busy = ((0U != (IData)(vlSelf->tb_net__DOT__nic__DOT__r_st)) 
+                                    | ((IData)(vlSelf->tb_net__DOT__nic__DOT__off_q) 
+                                       | (IData)(vlSelf->tb_net__DOT__nic__DOT__off_q2)));
     vlSelf->tb_net__DOT__nic__DOT__pb_a = ((IData)(vlSelf->tb_net__DOT__nic__DOT__wb)
                                             ? (IData)(vlSelf->tb_net__DOT__nic__DOT__wb_a)
                                             : (IData)(vlSelf->tb_net__DOT__b_addr));
@@ -694,6 +695,15 @@ VL_ATTR_COLD void Vtb_net___024root___ctor_var_reset(Vtb_net___024root* vlSelf) 
     vlSelf->tb_net__DOT__nic__DOT__o_bnry_in = VL_RAND_RESET_I(1);
     vlSelf->tb_net__DOT__nic__DOT__o_avail = VL_RAND_RESET_I(9);
     vlSelf->tb_net__DOT__nic__DOT__o_next = VL_RAND_RESET_I(8);
+    vlSelf->tb_net__DOT__nic__DOT__off_q2 = VL_RAND_RESET_I(1);
+    vlSelf->tb_net__DOT__nic__DOT__v_bad = VL_RAND_RESET_I(1);
+    vlSelf->tb_net__DOT__nic__DOT__v_acc = VL_RAND_RESET_I(1);
+    vlSelf->tb_net__DOT__nic__DOT__v_ring = VL_RAND_RESET_I(1);
+    vlSelf->tb_net__DOT__nic__DOT__v_room = VL_RAND_RESET_I(1);
+    vlSelf->tb_net__DOT__nic__DOT__v_group = VL_RAND_RESET_I(1);
+    vlSelf->tb_net__DOT__nic__DOT__v_pad = VL_RAND_RESET_I(11);
+    vlSelf->tb_net__DOT__nic__DOT__v_cnt = VL_RAND_RESET_I(12);
+    vlSelf->tb_net__DOT__nic__DOT__v_next = VL_RAND_RESET_I(8);
     vlSelf->tb_net__DOT__nic__DOT__r_st = VL_RAND_RESET_I(3);
     vlSelf->tb_net__DOT__nic__DOT__r_ptr = VL_RAND_RESET_I(16);
     vlSelf->tb_net__DOT__nic__DOT__r_n = VL_RAND_RESET_I(11);
@@ -754,6 +764,15 @@ VL_ATTR_COLD void Vtb_net___024root___ctor_var_reset(Vtb_net___024root* vlSelf) 
     vlSelf->__Vdlyvset__tb_net__DOT__nic__DOT__mar__v0 = 0;
     vlSelf->__Vdly__tb_net__DOT__nic__DOT__tx_copied_ok = VL_RAND_RESET_I(1);
     vlSelf->__Vdly__tb_net__DOT__nic__DOT__off_q = VL_RAND_RESET_I(1);
+    vlSelf->__Vdly__tb_net__DOT__nic__DOT__off_q2 = VL_RAND_RESET_I(1);
+    vlSelf->__Vdly__tb_net__DOT__nic__DOT__v_bad = VL_RAND_RESET_I(1);
+    vlSelf->__Vdly__tb_net__DOT__nic__DOT__v_acc = VL_RAND_RESET_I(1);
+    vlSelf->__Vdly__tb_net__DOT__nic__DOT__v_ring = VL_RAND_RESET_I(1);
+    vlSelf->__Vdly__tb_net__DOT__nic__DOT__v_room = VL_RAND_RESET_I(1);
+    vlSelf->__Vdly__tb_net__DOT__nic__DOT__v_pad = VL_RAND_RESET_I(11);
+    vlSelf->__Vdly__tb_net__DOT__nic__DOT__v_cnt = VL_RAND_RESET_I(12);
+    vlSelf->__Vdly__tb_net__DOT__nic__DOT__v_next = VL_RAND_RESET_I(8);
+    vlSelf->__Vdly__tb_net__DOT__nic__DOT__v_group = VL_RAND_RESET_I(1);
     vlSelf->__Vdlyvset__tb_net__DOT__nic__DOT__tally__v1 = 0;
     vlSelf->__Vdlyvset__tb_net__DOT__nic__DOT__tally__v2 = 0;
     vlSelf->__Vdly__tb_net__DOT__nic__DOT__r_st = VL_RAND_RESET_I(3);

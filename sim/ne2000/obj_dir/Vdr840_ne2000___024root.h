@@ -71,8 +71,17 @@ class alignas(VL_CACHE_LINE_BYTES) Vdr840_ne2000___024root final : public Verila
         CData/*0:0*/ dr840_ne2000__DOT__o_ring_ok;
         CData/*0:0*/ dr840_ne2000__DOT__o_bnry_in;
         CData/*7:0*/ dr840_ne2000__DOT__o_next;
+        CData/*0:0*/ dr840_ne2000__DOT__off_q2;
+        CData/*0:0*/ dr840_ne2000__DOT__v_bad;
+        CData/*0:0*/ dr840_ne2000__DOT__v_acc;
+        CData/*0:0*/ dr840_ne2000__DOT__v_ring;
+        CData/*0:0*/ dr840_ne2000__DOT__v_room;
+        CData/*0:0*/ dr840_ne2000__DOT__v_group;
+        CData/*7:0*/ dr840_ne2000__DOT__v_next;
         CData/*2:0*/ dr840_ne2000__DOT__r_st;
         CData/*7:0*/ dr840_ne2000__DOT__r_next;
+    };
+    struct {
         CData/*7:0*/ dr840_ne2000__DOT__r_page;
         CData/*0:0*/ dr840_ne2000__DOT__r_group;
         CData/*1:0*/ dr840_ne2000__DOT__r_k;
@@ -80,8 +89,6 @@ class alignas(VL_CACHE_LINE_BYTES) Vdr840_ne2000___024root final : public Verila
         CData/*0:0*/ dr840_ne2000__DOT__tx_copied_ok;
         CData/*7:0*/ dr840_ne2000__DOT__v;
         CData/*0:0*/ dr840_ne2000__DOT__started;
-    };
-    struct {
         CData/*7:0*/ dr840_ne2000__DOT__iset;
         CData/*7:0*/ dr840_ne2000__DOT__iclr;
         CData/*0:0*/ dr840_ne2000__DOT__nreset;
@@ -102,6 +109,13 @@ class alignas(VL_CACHE_LINE_BYTES) Vdr840_ne2000___024root final : public Verila
         CData/*0:0*/ __Vdlyvset__dr840_ne2000__DOT__mar__v0;
         CData/*0:0*/ __Vdly__dr840_ne2000__DOT__tx_copied_ok;
         CData/*0:0*/ __Vdly__dr840_ne2000__DOT__off_q;
+        CData/*0:0*/ __Vdly__dr840_ne2000__DOT__off_q2;
+        CData/*0:0*/ __Vdly__dr840_ne2000__DOT__v_bad;
+        CData/*0:0*/ __Vdly__dr840_ne2000__DOT__v_acc;
+        CData/*0:0*/ __Vdly__dr840_ne2000__DOT__v_ring;
+        CData/*0:0*/ __Vdly__dr840_ne2000__DOT__v_room;
+        CData/*7:0*/ __Vdly__dr840_ne2000__DOT__v_next;
+        CData/*0:0*/ __Vdly__dr840_ne2000__DOT__v_group;
         CData/*0:0*/ __Vdlyvset__dr840_ne2000__DOT__tally__v1;
         CData/*0:0*/ __Vdlyvset__dr840_ne2000__DOT__tally__v2;
         CData/*2:0*/ __Vdly__dr840_ne2000__DOT__r_st;
@@ -132,11 +146,15 @@ class alignas(VL_CACHE_LINE_BYTES) Vdr840_ne2000___024root final : public Verila
         SData/*12:0*/ dr840_ne2000__DOT__wa_o_i;
         SData/*13:0*/ dr840_ne2000__DOT__wb_a;
         SData/*13:0*/ dr840_ne2000__DOT__pb_a;
+    };
+    struct {
         SData/*12:0*/ dr840_ne2000__DOT__pa_e;
         SData/*12:0*/ dr840_ne2000__DOT__pa_o;
         SData/*10:0*/ dr840_ne2000__DOT__off_len;
         SData/*10:0*/ dr840_ne2000__DOT__o_pad;
         SData/*8:0*/ dr840_ne2000__DOT__o_avail;
+        SData/*10:0*/ dr840_ne2000__DOT__v_pad;
+        SData/*11:0*/ dr840_ne2000__DOT__v_cnt;
         SData/*15:0*/ dr840_ne2000__DOT__r_ptr;
         SData/*10:0*/ dr840_ne2000__DOT__r_n;
         SData/*10:0*/ dr840_ne2000__DOT__r_len;
@@ -146,8 +164,8 @@ class alignas(VL_CACHE_LINE_BYTES) Vdr840_ne2000___024root final : public Verila
         SData/*15:0*/ dr840_ne2000__DOT__tx_wait;
         SData/*15:0*/ __Vdly__dr840_ne2000__DOT__rbcr;
         SData/*15:0*/ __Vdly__dr840_ne2000__DOT__tx_wait;
-    };
-    struct {
+        SData/*10:0*/ __Vdly__dr840_ne2000__DOT__v_pad;
+        SData/*11:0*/ __Vdly__dr840_ne2000__DOT__v_cnt;
         SData/*10:0*/ __Vdly__dr840_ne2000__DOT__r_len;
         SData/*10:0*/ __Vdly__dr840_ne2000__DOT__r_n;
         SData/*10:0*/ __Vdly__dr840_ne2000__DOT__r_pad;

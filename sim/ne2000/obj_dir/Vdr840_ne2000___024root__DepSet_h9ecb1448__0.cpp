@@ -251,15 +251,24 @@ VL_INLINE_OPT void Vdr840_ne2000___024root___nba_sequent__TOP__0(Vdr840_ne2000__
     vlSelf->__Vdly__dr840_ne2000__DOT__r_pad = vlSelf->dr840_ne2000__DOT__r_pad;
     vlSelf->__Vdly__dr840_ne2000__DOT__r_n = vlSelf->dr840_ne2000__DOT__r_n;
     vlSelf->__Vdly__dr840_ne2000__DOT__r_len = vlSelf->dr840_ne2000__DOT__r_len;
+    vlSelf->__Vdly__dr840_ne2000__DOT__v_group = vlSelf->dr840_ne2000__DOT__v_group;
+    vlSelf->__Vdly__dr840_ne2000__DOT__v_next = vlSelf->dr840_ne2000__DOT__v_next;
+    vlSelf->__Vdly__dr840_ne2000__DOT__v_cnt = vlSelf->dr840_ne2000__DOT__v_cnt;
+    vlSelf->__Vdly__dr840_ne2000__DOT__v_pad = vlSelf->dr840_ne2000__DOT__v_pad;
+    vlSelf->__Vdly__dr840_ne2000__DOT__v_room = vlSelf->dr840_ne2000__DOT__v_room;
+    vlSelf->__Vdly__dr840_ne2000__DOT__v_ring = vlSelf->dr840_ne2000__DOT__v_ring;
+    vlSelf->__Vdly__dr840_ne2000__DOT__v_acc = vlSelf->dr840_ne2000__DOT__v_acc;
+    vlSelf->__Vdly__dr840_ne2000__DOT__v_bad = vlSelf->dr840_ne2000__DOT__v_bad;
     vlSelf->__Vdly__dr840_ne2000__DOT__tx_copied_ok 
         = vlSelf->dr840_ne2000__DOT__tx_copied_ok;
     vlSelf->__Vdly__dr840_ne2000__DOT__tx_copied = vlSelf->dr840_ne2000__DOT__tx_copied;
     vlSelf->__Vdly__dr840_ne2000__DOT__tx_wait = vlSelf->dr840_ne2000__DOT__tx_wait;
     vlSelf->__Vdly__tx_req = vlSelf->tx_req;
     vlSelf->__Vdly__dr840_ne2000__DOT__tx_pending = vlSelf->dr840_ne2000__DOT__tx_pending;
-    vlSelf->__Vdly__dr840_ne2000__DOT__r_st = vlSelf->dr840_ne2000__DOT__r_st;
-    vlSelf->__Vdly__dr840_ne2000__DOT__off_q = vlSelf->dr840_ne2000__DOT__off_q;
     vlSelf->__Vdly__dr840_ne2000__DOT__r_ptr = vlSelf->dr840_ne2000__DOT__r_ptr;
+    vlSelf->__Vdly__dr840_ne2000__DOT__r_st = vlSelf->dr840_ne2000__DOT__r_st;
+    vlSelf->__Vdly__dr840_ne2000__DOT__off_q2 = vlSelf->dr840_ne2000__DOT__off_q2;
+    vlSelf->__Vdly__dr840_ne2000__DOT__off_q = vlSelf->dr840_ne2000__DOT__off_q;
     vlSelf->__Vdly__dr840_ne2000__DOT__rcr = vlSelf->dr840_ne2000__DOT__rcr;
     vlSelf->__Vdlyvset__dr840_ne2000__DOT__tally__v0 = 0U;
     vlSelf->__Vdlyvset__dr840_ne2000__DOT__tally__v1 = 0U;
@@ -1313,12 +1322,38 @@ VL_INLINE_OPT void Vdr840_ne2000___024root___nba_sequent__TOP__2(Vdr840_ne2000__
             }
             if (vlSelf->dr840_ne2000__DOT__off_q) {
                 vlSelf->__Vdly__dr840_ne2000__DOT__off_q = 0U;
+                vlSelf->__Vdly__dr840_ne2000__DOT__off_q2 = 1U;
+                vlSelf->__Vdly__dr840_ne2000__DOT__v_bad 
+                    = (((2U != (3U & (IData)(vlSelf->dr840_ne2000__DOT__cr))) 
+                        | (0xeU > (IData)(vlSelf->dr840_ne2000__DOT__off_len))) 
+                       | (0x5eeU < (IData)(vlSelf->dr840_ne2000__DOT__off_len)));
+                vlSelf->__Vdly__dr840_ne2000__DOT__v_acc 
+                    = vlSelf->dr840_ne2000__DOT__o_acc;
+                vlSelf->__Vdly__dr840_ne2000__DOT__v_ring 
+                    = vlSelf->dr840_ne2000__DOT__o_ring_ok;
+                vlSelf->__Vdly__dr840_ne2000__DOT__v_room 
+                    = (1U & (~ ((IData)(vlSelf->dr840_ne2000__DOT__o_bnry_in) 
+                                & ((0xffU & VL_SHIFTR_III(12,12,32, 
+                                                          (0xfffU 
+                                                           & ((IData)(0x107U) 
+                                                              + (IData)(vlSelf->dr840_ne2000__DOT__o_pad))), 8U)) 
+                                   >= (IData)(vlSelf->dr840_ne2000__DOT__o_avail)))));
+                vlSelf->__Vdly__dr840_ne2000__DOT__v_pad 
+                    = vlSelf->dr840_ne2000__DOT__o_pad;
+                vlSelf->__Vdly__dr840_ne2000__DOT__v_cnt 
+                    = (0xfffU & ((IData)(4U) + (IData)(vlSelf->dr840_ne2000__DOT__o_pad)));
+                vlSelf->__Vdly__dr840_ne2000__DOT__v_next 
+                    = vlSelf->dr840_ne2000__DOT__o_next;
+                vlSelf->__Vdly__dr840_ne2000__DOT__v_group 
+                    = (1U & (IData)((vlSelf->dr840_ne2000__DOT__off_dst 
+                                     >> 0x28U)));
+            }
+            if (vlSelf->dr840_ne2000__DOT__off_q2) {
+                vlSelf->__Vdly__dr840_ne2000__DOT__off_q2 = 0U;
                 vlSelf->rx_answer = 1U;
                 vlSelf->rx_take = 0U;
-                if ((1U & (~ (((2U != (3U & (IData)(vlSelf->dr840_ne2000__DOT__cr))) 
-                               | (0xeU > (IData)(vlSelf->dr840_ne2000__DOT__off_len))) 
-                              | (0x5eeU < (IData)(vlSelf->dr840_ne2000__DOT__off_len)))))) {
-                    if (vlSelf->dr840_ne2000__DOT__o_acc) {
+                if ((1U & (~ (IData)(vlSelf->dr840_ne2000__DOT__v_bad)))) {
+                    if (vlSelf->dr840_ne2000__DOT__v_acc) {
                         if ((0x20U & (IData)(vlSelf->dr840_ne2000__DOT__rcr))) {
                             if ((0x7fU == vlSelf->dr840_ne2000__DOT__tally
                                  [2U])) {
@@ -1330,15 +1365,9 @@ VL_INLINE_OPT void Vdr840_ne2000___024root___nba_sequent__TOP__2(Vdr840_ne2000__
                                             + vlSelf->dr840_ne2000__DOT__tally
                                             [2U]));
                             vlSelf->__Vdlyvset__dr840_ne2000__DOT__tally__v1 = 1U;
-                        } else if (vlSelf->dr840_ne2000__DOT__o_ring_ok) {
+                        } else if (vlSelf->dr840_ne2000__DOT__v_ring) {
                             if ((1U & (((IData)(vlSelf->dr840_ne2000__DOT__isr) 
-                                        >> 4U) | ((IData)(vlSelf->dr840_ne2000__DOT__o_bnry_in) 
-                                                  & ((0xffU 
-                                                      & VL_SHIFTR_III(12,12,32, 
-                                                                      (0xfffU 
-                                                                       & ((IData)(0x107U) 
-                                                                          + (IData)(vlSelf->dr840_ne2000__DOT__o_pad))), 8U)) 
-                                                     >= (IData)(vlSelf->dr840_ne2000__DOT__o_avail)))))) {
+                                        >> 4U) | (~ (IData)(vlSelf->dr840_ne2000__DOT__v_room))))) {
                                 vlSelf->dr840_ne2000__DOT__iset 
                                     = (0x10U | (IData)(vlSelf->dr840_ne2000__DOT__iset));
                                 vlSelf->dr840_ne2000__DOT__rsr = 0x10U;
@@ -1359,18 +1388,15 @@ VL_INLINE_OPT void Vdr840_ne2000___024root___nba_sequent__TOP__2(Vdr840_ne2000__
                                     = vlSelf->dr840_ne2000__DOT__off_len;
                                 vlSelf->__Vdly__dr840_ne2000__DOT__r_n = 0U;
                                 vlSelf->__Vdly__dr840_ne2000__DOT__r_pad 
-                                    = vlSelf->dr840_ne2000__DOT__o_pad;
+                                    = vlSelf->dr840_ne2000__DOT__v_pad;
                                 vlSelf->__Vdly__dr840_ne2000__DOT__r_cnt 
-                                    = (0xfffU & ((IData)(4U) 
-                                                 + (IData)(vlSelf->dr840_ne2000__DOT__o_pad)));
+                                    = vlSelf->dr840_ne2000__DOT__v_cnt;
                                 vlSelf->__Vdly__dr840_ne2000__DOT__r_next 
-                                    = vlSelf->dr840_ne2000__DOT__o_next;
+                                    = vlSelf->dr840_ne2000__DOT__v_next;
                                 vlSelf->__Vdly__dr840_ne2000__DOT__r_page 
                                     = vlSelf->dr840_ne2000__DOT__curr;
                                 vlSelf->__Vdly__dr840_ne2000__DOT__r_group 
-                                    = (1U & (IData)(
-                                                    (vlSelf->dr840_ne2000__DOT__off_dst 
-                                                     >> 0x28U)));
+                                    = vlSelf->dr840_ne2000__DOT__v_group;
                                 vlSelf->__Vdly__dr840_ne2000__DOT__r_crc = 0xffffffffU;
                                 vlSelf->__Vdly__dr840_ne2000__DOT__r_k = 0U;
                                 vlSelf->__Vdly__dr840_ne2000__DOT__r_ptr 
@@ -1582,6 +1608,7 @@ VL_INLINE_OPT void Vdr840_ne2000___024root___nba_sequent__TOP__2(Vdr840_ne2000__
         vlSelf->__Vdly__tx_req = 0U;
         vlSelf->__Vdly__dr840_ne2000__DOT__tx_copied = 0U;
         vlSelf->__Vdly__dr840_ne2000__DOT__off_q = 0U;
+        vlSelf->__Vdly__dr840_ne2000__DOT__off_q2 = 0U;
         vlSelf->__Vdly__dr840_ne2000__DOT__r_st = 0U;
         vlSelf->__Vdly__dr840_ne2000__DOT__r_ptr = 0U;
         vlSelf->__Vdly__dr840_ne2000__DOT__r_n = 0U;
@@ -1620,6 +1647,14 @@ VL_INLINE_OPT void Vdr840_ne2000___024root___nba_sequent__TOP__2(Vdr840_ne2000__
         vlSelf->__Vdly__dr840_ne2000__DOT__tx_copied_ok = 0U;
         vlSelf->rx_answer = 0U;
         vlSelf->rx_take = 0U;
+        vlSelf->__Vdly__dr840_ne2000__DOT__v_bad = 0U;
+        vlSelf->__Vdly__dr840_ne2000__DOT__v_acc = 0U;
+        vlSelf->__Vdly__dr840_ne2000__DOT__v_ring = 0U;
+        vlSelf->__Vdly__dr840_ne2000__DOT__v_room = 0U;
+        vlSelf->__Vdly__dr840_ne2000__DOT__v_group = 0U;
+        vlSelf->__Vdly__dr840_ne2000__DOT__v_pad = 0U;
+        vlSelf->__Vdly__dr840_ne2000__DOT__v_cnt = 0U;
+        vlSelf->__Vdly__dr840_ne2000__DOT__v_next = 0U;
         vlSelf->__Vdly__dr840_ne2000__DOT__r_len = 0U;
         vlSelf->__Vdly__dr840_ne2000__DOT__r_pad = 0U;
         vlSelf->__Vdly__dr840_ne2000__DOT__r_cnt = 0U;
@@ -1636,6 +1671,14 @@ VL_INLINE_OPT void Vdr840_ne2000___024root___nba_sequent__TOP__2(Vdr840_ne2000__
     vlSelf->dr840_ne2000__DOT__tx_wait = vlSelf->__Vdly__dr840_ne2000__DOT__tx_wait;
     vlSelf->dr840_ne2000__DOT__tx_copied = vlSelf->__Vdly__dr840_ne2000__DOT__tx_copied;
     vlSelf->dr840_ne2000__DOT__tx_copied_ok = vlSelf->__Vdly__dr840_ne2000__DOT__tx_copied_ok;
+    vlSelf->dr840_ne2000__DOT__v_bad = vlSelf->__Vdly__dr840_ne2000__DOT__v_bad;
+    vlSelf->dr840_ne2000__DOT__v_acc = vlSelf->__Vdly__dr840_ne2000__DOT__v_acc;
+    vlSelf->dr840_ne2000__DOT__v_ring = vlSelf->__Vdly__dr840_ne2000__DOT__v_ring;
+    vlSelf->dr840_ne2000__DOT__v_room = vlSelf->__Vdly__dr840_ne2000__DOT__v_room;
+    vlSelf->dr840_ne2000__DOT__v_pad = vlSelf->__Vdly__dr840_ne2000__DOT__v_pad;
+    vlSelf->dr840_ne2000__DOT__v_cnt = vlSelf->__Vdly__dr840_ne2000__DOT__v_cnt;
+    vlSelf->dr840_ne2000__DOT__v_next = vlSelf->__Vdly__dr840_ne2000__DOT__v_next;
+    vlSelf->dr840_ne2000__DOT__v_group = vlSelf->__Vdly__dr840_ne2000__DOT__v_group;
     vlSelf->dr840_ne2000__DOT__r_len = vlSelf->__Vdly__dr840_ne2000__DOT__r_len;
     vlSelf->dr840_ne2000__DOT__r_n = vlSelf->__Vdly__dr840_ne2000__DOT__r_n;
     vlSelf->dr840_ne2000__DOT__r_pad = vlSelf->__Vdly__dr840_ne2000__DOT__r_pad;
@@ -1646,6 +1689,7 @@ VL_INLINE_OPT void Vdr840_ne2000___024root___nba_sequent__TOP__2(Vdr840_ne2000__
     vlSelf->dr840_ne2000__DOT__r_crc = vlSelf->__Vdly__dr840_ne2000__DOT__r_crc;
     vlSelf->dr840_ne2000__DOT__r_k = vlSelf->__Vdly__dr840_ne2000__DOT__r_k;
     vlSelf->dr840_ne2000__DOT__off_q = vlSelf->__Vdly__dr840_ne2000__DOT__off_q;
+    vlSelf->dr840_ne2000__DOT__off_q2 = vlSelf->__Vdly__dr840_ne2000__DOT__off_q2;
     vlSelf->dr840_ne2000__DOT__r_st = vlSelf->__Vdly__dr840_ne2000__DOT__r_st;
     vlSelf->dr840_ne2000__DOT__r_ptr = vlSelf->__Vdly__dr840_ne2000__DOT__r_ptr;
     vlSelf->dr840_ne2000__DOT__rcr = vlSelf->__Vdly__dr840_ne2000__DOT__rcr;
@@ -1769,7 +1813,8 @@ VL_INLINE_OPT void Vdr840_ne2000___024root___nba_sequent__TOP__2(Vdr840_ne2000__
                                            : ((IData)(1U) 
                                               + (IData)(vlSelf->dr840_ne2000__DOT__rsar))));
     vlSelf->rx_busy = ((0U != (IData)(vlSelf->dr840_ne2000__DOT__r_st)) 
-                       | (IData)(vlSelf->dr840_ne2000__DOT__off_q));
+                       | ((IData)(vlSelf->dr840_ne2000__DOT__off_q) 
+                          | (IData)(vlSelf->dr840_ne2000__DOT__off_q2)));
     vlSelf->dr840_ne2000__DOT__pa_e = (0x1fffU & ((IData)(vlSelf->dr840_ne2000__DOT__wa_e)
                                                    ? (IData)(vlSelf->dr840_ne2000__DOT__wa_e_i)
                                                    : 

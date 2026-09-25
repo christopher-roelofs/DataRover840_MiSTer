@@ -77,11 +77,18 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_net___024root final : public VerilatedMod
         CData/*0:0*/ tb_net__DOT__nic__DOT__o_ring_ok;
         CData/*0:0*/ tb_net__DOT__nic__DOT__o_bnry_in;
         CData/*7:0*/ tb_net__DOT__nic__DOT__o_next;
+        CData/*0:0*/ tb_net__DOT__nic__DOT__off_q2;
+        CData/*0:0*/ tb_net__DOT__nic__DOT__v_bad;
+        CData/*0:0*/ tb_net__DOT__nic__DOT__v_acc;
+    };
+    struct {
+        CData/*0:0*/ tb_net__DOT__nic__DOT__v_ring;
+        CData/*0:0*/ tb_net__DOT__nic__DOT__v_room;
+        CData/*0:0*/ tb_net__DOT__nic__DOT__v_group;
+        CData/*7:0*/ tb_net__DOT__nic__DOT__v_next;
         CData/*2:0*/ tb_net__DOT__nic__DOT__r_st;
         CData/*7:0*/ tb_net__DOT__nic__DOT__r_next;
         CData/*7:0*/ tb_net__DOT__nic__DOT__r_page;
-    };
-    struct {
         CData/*0:0*/ tb_net__DOT__nic__DOT__r_group;
         CData/*1:0*/ tb_net__DOT__nic__DOT__r_k;
         CData/*0:0*/ tb_net__DOT__nic__DOT__tx_copied;
@@ -117,6 +124,13 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_net___024root final : public VerilatedMod
         CData/*0:0*/ __Vdlyvset__tb_net__DOT__nic__DOT__mar__v0;
         CData/*0:0*/ __Vdly__tb_net__DOT__nic__DOT__tx_copied_ok;
         CData/*0:0*/ __Vdly__tb_net__DOT__nic__DOT__off_q;
+        CData/*0:0*/ __Vdly__tb_net__DOT__nic__DOT__off_q2;
+        CData/*0:0*/ __Vdly__tb_net__DOT__nic__DOT__v_bad;
+        CData/*0:0*/ __Vdly__tb_net__DOT__nic__DOT__v_acc;
+        CData/*0:0*/ __Vdly__tb_net__DOT__nic__DOT__v_ring;
+        CData/*0:0*/ __Vdly__tb_net__DOT__nic__DOT__v_room;
+        CData/*7:0*/ __Vdly__tb_net__DOT__nic__DOT__v_next;
+        CData/*0:0*/ __Vdly__tb_net__DOT__nic__DOT__v_group;
         CData/*0:0*/ __Vdlyvset__tb_net__DOT__nic__DOT__tally__v1;
         CData/*0:0*/ __Vdlyvset__tb_net__DOT__nic__DOT__tally__v2;
         CData/*2:0*/ __Vdly__tb_net__DOT__nic__DOT__r_st;
@@ -132,6 +146,8 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_net___024root final : public VerilatedMod
         CData/*0:0*/ __Vdly__tb_net__DOT__rx_offer;
         CData/*0:0*/ __Vdly__tb_net__DOT__rx_byte;
         CData/*7:0*/ __Vdly__tb_net__DOT__rx_data;
+    };
+    struct {
         CData/*0:0*/ __Vdly__tb_net__DOT__tx_ok;
         CData/*0:0*/ __VstlFirstIteration;
         CData/*0:0*/ __VicoFirstIteration;
@@ -146,8 +162,6 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_net___024root final : public VerilatedMod
         SData/*10:0*/ tb_net__DOT__rx_len;
         SData/*15:0*/ tb_net__DOT__nic__DOT__rsar;
         SData/*15:0*/ tb_net__DOT__nic__DOT__rbcr;
-    };
-    struct {
         SData/*15:0*/ tb_net__DOT__nic__DOT__tbcr;
         SData/*15:0*/ tb_net__DOT__nic__DOT__rsar_n;
         SData/*12:0*/ tb_net__DOT__nic__DOT__wa_e_i;
@@ -159,6 +173,8 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_net___024root final : public VerilatedMod
         SData/*10:0*/ tb_net__DOT__nic__DOT__off_len;
         SData/*10:0*/ tb_net__DOT__nic__DOT__o_pad;
         SData/*8:0*/ tb_net__DOT__nic__DOT__o_avail;
+        SData/*10:0*/ tb_net__DOT__nic__DOT__v_pad;
+        SData/*11:0*/ tb_net__DOT__nic__DOT__v_cnt;
         SData/*15:0*/ tb_net__DOT__nic__DOT__r_ptr;
         SData/*10:0*/ tb_net__DOT__nic__DOT__r_n;
         SData/*10:0*/ tb_net__DOT__nic__DOT__r_len;
@@ -169,6 +185,8 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_net___024root final : public VerilatedMod
         SData/*10:0*/ tb_net__DOT__br__DOT__n;
         SData/*15:0*/ __Vdly__tb_net__DOT__nic__DOT__rbcr;
         SData/*15:0*/ __Vdly__tb_net__DOT__nic__DOT__tx_wait;
+        SData/*10:0*/ __Vdly__tb_net__DOT__nic__DOT__v_pad;
+        SData/*11:0*/ __Vdly__tb_net__DOT__nic__DOT__v_cnt;
         SData/*10:0*/ __Vdly__tb_net__DOT__nic__DOT__r_len;
         SData/*10:0*/ __Vdly__tb_net__DOT__nic__DOT__r_n;
         SData/*10:0*/ __Vdly__tb_net__DOT__nic__DOT__r_pad;
@@ -194,6 +212,8 @@ class alignas(VL_CACHE_LINE_BYTES) Vtb_net___024root final : public VerilatedMod
         IData/*31:0*/ __VactIterCount;
         VL_OUT64(ddr_din,63,0);
         VL_IN64(ddr_dout,63,0);
+    };
+    struct {
         QData/*47:0*/ tb_net__DOT__rx_dst;
         QData/*47:0*/ tb_net__DOT__nic__DOT__off_dst;
         QData/*63:0*/ tb_net__DOT__br__DOT__acc;
