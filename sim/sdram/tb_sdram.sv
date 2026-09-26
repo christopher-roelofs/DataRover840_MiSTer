@@ -135,7 +135,7 @@ module tb_sdram #(
         .imem_ack(iack), .imem_rdata(ird), .imem_err(ierr),
         .dmem_addr(da), .dmem_req(dreq), .dmem_burst(dbur), .dmem_we(dwe),
         .dmem_be(dbe), .dmem_wdata(dwd), .dmem_ack(dack), .dmem_rdata(drd),
-        .dmem_err(derr), .irq_in(tx39_en ? t_irq : irq_in), .halt(tx39_en ? t_stop : 1'b0),
+        .dmem_err(derr), .irq_in(tx39_en ? t_irq : irq_in), .halt(tx39_en ? t_stop : 1'b0), .halt_clean(1'b0),
         .retire_valid(retire_valid), .retire_pc(retire_pc),
         .retire_insn(retire_insn), .retire_next_pc(retire_next_pc),
         .exc_valid(dbg_exc_valid), .exc_code(dbg_exc_code), .exc_epc(dbg_exc_epc),

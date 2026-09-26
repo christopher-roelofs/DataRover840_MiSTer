@@ -57,7 +57,19 @@ module dr840_ne2000 #(
     input  wire [13:0] b_addr,
     output wire [7:0]  b_q,
 
-    output reg  [31:0] dbg_tx, dbg_rx
+    output reg  [31:0] dbg_tx, dbg_rx,
+
+    // The chip's registers across a power cycle of the MiSTer (see
+    // dr840_machine.sv), so that a machine saved with the network in use
+    // finds its card as its driver left it: 0..15 the page registers,
+    // 16..21 the station address, 24..31 the multicast filter, 32..34 the
+    // tallies, 35 a transmit in flight. Its buffer is not kept: a frame
+    // being sent is reported sent (TCP sends it again), and one received
+    // but not yet read is lost the same way.
+    input  wire [5:0]  ctx_addr,
+    input  wire        ctx_we,
+    input  wire [31:0] ctx_wdata,
+    output reg  [31:0] ctx_rdata
 );
 
     // ------------------------------------------------------------ state
@@ -479,9 +491,66 @@ module dr840_ne2000 #(
                     tx_pending <= 1'b0; tx_req <= 1'b0; tx_copied <= 1'b0;
                     for (i = 0; i < 3; i = i + 1) tally[i] <= 8'd0;
                 end
+
+                // -------------------------------------------- the context
+                if (ctx_we) begin
+                    if (ctx_addr[5:3] == 3'b010 && ctx_addr[2:0] < 3'd6) par[ctx_addr[2:0]] <= ctx_wdata[7:0];
+                    else if (ctx_addr[5:3] == 3'b011) mar[ctx_addr[2:0]] <= ctx_wdata[7:0];
+                    else case (ctx_addr)
+                    6'd0:  cr     <= ctx_wdata[7:0];
+                    6'd1:  isr    <= ctx_wdata[7:0];
+                    6'd2:  imr    <= ctx_wdata[7:0];
+                    6'd3:  dcr    <= ctx_wdata[7:0];
+                    6'd4:  rcr    <= ctx_wdata[7:0];
+                    6'd5:  tcr    <= ctx_wdata[7:0];
+                    6'd6:  tsr    <= ctx_wdata[7:0];
+                    6'd7:  rsr    <= ctx_wdata[7:0];
+                    6'd8:  pstart <= ctx_wdata[7:0];
+                    6'd9:  pstop  <= ctx_wdata[7:0];
+                    6'd10: bnry   <= ctx_wdata[7:0];
+                    6'd11: curr   <= ctx_wdata[7:0];
+                    6'd12: tpsr   <= ctx_wdata[7:0];
+                    6'd13: rsar   <= ctx_wdata[15:0];
+                    6'd14: rbcr   <= ctx_wdata[15:0];
+                    6'd15: tbcr   <= ctx_wdata[15:0];
+                    6'd32, 6'd33, 6'd34: tally[ctx_addr[1:0]] <= ctx_wdata[7:0];
+                    6'd35: begin
+                        // Whatever was going out has gone: PTX, as the chip
+                        // reports a frame sent.
+                        tx_pending <= 1'b0; tx_req <= 1'b0; tx_copied <= 1'b0;
+                        if (ctx_wdata[0]) begin isr <= isr | 8'h02; tsr <= 8'h01; end
+                    end
+                    default: ;
+                    endcase
+                end
             end
         end
     end
+
+    always @(posedge clk)
+        ctx_rdata <= (ctx_addr[5:3] == 3'b010) ? {24'd0, (ctx_addr[2:0] < 3'd6) ? par[ctx_addr[2:0]] : 8'd0}
+                   : (ctx_addr[5:3] == 3'b011) ? {24'd0, mar[ctx_addr[2:0]]}
+                   : (ctx_addr == 6'd0)  ? {24'd0, cr}
+                   : (ctx_addr == 6'd1)  ? {24'd0, isr}
+                   : (ctx_addr == 6'd2)  ? {24'd0, imr}
+                   : (ctx_addr == 6'd3)  ? {24'd0, dcr}
+                   : (ctx_addr == 6'd4)  ? {24'd0, rcr}
+                   : (ctx_addr == 6'd5)  ? {24'd0, tcr}
+                   : (ctx_addr == 6'd6)  ? {24'd0, tsr}
+                   : (ctx_addr == 6'd7)  ? {24'd0, rsr}
+                   : (ctx_addr == 6'd8)  ? {24'd0, pstart}
+                   : (ctx_addr == 6'd9)  ? {24'd0, pstop}
+                   : (ctx_addr == 6'd10) ? {24'd0, bnry}
+                   : (ctx_addr == 6'd11) ? {24'd0, curr}
+                   : (ctx_addr == 6'd12) ? {24'd0, tpsr}
+                   : (ctx_addr == 6'd13) ? {16'd0, rsar}
+                   : (ctx_addr == 6'd14) ? {16'd0, rbcr}
+                   : (ctx_addr == 6'd15) ? {16'd0, tbcr}
+                   : (ctx_addr == 6'd32) ? {24'd0, tally[0]}
+                   : (ctx_addr == 6'd33) ? {24'd0, tally[1]}
+                   : (ctx_addr == 6'd34) ? {24'd0, tally[2]}
+                   : (ctx_addr == 6'd35) ? {31'd0, tx_pending | tx_req}
+                   : 32'd0;
 endmodule
 
 `default_nettype wire

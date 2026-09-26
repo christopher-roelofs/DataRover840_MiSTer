@@ -32,7 +32,8 @@ module tb_net (
         .tx_req(tx_req), .tx_base(tx_base), .tx_len(tx_len), .tx_done(tx_done), .tx_ok(tx_ok),
         .rx_offer(rx_offer), .rx_len(rx_len), .rx_dst(rx_dst), .rx_answer(rx_answer), .rx_take(rx_take),
         .rx_byte(rx_byte), .rx_data(rx_data), .rx_busy(rx_busy), .b_addr(b_addr), .b_q(b_q),
-        .dbg_tx(), .dbg_rx());
+        .dbg_tx(), .dbg_rx(),
+        .ctx_addr(6'd0), .ctx_we(1'b0), .ctx_wdata(32'd0), .ctx_rdata());
     dr840_netbridge br (.clk(clk), .cen(cen), .rst_n(rst_n), .enable(enable),
         .tx_req(tx_req), .tx_base(tx_base), .tx_len(tx_len), .tx_done(tx_done), .tx_ok(tx_ok),
         .rx_offer(rx_offer), .rx_len(rx_len), .rx_dst(rx_dst), .rx_answer(rx_answer), .rx_take(rx_take),

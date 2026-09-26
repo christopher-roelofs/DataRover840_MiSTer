@@ -35,6 +35,8 @@ BASE, SIZE = 0x38000000, 0x11000
 MAGIC = b"DRNE"
 TX_RING, RX_RING, SLOT, SLOTS = 0x1000, 0x9000, 0x800, 16
 TAP = "drnet0"
+TAP_MAC = "02:44:52:4e:45:30"  # fixed, and Main's too: a DataRover resumed from a
+                               # saved context still has it in its ARP cache
 PIDFILE = "/tmp/drnet.pid"
 DEBUG = "--debug" in sys.argv
 
@@ -70,6 +72,7 @@ def main():
     tap = os.open("/dev/net/tun", os.O_RDWR)
     fcntl.ioctl(tap, 0x400454CA, struct.pack("16sH", TAP.encode(), 0x0002 | 0x1000))  # TUNSETIFF, IFF_TAP|IFF_NO_PI
     up = uplink()
+    sh("ip link set %s address %s" % (TAP, TAP_MAC))
     sh("ip link set %s up" % TAP)
     sh("echo 1 > /proc/sys/net/ipv4/ip_forward")
     sh("echo 1 > /proc/sys/net/ipv4/conf/%s/proxy_arp" % TAP)

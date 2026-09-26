@@ -51,7 +51,7 @@ module tb_board (
         .dmem_addr(da), .dmem_req(dreq), .dmem_burst(dbur), .dmem_we(dwe),
         .dmem_be(dbe), .dmem_wdata(dwd), .dmem_ack(dack), .dmem_rdata(drd),
         .dmem_err(derr),
-        .irq_in(irq_in), .halt(1'b0),
+        .irq_in(irq_in), .halt(1'b0), .halt_clean(1'b0),
         .retire_valid(retire_valid), .retire_pc(retire_pc),
         .retire_insn(retire_insn), .retire_next_pc(retire_next_pc),
         .ihit_count(ihit_count), .imiss_count(imiss_count),

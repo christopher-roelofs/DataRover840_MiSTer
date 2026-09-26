@@ -170,11 +170,10 @@ localparam CONF_STR = {
     // A reset that ignores the save: the RAM cleared, Magic Cap set up
     // from nothing. The save is overwritten by the next one.
     "P3T[15],Start fresh (clear RAM);",
-    // Switched off the old way: Magic Cap powers off and the RAM is saved
-    // without the machine's context, so the next load resets into it and
-    // cleans up, as a DataRover does after all its power has gone -- and
-    // a way back should a saved context ever not carry on.
-    "P3T[25],Full power off;",
+    // The ON button: off if it is on, on if it is off. Switched off this
+    // way (or by F4, or a pad's Start) it stays off; only Magic Cap's own
+    // idle power-off is woken from, if the option above says so.
+    "P3T[25],Power button;",
 
     "P4,Packages;",
     "P4-;",
@@ -447,14 +446,17 @@ localparam [2:0] MT_WRITE = 3'd0, MT_READ = 3'd1, MT_ROM = 3'd2, MT_CLEAR = 3'd3
 // It is one more 16 KB chunk in the RAM image's file, after the four
 // megabytes (sectors 8192..8223): the context's words first, then a
 // header at word 0x3F0 -- magic, version, and the sum of the words.
-// Every save writes the chunk with no header before the RAM, and a save
-// taken at a power-off writes it again with one after, so a save cut off
-// half way never pairs new RAM with an old context. A file of four
+// Every save writes the chunk with no header before the RAM and again
+// with one after, so a save cut off half way never pairs new RAM with an
+// old context. A save of a running machine holds it at a clean boundary
+// (r3900.sv's halt_clean) and keeps its context too: the load carries on
+// from the very instruction, where RAM alone would have been cleaned up
+// after, having been caught in the middle of whatever it was doing. A file of four
 // megabytes exactly is a RAM image as before, and resets as before; one
 // that can grow (a ROM's own save) grows by the chunk at its next save.
 localparam [31:0] CTX_MAGIC   = 32'h4452_4358;       // "DRCX"
-localparam [31:0] CTX_VERSION = 32'd1;
-localparam [9:0]  CTX_LAST    = 10'h27F;             // the machine's words: 0x000..0x27F
+localparam [31:0] CTX_VERSION = 32'd2;                // 2: the network card's chip too
+localparam [9:0]  CTX_LAST    = 10'h2BF;             // the machine's words: 0x000..0x2BF
 localparam [63:0] IMG_RAM     = 64'd4194304;
 localparam [63:0] IMG_RAM_CTX = 64'd4194304 + 64'd16384;
 reg  [2:0]  mt_phase;
@@ -471,12 +473,14 @@ reg         img_ctx;                  // the image's file holds the chunk
 reg         ctx_ok;                   // a context came with the RAM, and checks out
 reg         ctx_boot;                 // this load may resume (a load, not the OSD's reset)
 reg         ran;                      // the machine has run since its ROM arrived
-reg         ctx_want;                 // this save is taken at a power-off: keep the context
+reg         ctx_want;                 // this save keeps the context (every one now)
 reg         ctx_step;                 // a save: 0 the chunk without its header, 1 with
 reg         resume_go;                // put back: press ON
 reg         resumed;                  // on the status line: this boot was a wake
-reg         full_off, fulloff_d;      // "Full power off": the next power-off keeps no context
-reg         press_off;                // the core pressing ON to power off
+reg         pwrbtn_d;                 // the OSD's "Power button"
+reg         onb_d;
+reg         press_btn;                // the core pressing ON for it
+reg         manual_off;               // switched off by a press of ON, not by idling
 // The save buffer's one write port: the memory's bursts, or the context.
 reg         sw_we;
 reg  [11:0] sw_a;
@@ -558,16 +562,16 @@ wire        mem_idle, stopped;
 // saved through: two seconds after the stop, or when the save is done.
 reg        wake_pend, wake;
 reg [27:0] wake_cnt;
-// And pressed once more: at once after a context has been put back, which
-// is the machine being switched on; and to switch it off for "Full power
-// off", after which it stays off.
+// And pressed once more: at once after a context taken while it was off
+// has been put back, which is the machine being switched on; and for the
+// OSD's "Power button".
 wire ctx_quiet = (mt_phase == MT_CTXLOAD && save_run) || resume_go;
 always @(posedge clk_sys or negedge rst_n) begin
     if (!rst_n) begin wake_pend <= 1'b0; wake <= 1'b0; wake_cnt <= 28'd0; end
     else begin
-        if (stopped && !stop_d && !status[6] && !full_off && !ctx_quiet) begin wake_pend <= 1'b1; wake_cnt <= 28'd0; end
-        if (resume_go) begin wake_pend <= 1'b1; wake_cnt <= 28'd184_000_000; end
-        if (press_off && !wake && !wake_pend) begin wake <= 1'b1; wake_cnt <= 28'd0; end
+        if (stopped && !stop_d && !status[6] && !manual_off && !ctx_quiet) begin wake_pend <= 1'b1; wake_cnt <= 28'd0; end
+        if (resume_go && stopped) begin wake_pend <= 1'b1; wake_cnt <= 28'd184_000_000; end
+        if (press_btn && !wake && !wake_pend) begin wake <= 1'b1; wake_cnt <= 28'd0; end
         if (wake_pend) begin
             if (wake_cnt != 28'd184_000_000) wake_cnt <= wake_cnt + 28'd1;
             else if (save_st == 2'd0 && !save_run) begin wake_pend <= 1'b0; wake <= 1'b1; wake_cnt <= 28'd0; end
@@ -673,8 +677,8 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
         stop_d <= 0; savebtn_d <= 0;
         ctx_sel <= 0; ctx_we <= 0; ctx_addr <= 0; ctx_wdata <= 0; cx_st <= 0; cx_wait <= 0; cx_i <= 0;
         ctx_sum <= 0; ctx_magic_ok <= 0; ctx_ver_ok <= 0; img_ctx <= 0; ctx_ok <= 0; ctx_boot <= 0;
-        ctx_want <= 0; ctx_step <= 0; resume_go <= 0; resumed <= 0; full_off <= 0; fulloff_d <= 0; ran <= 0;
-        press_off <= 0; sw_we <= 0; sw_a <= 0; sw_d <= 0;
+        ctx_want <= 0; ctx_step <= 0; resume_go <= 0; resumed <= 0; pwrbtn_d <= 0; manual_off <= 0; onb_d <= 0; ran <= 0;
+        press_btn <= 0; sw_we <= 0; sw_a <= 0; sw_d <= 0;
         fresh <= 0; fresh_d <= 0; fresh_cnt <= 0; fresh_pulse <= 0;
         auto_tick <= 0; auto_secs <= 0;
         mt_errors <= 0; mt_first <= 32'hFFFF_FFFF;
@@ -1016,18 +1020,14 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
         auto_tick <= (auto_tick == 27'd91_999_999) ? 27'd0 : auto_tick + 27'd1;
         if (auto_tick == 27'd0 && auto_secs != 11'h7FF) auto_secs <= auto_secs + 11'd1;
         if (save_run || status[18:17] == 2'd0) auto_secs <= 11'd0;
-        // "Full power off": Magic Cap switched off by the ON button, and
-        // saved without its context, so that the next load resets into
-        // the RAM and cleans up -- the old way, and a way out should a
-        // context ever not resume. Already off, just saved that way.
-        fulloff_d <= status[25];
-        press_off <= 1'b0;
-        if (status[25] && !fulloff_d && rom_ok) begin
-            full_off <= 1'b1;
-            if (stopped) want_ram_save <= 1'b1;
-            else press_off <= 1'b1;
-        end
-        if (!stopped && stop_d && !ctx_quiet) full_off <= 1'b0;   // switched on again
+        // The OSD's "Power button": ON pressed for a tenth of a second.
+        pwrbtn_d  <= status[25];
+        press_btn <= status[25] && !pwrbtn_d && rom_ok;
+        // A press of ON while it runs is someone switching it off, and it
+        // stays off; a power-off without one is Magic Cap idling.
+        onb_d <= on_button;
+        if (on_button && !onb_d && !stopped) manual_off <= 1'b1;
+        if (!stopped && stop_d && !ctx_quiet) manual_off <= 1'b0;   // on again
         if ((stopped && !stop_d && !ctx_quiet) || (status[5] && !savebtn_d) ||
             (osd_open && !osd_d && ram_dirty && status[7]) ||
             (auto_due && ram_dirty && !stopped && !save_run)) begin
@@ -1061,7 +1061,7 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
                       // The RAM: the context's chunk, headerless, first --
                       // and its context after, if this is a power-off.
                       2'd0: begin mt_phase <= MT_CTXSAVE; ctx_step <= 1'b0; cx_st <= 4'd0; cur <= 2'd3;
-                                  ctx_want <= stopped && !full_off;
+                                  ctx_want <= 1'b1;
                                   want_ram_save <= 1'b0; ram_dirty <= 1'b0; end
                       2'd3: begin mt_phase <= MT_CTXLOAD; cx_st <= 4'd0; cx_i <= 10'd0; end
                       2'd1: begin mt_phase <= MT_SAVE; cur <= xfer_slot ? 2'd1 : 2'd2; want_card_save[xfer_slot] <= 1'b0; end
@@ -1167,7 +1167,7 @@ dr840_machine machine (
     .load_en(load_en_q),
     .pkg_go_tog(pkg_go_tog), .pkg_speed(status[13:12]), .pkg_len(pkg_len), .pkg_waddr(pkg_waddr), .pkg_wdata(pkg_wdata),
     .pkg_wreq(pkg_wreq), .pkg_wack(pkg_wack), .pkg_state(pkg_state), .pkg_sent(pkg_sent),
-    .mem_borrow(borrow_q), .hold(halt_req), .blank(save_run | halt_req), .progress(xfer_prog), .tint(status[9:8]), .native(native),
+    .mem_borrow(borrow_q), .hold(halt_req), .freeze(ctx_ok), .blank(save_run | halt_req), .progress(xfer_prog), .tint(status[9:8]), .native(native),
     .mem_idle(mem_idle), .stopped(stopped), .ram_written(ram_written), .card_written(card_written),
     .load_addr(load_addr), .load_data(load_data),
     .load_we(load_we), .load_burst(load_burst), .load_rdata(load_rdata),

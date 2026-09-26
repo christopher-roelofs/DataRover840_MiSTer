@@ -418,6 +418,7 @@ module r3900_cached #(
 
     input  wire [5:0]  irq_in,
     input  wire        halt,
+    input  wire        halt_clean,
 
     output wire        retire_valid,
     output wire [31:0] retire_pc,
@@ -459,7 +460,7 @@ module r3900_cached #(
         .dbus_addr(da), .dbus_req(dreq), .dbus_addr_la(dla),
         .dbus_cached(dc), .dbus_we(dwe), .dbus_be(dbe), .dbus_wdata(dwd),
         .dbus_ack(dack), .dbus_rdata(drd), .dbus_err(derr),
-        .irq_in(irq_in), .halt(halt), .cache_op(cop), .cache_op_addr(cop_addr),
+        .irq_in(irq_in), .halt(halt), .halt_clean(halt_clean), .cache_op(cop), .cache_op_addr(cop_addr),
         .retire_valid(retire_valid), .retire_pc(retire_pc),
         .retire_insn(retire_insn), .retire_next_pc(retire_next_pc),
         .exc_valid(exc_valid), .exc_code(exc_code), .exc_epc(exc_epc), .exc_ip(exc_ip), .exc_bad(exc_bad),

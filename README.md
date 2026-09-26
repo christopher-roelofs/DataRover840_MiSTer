@@ -52,18 +52,18 @@ says whether it wakes again.
 **And remembers.** The four megabytes of RAM -- everything the user has --
 are a MiSTer save file, `saves/DataRover840/<rom>.sav`, written when Magic
 Cap turns the machine off, on "Save RAM now", or (off by default) when the
-OSD opens, and read back when the core starts. When Magic Cap has turned
-the machine off, the save also holds the machine's context -- the CPU's
-registers and the peripheral block's, the codec's and the Magic Bus's --
-and the next load puts it back and presses ON: Magic Cap carries on from
-its own power-off routine, as a DataRover does when it is switched on,
-with no "Cleaning up". Loaded without one (a save taken while it ran, a
-RAM image of exactly four megabytes, or after "Full power off"), the ROM
-resets into its retained RAM, says "Cleaning up", and carries on where it
-was -- what a DataRover does after losing all its power while it was off.
-The context is one more 16 KB chunk after the four megabytes, written
-without its header before the RAM and with it after, so an interrupted
-save never pairs new RAM with an old context. A save or load
+OSD opens, and read back when the core starts. Every save also holds the
+machine's context -- the CPU's registers and the peripheral block's, the
+codec's and the Magic Bus's -- taken with the CPU held at a clean
+boundary, never in a branch's delay slot; the load puts it back and the
+machine carries on from the very instruction, or, saved while Magic Cap
+had it switched off, is switched on: no "Cleaning up" either way. Only a
+RAM image of exactly four megabytes (one mounted by hand, which Main does
+not let grow) still resets into its retained RAM and cleans up, as a
+DataRover does after losing all its power while it was off. The context
+is one more 16 KB chunk after the four megabytes, written without its
+header before the RAM and with it after, so an interrupted save never
+pairs new RAM with an old context. A save or load
 holds the machine for about two seconds, and the panel shows a bar
 filling meanwhile. "Autosave every" (off by default) adds a save every 5,
 15 or 30 minutes, taken only if the RAM has changed since the last one. "Start fresh" resets into cleared RAM instead, leaving
@@ -751,8 +751,9 @@ entry on a sub-page is not found. Settings are on pages:
   and the LCD's colours.
 - **Power & Saving**: AC adaptor with a battery, AC adaptor alone, or
   battery; what happens after Magic Cap's idle power-off; autosaves, "Save
-  RAM now", "Start fresh", and "Full power off" (switched off and saved
-  without the context, so the next load resets and cleans up).
+  RAM now", "Start fresh", and "Power button" (ON: off if it is on, on if
+  it is off). Switched off by a press of ON it stays off; only Magic
+  Cap's own idle power-off is woken from, if the option says so.
 - **Packages**: the package link's speed, and offering the package again.
 - **System**: the keyboard, and booting to the IDT monitor.
 

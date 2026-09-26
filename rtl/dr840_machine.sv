@@ -30,7 +30,10 @@ module dr840_machine (
     // and gets the memory back afterwards with everything as it was. For
     // saving the RAM while the machine is off.
     input  wire        mem_borrow,
-    input  wire        hold,         // and held beforehand, while the memory drains
+    input  wire        hold,         // and held beforehand, while the memory drains -- at a
+                                     // clean boundary, so its context can be saved with it
+    // Held at once, from reset: a context waiting to be put back.
+    input  wire        freeze,
     input  wire        blank,        // the panel shown off meanwhile
     input  wire [7:0]  progress,     // with a bar for how far it has got
     input  wire [1:0]  tint,         // the panel's colour: off, grey, green
@@ -114,7 +117,8 @@ module dr840_machine (
     input  wire        no_battery,     // and no main battery fitted
     // The machine's state across a power cycle of the MiSTer, a word at a
     // time, only with the core halted: 0x000..0x1FF the peripheral block
-    // (dr840_tx39.sv has the map), 0x200..0x27F the CPU (r3900.sv). The
+    // (dr840_tx39.sv has the map), 0x200..0x27F the CPU (r3900.sv),
+    // 0x280..0x2BF the network card's chip (dr840_ne2000.sv). The
     // top level saves it with the RAM when Magic Cap powers off and puts
     // it back before the core is let go, so a load is a wake, not a reset.
     // Read a register behind the address; the .sdc gives all of it
@@ -210,12 +214,12 @@ module dr840_machine (
         .dmem_addr(da), .dmem_req(dreq), .dmem_burst(dbur), .dmem_we(dwe),
         .dmem_be(dbe), .dmem_wdata(dwd), .dmem_ack(dack), .dmem_rdata(drd),
         .dmem_err(derr),
-        .irq_in(soc_irq), .halt(cpu_stop | mem_borrow | hold),
+        .irq_in(soc_irq), .halt(cpu_stop | mem_borrow | freeze), .halt_clean(hold),
         .retire_valid(retire_valid), .retire_pc(obs_pc),
         .retire_insn(obs_insn), .retire_next_pc(),
         .exc_valid(exc_valid), .exc_code(exc_code), .exc_epc(exc_epc), .exc_ip(exc_ip), .exc_bad(exc_bad),
         .stall_store(), .stall_load(), .stall_fetch(),
-        .ctx_addr(ctx_addr[6:0]), .ctx_we(ctx_we && ctx_addr[9]), .ctx_wdata(ctx_wdata), .ctx_rdata(cpu_ctx),
+        .ctx_addr(ctx_addr[6:0]), .ctx_we(ctx_we && ctx_addr[9] && !ctx_addr[7]), .ctx_wdata(ctx_wdata), .ctx_rdata(cpu_ctx),
         .ihit_count(obs_ihit), .imiss_count(obs_imiss),
         .dhit_count(obs_dhit), .dmiss_count(obs_dmiss)
     );
@@ -270,8 +274,8 @@ module dr840_machine (
     wire [3:0]  io_be;
     wire [5:0]  soc_irq;
     wire        cpu_stop;
-    wire [31:0] cpu_ctx, soc_ctx;
-    always @(posedge clk) ctx_rdata <= ctx_addr[9] ? cpu_ctx : soc_ctx;
+    wire [31:0] cpu_ctx, soc_ctx, nic_ctx;
+    always @(posedge clk) ctx_rdata <= !ctx_addr[9] ? soc_ctx : ctx_addr[7] ? nic_ctx : cpu_ctx;
     wire        snd_tog;
     wire [31:0] snd_addr;
     wire [15:0] codec_b;
@@ -333,7 +337,9 @@ module dr840_machine (
         .rx_answer(net_rx_answer), .rx_take(net_rx_take),
         .rx_byte(net_rx_byte), .rx_data(net_rx_data), .rx_busy(net_rx_busy),
         .b_addr(net_b_addr), .b_q(net_b_q),
-        .dbg_tx(net_dbg_tx), .dbg_rx(net_dbg_rx)
+        .dbg_tx(net_dbg_tx), .dbg_rx(net_dbg_rx),
+        .ctx_addr(ctx_addr[5:0]), .ctx_we(ctx_we && ctx_addr[9] && ctx_addr[7]),
+        .ctx_wdata(ctx_wdata), .ctx_rdata(nic_ctx)
     );
 
     wire [31:0] va, vrd;

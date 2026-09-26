@@ -42,7 +42,7 @@ module tb_top #(
         .dmem_we(dbus_we),
         .dmem_be(dbus_be), .dmem_wdata(dbus_wdata), .dmem_ack(dbus_ack),
         .dmem_rdata(dbus_rdata), .dmem_err(dbus_err),
-        .irq_in(irq_in), .halt(1'b0),
+        .irq_in(irq_in), .halt(1'b0), .halt_clean(1'b0),
         .retire_valid(retire_valid), .retire_pc(retire_pc),
         .retire_insn(retire_insn), .retire_next_pc(retire_next_pc),
         .ihit_count(ihit_count), .imiss_count(imiss_count),

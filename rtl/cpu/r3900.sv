@@ -80,6 +80,12 @@ module r3900 #(
     // Held: nothing leaves EX, so what is in MEM and WB -- the store that
     // asked for this -- completes, and the next instruction waits.
     input  wire        halt,
+    // Held at a clean boundary: EX stops once what it holds is not a
+    // branch's delay slot, so that the machine's context read then (see
+    // ctx_addr below) says where to carry on -- the instruction in EX --
+    // without a branch half taken. Until then the pipeline runs on. A
+    // save of a running machine asks for this; `halt` stops at once.
+    input  wire        halt_clean,
 
     // The CACHE instruction, passed out rather than acted on here. MIPS
     // hardware does not snoop: software that writes instructions is
@@ -376,7 +382,7 @@ module r3900 #(
     wire exc_flush;
 
     wire adv_mem = !stall_mem;
-    wire adv_ex  = !stall_mem && !stall_ex && !halt;
+    wire adv_ex  = !stall_mem && !stall_ex && !halt && !(halt_clean && ex_v && !ex_ds);
     wire id_hazard;
     wire adv_id  = adv_ex && !id_hazard;
 
