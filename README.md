@@ -39,7 +39,7 @@ goes through, the MiSTer's keyboard is a Magic Bus keyboard, and the boot
 sound plays. After the machine has sat idle Magic Cap turns it off; by
 default the core then presses the ON button for it (there is no battery to
 save), and F4 or the joystick's ON button is that button. Power
-(OSD: Power & Saving) is the AC adaptor with a battery by default, and
+(OSD: Power) is the AC adaptor with a battery by default, and
 Magic Cap's gauge shows its charging bolt: the adaptor is the TX39's
 PWRINT pin, and the main battery is the codec's AD2, both found by driving
 each input the ROM watches in the reference emulator. "AC adaptor" alone
@@ -51,7 +51,7 @@ says whether it wakes again.
 
 **And remembers.** The four megabytes of RAM -- everything the user has --
 are a MiSTer save file, `saves/DataRover840/<rom>.sav`, written when Magic
-Cap turns the machine off, on "Save RAM now", or (off by default) when the
+Cap turns the machine off, on "Save state", or (off by default) when the
 OSD opens, and read back when the core starts. Every save also holds the
 machine's context -- the CPU's registers and the peripheral block's, the
 codec's and the Magic Bus's -- taken with the CPU held at a clean
@@ -738,7 +738,10 @@ have come from anywhere else:
 Media at the top: the ROM, the RAM image, each card slot's image and a
 package to install. The images stay on the main page because an .mgl
 mounts an image by selecting its entry on the page the OSD opens on; an
-entry on a sub-page is not found. Settings are on pages:
+entry on a sub-page is not found. Then saving, where the console cores
+keep theirs: "Save state" (the RAM image with the machine's context, one
+slot, which every load carries on from), "Autosave on OSD" and "Autosave
+every". Settings are on pages:
 
 - **Card slots**: what each slot holds. Slot 1 is a memory card, the
   network card or empty; slot 2 a memory card or empty. A memory card is
@@ -749,13 +752,13 @@ entry on a sub-page is not found. Settings are on pages:
   back in with the option key held, which is how a blank one is set up.
 - **Display**: resolution (the panel's 480x320, or 640x480 in a bezel)
   and the LCD's colours.
-- **Power & Saving**: AC adaptor with a battery, AC adaptor alone, or
-  battery; what happens after Magic Cap's idle power-off; autosaves, "Save
-  RAM now", "Start fresh", and "Power button" (ON: off if it is on, on if
-  it is off). Switched off by a press of ON it stays off; only Magic
+- **Power**: AC adaptor with a battery, AC adaptor alone, or battery;
+  what happens after Magic Cap's idle power-off; and "Power button" (ON:
+  off if it is on, on if it is off). Switched off by a press of ON it stays off; only Magic
   Cap's own idle power-off is woken from, if the option says so.
 - **Packages**: the package link's speed, and offering the package again.
-- **System**: the keyboard, and booting to the IDT monitor.
+- **System**: the keyboard, booting to the IDT monitor, and "Start fresh"
+  (a reset into cleared RAM; the save is replaced by the next one).
 
 A memory card in a slot is saved whenever the OSD opens with it written
 to, since the OSD is where a card is changed. Magic Cap writes to a card

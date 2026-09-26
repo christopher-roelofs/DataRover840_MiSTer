@@ -103,6 +103,19 @@ localparam CONF_STR = {
     "S1,IMG,Slot 2 card image;",
     "F2,PKGMC2,Install package;",
     "-;",
+    // Saving, where the console cores keep theirs: the main page. The
+    // save is the RAM image with the machine's context -- a save state,
+    // in one slot, which the next load carries on from.
+    "T[5],Save state;",
+    // As the console cores do it: opening the OSD saves, if anything in
+    // the RAM has changed since the last save. Off by default: a save is
+    // two seconds with the machine held, which is not what opening a menu
+    // should cost.
+    "O[7],Autosave on OSD,Off,On;",
+    // A save every so often, if anything has changed since the last; off
+    // by default, since a save holds the machine for two seconds.
+    "O[18:17],Autosave every,Off,5 min,15 min,30 min;",
+    "-;",
     // Memory cards: a raw image of the card's common memory, the
     // reference emulator's own format (--sram1, --sram2), formatted by
     // Magic Cap itself. Slot 2's image is the framework's image 1 and slot
@@ -141,7 +154,7 @@ localparam CONF_STR = {
     // green backlight's, the reference's tints.
     "P2O[9:8],LCD color,Black & white,Grey,Green;",
 
-    "P3,Power & Saving;",
+    "P3,Power;",
     "P3-;",
     // Where the power comes from. By default the AC adaptor with a
     // battery fitted: the gauge shows the charging bolt. The adaptor alone
@@ -157,19 +170,6 @@ localparam CONF_STR = {
     // for it once the RAM has been written: an autosave and a blink,
     // rather than a dark screen.
     "P3O[6],Idle power-off,Wake,Stay off;",
-    // As the console cores do it: opening the OSD saves, if anything in
-    // the RAM has changed since the last save. Off by default: a save is
-    // two seconds with the machine held, which is not what opening a menu
-    // should cost.
-    "P3O[7],Autosave on OSD,Off,On;",
-    // A save every so often, if anything has changed since the last; off
-    // by default, since a save holds the machine for two seconds.
-    "P3O[18:17],Autosave every,Off,5 min,15 min,30 min;",
-    "P3-;",
-    "P3T[5],Save RAM now;",
-    // A reset that ignores the save: the RAM cleared, Magic Cap set up
-    // from nothing. The save is overwritten by the next one.
-    "P3T[15],Start fresh (clear RAM);",
     // The ON button: off if it is on, on if it is off. Switched off this
     // way (or by F4, or a pad's Start) it stays off; only Magic Cap's own
     // idle power-off is woken from, if the option above says so.
@@ -193,6 +193,10 @@ localparam CONF_STR = {
     // The option button, held at reset, takes the ROM to the IDT monitor
     // instead of Magic Cap. Takes effect on the next reset.
     "P5O[2],Boot,Magic Cap,IDT monitor;",
+    "P5-;",
+    // A reset that ignores the save: the RAM cleared, Magic Cap set up
+    // from nothing. The save is overwritten by the next one.
+    "P5T[15],Start fresh (clear RAM);",
 
     "-;",
     "R[0],Reset;",
