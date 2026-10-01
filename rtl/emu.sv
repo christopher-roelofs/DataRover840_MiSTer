@@ -71,7 +71,8 @@ assign VIDEO_ARY = native ? 13'd2 : 13'd3;
 // the top, settings on pages. Every label and value fits the OSD's width
 // (about 28 characters; longer is cut off). The status bits are the ones
 // they have always been, so a saved configuration still means the same;
-// bit 3, the debug display that was, is unused.
+// bit 3, the debug display that was, is unused, and so are 18:17, the
+// periodic autosave that was.
 localparam CONF_STR = {
     "DataRover840;;",
     "-;",
@@ -112,9 +113,6 @@ localparam CONF_STR = {
     // two seconds with the machine held, which is not what opening a menu
     // should cost.
     "O[7],Autosave on OSD,Off,On;",
-    // A save every so often, if anything has changed since the last; off
-    // by default, since a save holds the machine for two seconds.
-    "O[18:17],Autosave every,Off,5 min,15 min,30 min;",
     "-;",
     // Memory cards: a raw image of the card's common memory, the
     // reference emulator's own format (--sram1, --sram2), formatted by
@@ -506,11 +504,6 @@ reg  [31:0] secw_q;
 reg         rom_req;                  // the request in flight is a ROM word
 reg  [7:0]  chunk;                    // 0..255, of 16 KB
 reg         fresh, fresh_d;
-reg  [26:0] auto_tick;
-reg  [10:0] auto_secs;
-wire        auto_due = (status[18:17] == 2'd1) ? (auto_secs >= 11'd300)
-                     : (status[18:17] == 2'd2) ? (auto_secs >= 11'd900)
-                     : (status[18:17] == 2'd3) ? (auto_secs >= 11'd1800) : 1'b0;
 reg  [3:0]  fresh_cnt;
 // Which image the sector machine is moving, numbered as the framework's
 // images are: 0 the RAM, 1 the card in slot 2, 2 the card in slot 1 -- and
@@ -684,7 +677,6 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
         ctx_want <= 0; ctx_step <= 0; resume_go <= 0; resumed <= 0; pwrbtn_d <= 0; manual_off <= 0; onb_d <= 0; ran <= 0;
         press_btn <= 0; sw_we <= 0; sw_a <= 0; sw_d <= 0;
         fresh <= 0; fresh_d <= 0; fresh_cnt <= 0; fresh_pulse <= 0;
-        auto_tick <= 0; auto_secs <= 0;
         mt_errors <= 0; mt_first <= 32'hFFFF_FFFF;
     end else begin
         dl_d  <= rom_dl;
@@ -1018,12 +1010,6 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
         // off or on request (and, if the option says, when the OSD opens);
         // the card saved along with it, and always when the OSD opens
         // with it written to, since the OSD is where a card is ejected.
-        // The periodic save: seconds counted, and a save once the chosen
-        // number of minutes have passed with the RAM changed and the
-        // machine running. Any save starts the count again.
-        auto_tick <= (auto_tick == 27'd91_999_999) ? 27'd0 : auto_tick + 27'd1;
-        if (auto_tick == 27'd0 && auto_secs != 11'h7FF) auto_secs <= auto_secs + 11'd1;
-        if (save_run || status[18:17] == 2'd0) auto_secs <= 11'd0;
         // The OSD's "Power button": ON pressed for a tenth of a second.
         pwrbtn_d  <= status[25];
         press_btn <= status[25] && !pwrbtn_d && rom_ok;
@@ -1033,8 +1019,7 @@ always @(posedge clk_sys or negedge hard_rst_n) begin
         if (on_button && !onb_d && !stopped) manual_off <= 1'b1;
         if (!stopped && stop_d && !ctx_quiet) manual_off <= 1'b0;   // on again
         if ((stopped && !stop_d && !ctx_quiet) || (status[5] && !savebtn_d) ||
-            (osd_open && !osd_d && ram_dirty && status[7]) ||
-            (auto_due && ram_dirty && !stopped && !save_run)) begin
+            (osd_open && !osd_d && ram_dirty && status[7])) begin
             want_ram_save <= 1'b1;
             if (card_in[0] && slot_mem[0] && card_dirty[0]) want_card_save[0] <= 1'b1;
             if (card_in[1] && slot_mem[1] && card_dirty[1]) want_card_save[1] <= 1'b1;

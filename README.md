@@ -65,8 +65,7 @@ is one more 16 KB chunk after the four megabytes, written without its
 header before the RAM and with it after, so an interrupted save never
 pairs new RAM with an old context. A save or load
 holds the machine for about two seconds, and the panel shows a bar
-filling meanwhile. "Autosave every" (off by default) adds a save every 5,
-15 or 30 minutes, taken only if the RAM has changed since the last one. "Start fresh" resets into cleared RAM instead, leaving
+filling meanwhile. "Start fresh" resets into cleared RAM instead, leaving
 the file to be replaced by the next save. The USA, Japanese
 and Rosemary SDK ROMs are three menu entries, each with its own save, and
 Main remembers the last ROM loaded: the core started on its own comes up
@@ -740,8 +739,8 @@ package to install. The images stay on the main page because an .mgl
 mounts an image by selecting its entry on the page the OSD opens on; an
 entry on a sub-page is not found. Then saving, where the console cores
 keep theirs: "Save state" (the RAM image with the machine's context, one
-slot, which every load carries on from), "Autosave on OSD" and "Autosave
-every". Settings are on pages:
+slot, which every load carries on from) and "Autosave on OSD". Settings
+are on pages:
 
 - **Card slots**: what each slot holds. Slot 1 is a memory card, the
   network card or empty; slot 2 a memory card or empty. A memory card is
