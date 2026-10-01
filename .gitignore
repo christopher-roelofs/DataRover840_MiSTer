@@ -21,3 +21,5 @@ sim/lcd/obj_dir/
 sim/status/obj_dir/
 sim/sib/obj_dir/
 sim/sdram/obj_*/
+sim/ne2000/obj_dir/
+sim/netbridge/obj_dir/
